@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/libraries/IterableOrderedOrderSet.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/libraries/</a> IterableOrderedOrderSet.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>45/45</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">96.15% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>25/26</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>8/8</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>47/47</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">36×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">36×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">34×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">25×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">27×</span>
+<span class="cline-any cline-yes">27×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">85×</span>
+<span class="cline-any cline-yes">85×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">43×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">85×</span>
+<span class="cline-any cline-yes">85×</span>
+<span class="cline-any cline-yes">85×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity &gt;=0.6.8;
+&nbsp;
+&nbsp;
+library IterableOrderedOrderSet {
+  uint64 private constant MIN_RATE = uint64(0);
+  uint64 private constant MAX_RATE = uint64(-1);
+&nbsp;
+  // getValue(QUEUE_START) returns 0
+  bytes32 private constant QUEUE_START = 0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1000000000000000000000000;
+  // getValue(QUEUE_END) returns MaxValue in uint64
+  bytes32 constant QUEUE_END = 0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1ffffffffffffffffffffffff;
+&nbsp;
+  struct Data {
+    mapping(bytes32 =&gt; bytes32) nextMap;
+    uint256 size;
+  }
+&nbsp;
+  struct Order {
+    address owner; // 160 bit
+    uint32 amount; // 32 bit
+    uint64 rate; // 64 bit
+  }
+&nbsp;
+  function get_queue_start_bytes32() internal pure returns (bytes32) {
+    return QUEUE_START;
+  }
+&nbsp;
+  function insert(
+    Data storage self,
+    bytes32 elementToInsert,
+    bytes32 elmentBeforeNewOne
+  ) public returns (bool) {
+    uint64 currentvalue = getValue(elementToInsert);
+&nbsp;
+    require(
+      elementToInsert != bytes32(0),
+      "Inserting bytes(0) is not supported"
+    );
+    require(currentvalue != MIN_RATE, "Inserting QUEUE_START is not supported");
+    require(currentvalue != MAX_RATE, "Inserting QUEUE_END is not supported");
+&nbsp;
+    if (contains(self, elementToInsert)) {
+      return false;
+    }
+    bool foundposition = false;
+    if (self.size == 0) {
+      self.nextMap[QUEUE_START] = elementToInsert;
+      self.nextMap[elementToInsert] = QUEUE_END;
+    } else {
+      bytes32 elmentBeforeNewOneNext = elmentBeforeNewOne;
+      while (!foundposition) {
+        if (getValue(elmentBeforeNewOneNext) &lt; currentvalue) {
+          if (currentvalue &lt; getValue(self.nextMap[elmentBeforeNewOneNext])) {
+            bytes32 tmp = self.nextMap[elmentBeforeNewOneNext];
+            self.nextMap[elmentBeforeNewOneNext] = elementToInsert;
+            self.nextMap[elementToInsert] = tmp;
+            foundposition = true;
+          } else {
+            elmentBeforeNewOneNext = self.nextMap[elmentBeforeNewOneNext];
+          }
+        } else {
+          return false; // Element is already in the queue
+        }
+      }
+    }
+    self.size++;
+    return true;
+  }
+&nbsp;
+  function remove(
+    Data storage self,
+    bytes32 elementToRemove,
+    bytes32 elementBeforeRemoval
+  ) internal returns (bool) {
+    if (!contains(self, elementToRemove)) {
+      return false;
+    }
+    bytes32 elementBeforeRemovalNext = elementBeforeRemoval;
+    while (self.nextMap[elementBeforeRemovalNext] != elementToRemove) {
+      if (elementBeforeRemovalNext == QUEUE_END) {
+        return false;
+      }
+      elementBeforeRemovalNext = self.nextMap[elementBeforeRemovalNext];
+    }
+    self.nextMap[elementBeforeRemovalNext] = self.nextMap[elementToRemove];
+    self.nextMap[elementToRemove] = bytes32(0);
+    self.size--;
+    return true;
+  }
+&nbsp;
+  function getValue(bytes32 value) internal pure returns (uint64) {
+    (uint64 rate, , ) = decodeOrder(value);
+    return rate;
+  }
+&nbsp;
+  function contains(Data storage self, bytes32 value)
+    internal
+    view
+    returns (bool)
+  {
+    if (value == QUEUE_START || value == QUEUE_END) {
+      return false;
+    }
+    return self.nextMap[value] != bytes32(0);
+  }
+&nbsp;
+  function first(Data storage self) internal view returns (bytes32) {
+    require(self.size &gt; 0, "Trying to get first from empty set");
+    return self.nextMap[QUEUE_START];
+  }
+&nbsp;
+  function next(Data storage self, bytes32 value)
+    internal
+    view
+    returns (bytes32)
+  {
+    <span class="missing-if-branch" title="else path not taken" >E</span>require(value != QUEUE_END, "Trying to get next of non-existent element");
+    require(
+      self.nextMap[value] != bytes32(0),
+      "Trying to get next of last element"
+    );
+    return self.nextMap[value];
+  }
+&nbsp;
+  function decodeOrder(bytes32 orderData)
+    internal
+    pure
+    returns (
+      uint64 rate,
+      uint32 amount,
+      address owner
+    )
+  {
+    // checkout new feature: abi.decode(msg.data[4:], (uint, uint))
+    owner = address(uint256(orderData) / 2**96);
+    amount = uint32((uint256(orderData) % 2**96) / 2**64);
+    rate = uint64((uint256(orderData) % 2**64) / 1);
+  }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Wed May 20 2020 21:56:37 GMT+0200 (Central European Summer Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>
