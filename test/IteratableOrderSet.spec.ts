@@ -16,6 +16,7 @@ const {
 
 const BYTES32_ZERO = encodeOrder(0, 0, 0);
 const BYTES32_ONE = encodeOrder(1, 1, 1);
+const BYTES32_ONE_DIFFERENT = encodeOrder(1, 2, 2);
 const BYTES32_TWO = encodeOrder(1, 8, 4);
 const BYTES32_THREE = encodeOrder(1, 6, 2);
 
@@ -33,13 +34,7 @@ async function getSetContent(set: IterableOrderedOrderSetWrapperInstance) {
 }
 
 contract("IterableOrderedOrderSet", function () {
-  beforeEach(async () => {
-    const lib = await IterableOrderedOrderSet.new();
-    await IterableOrderedOrderSetWrapper.link(
-      "IterableOrderedOrderSet",
-      lib.address
-    );
-  });
+  beforeEach(async () => {});
 
   it("should contain the added values", async () => {
     const set = await IterableOrderedOrderSetWrapper.new();
@@ -101,6 +96,15 @@ contract("IterableOrderedOrderSet", function () {
     assert.equal(third, BYTES32_ONE);
     assert.equal(second, BYTES32_TWO);
     assert.equal(first, BYTES32_THREE);
+  });
+  it("should not allow to insert same limit price with same user", async () => {
+    const set = await IterableOrderedOrderSetWrapper.new();
+
+    await set.insert(BYTES32_ONE);
+    await truffleAssert.reverts(
+      set.insert(BYTES32_ONE_DIFFERENT),
+      "user is not allowed to place same order twice"
+    );
   });
 
   it("should allow to insert element at certain element", async () => {
@@ -231,9 +235,9 @@ contract("IterableOrderedOrderSet", function () {
 
   it("encodeOrder reverses decodeOrder", async () => {
     const set = await IterableOrderedOrderSetWrapper.new();
-
+    const ans = await set.decodeOrder(BYTES32_ONE);
     assert.equal(
-      await set.encodeOrder.call(await set.decodeOrder.call(BYTES32_ONE)),
+      await set.encodeOrder.call(ans[0], ans[1], ans[2]),
       BYTES32_ONE
     );
   });

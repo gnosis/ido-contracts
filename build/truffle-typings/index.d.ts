@@ -316,26 +316,9 @@ export interface IterableOrderedOrderSetWrapperInstance
     txDetails?: Truffle.TransactionDetails
   ): Promise<string>;
 
-  biggerThan: {
-    (
-      orderLeft: string | BN,
-      orderRight: string | BN,
-      txDetails?: Truffle.TransactionDetails
-    ): Promise<Truffle.TransactionResponse>;
-    call(
-      orderLeft: string | BN,
-      orderRight: string | BN,
-      txDetails?: Truffle.TransactionDetails
-    ): Promise<boolean>;
-    sendTransaction(
-      orderLeft: string | BN,
-      orderRight: string | BN,
-      txDetails?: Truffle.TransactionDetails
-    ): Promise<string>;
-    estimateGas(
-      orderLeft: string | BN,
-      orderRight: string | BN,
-      txDetails?: Truffle.TransactionDetails
-    ): Promise<number>;
-  };
+  biggerThan(
+    orderLeft: string | BN,
+    orderRight: string | BN,
+    txDetails?: Truffle.TransactionDetails
+  ): Promise<boolean>;
 }

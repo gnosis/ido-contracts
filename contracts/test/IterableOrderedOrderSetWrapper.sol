@@ -1,5 +1,4 @@
 pragma solidity ^0.6.0;
-
 import "../libraries/IterableOrderedOrderSet.sol";
 
 
@@ -46,28 +45,29 @@ contract IterableOrderedOrderSetWrapper {
 
   function decodeOrder(bytes32 value)
     public
-    view
+    pure
     returns (
       uint64,
       uint96,
       uint96
     )
   {
-    return decodeOrder(value);
+    return IterableOrderedOrderSet.decodeOrder(value);
   }
 
   function encodeOrder(
     uint64 userId,
     uint96 sellAmount,
     uint96 buyAmount
-  ) public view returns (bytes32) {
-    return encodeOrder(userId, sellAmount, buyAmount);
+  ) public pure returns (bytes32) {
+    return IterableOrderedOrderSet.encodeOrder(userId, sellAmount, buyAmount);
   }
 
   function biggerThan(bytes32 orderLeft, bytes32 orderRight)
     public
+    pure
     returns (bool)
   {
-    return biggerThan(orderLeft, orderRight);
+    return IterableOrderedOrderSet.biggerThan(orderLeft, orderRight);
   }
 }

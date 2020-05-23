@@ -158,7 +158,7 @@ library IterableOrderedOrderSet {
     )
   {
     userId = uint64(uint256(_orderData) / 2**192);
-    sellAmount = uint96((uint256(_orderData) % 2**192) / 2**94);
+    sellAmount = uint96((uint256(_orderData) % 2**192) / 2**96);
     buyAmount = uint96((uint256(_orderData) % 2**96));
   }
 
