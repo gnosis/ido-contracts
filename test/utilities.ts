@@ -1,11 +1,27 @@
-const queueStartElement =
-  "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
-const queueLastElement =
-  "0x0000000000000000000000000000000000000000000000000000000000000001";
 import { EasyAuctionInstance } from "../types/truffle-typings";
-
+import BN from "bn.js";
 import { HttpProvider } from "web3-core";
-const encodeOrder = function (
+
+const ERC20 = artifacts.require("ERC20Mintable.sol");
+export const queueStartElement =
+  "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
+export const queueLastElement =
+  "0x0000000000000000000000000000000000000000000000000000000000000001";
+
+export function toAuctionDataResult(
+  result: [string, string, BN, string, string, BN, BN]
+): OrderResult {
+  return {
+    sellToken: result[0],
+    buyToken: result[1],
+    auctionEndDate: result[2],
+    sellOrder: result[3],
+    clearingPriceOrder: result[4],
+    volumeClearingPriceOrder: result[5],
+    rewardFactor: result[6],
+  };
+}
+export function encodeOrder(
   userId: number,
   sellAmount: number,
   buyAmount: number
@@ -16,7 +32,7 @@ const encodeOrder = function (
     sellAmount.toString(16).padStart(24, "0") +
     buyAmount.toString(16).padStart(24, "0")
   );
-};
+}
 
 const jsonrpc = "2.0";
 const id = 0;
@@ -71,11 +87,53 @@ export async function sendTxAndGetReturnValue<T>(
   await method.sendTransaction(...args);
   return result;
 }
+export function toPrice(result: [BN, BN]): Price {
+  return {
+    priceNumerator: result[0],
+    priceDenominator: result[1],
+  };
+}
+
+export interface Price {
+  priceNumerator: BN;
+  priceDenominator: BN;
+}
+
+export interface OrderResult {
+  sellToken: string;
+  buyToken: string;
+  auctionEndDate: BN;
+  sellOrder: string;
+  clearingPriceOrder: string;
+  volumeClearingPriceOrder: BN;
+  rewardFactor: BN;
+}
 
 export interface Order {
-  userId: number;
-  buyAmount: number;
-  sellAmount: number;
+  sellAmount: BN;
+  buyAmount: BN;
+  owner: string;
+}
+
+export async function createTokensAndMintAndApprove(
+  easyAuction: EasyAuctionInstance,
+  users: string[]
+) {
+  const buyToken = await ERC20.new("BT", "BT");
+  const sellToken = await ERC20.new("BT", "BT");
+
+  for (const user of users) {
+    await buyToken.mint(user, new BN(10).pow(new BN(30)));
+    await buyToken.approve(easyAuction.address, new BN(10).pow(new BN(30)), {
+      from: user,
+    });
+
+    await sellToken.mint(user, new BN(10).pow(new BN(30)));
+    await sellToken.approve(easyAuction.address, new BN(10).pow(new BN(30)), {
+      from: user,
+    });
+  }
+  return { sellToken: sellToken, buyToken: buyToken };
 }
 
 // import { EasyAuctionInstance } from "../types/truffle-typings";
@@ -95,20 +153,3 @@ export interface Order {
 //     buyAmount: object.returnValues.buyAmount;
 //   });
 // };
-
-// const placeBuyOrderWithOptimalProceedingElement = function (
-//   easyAuction: EasyAuctionInstance,
-//   sellAmount: number,
-//   buyAmount: number
-// ): void {
-//   const orders = getAllOrders(easyAuction);
-// };
-
-module.exports = {
-  encodeOrder,
-  //placeBuyOrderWithOptimalProceedingElement,
-  sendTxAndGetReturnValue,
-  queueStartElement,
-  queueLastElement,
-  closeAuction,
-};

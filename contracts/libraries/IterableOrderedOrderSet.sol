@@ -21,8 +21,8 @@ library IterableOrderedOrderSet {
 
   struct Order {
     uint64 owner;
-    uint96 sellAmount;
     uint96 buyAmount;
+    uint96 sellAmount;
   }
 
   function insert(
@@ -41,6 +41,10 @@ library IterableOrderedOrderSet {
       self.nextMap[QUEUE_START] = elementToInsert;
       self.nextMap[elementToInsert] = QUEUE_END;
     } else {
+      require(
+        elmentBeforeNewOne == QUEUE_START || contains(self, elmentBeforeNewOne),
+        "elmentBeforeNewOne must be valid order"
+      );
       bytes32 elmentBeforeNewOneNext = elmentBeforeNewOne;
       while (!foundposition) {
         if (elmentBeforeNewOneNext.biggerThan(elementToInsert)) {
@@ -153,27 +157,27 @@ library IterableOrderedOrderSet {
     pure
     returns (
       uint64 userId,
-      uint96 sellAmount,
-      uint96 buyAmount
+      uint96 buyAmount,
+      uint96 sellAmount
     )
   {
     userId = uint64(uint256(_orderData) / 2**192);
-    sellAmount = uint96((uint256(_orderData) % 2**192) / 2**96);
-    buyAmount = uint96((uint256(_orderData) % 2**96));
+    buyAmount = uint96((uint256(_orderData) % 2**192) / 2**96);
+    sellAmount = uint96((uint256(_orderData) % 2**96));
   }
 
   function encodeOrder(
     uint64 userId,
-    uint96 sellAmount,
-    uint96 buyAmount
+    uint96 buyAmount,
+    uint96 sellAmount
   ) internal pure returns (bytes32) {
     return
       bytes32(
         uint256(userId) *
           2**192 +
-          uint256(sellAmount) *
+          uint256(buyAmount) *
           2**96 +
-          uint256(buyAmount)
+          uint256(sellAmount)
       );
   }
 }

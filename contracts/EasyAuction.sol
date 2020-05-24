@@ -60,17 +60,13 @@ contract EasyAuction {
     bytes32 sellOrder;
     bytes32 clearingPriceOrder;
     uint96 volumeClearingPriceOrder;
+    uint96 rewardFactor;
   }
   mapping(uint256 => IterableOrderedOrderSet.Data) public buyOrders;
   mapping(uint256 => AuctionData) public auctionData;
   IdToAddressBiMap.Data private registeredUsers;
   uint64 public numUsers;
-  address public donationAccount;
   uint256 public auctionCounter;
-
-  constructor() public {
-    donationAccount = msg.sender;
-  }
 
   function initiateAuction(
     ERC20 _sellToken,
@@ -89,8 +85,9 @@ contract EasyAuction {
       _sellToken,
       _buyToken,
       block.timestamp + duration,
-      IterableOrderedOrderSet.encodeOrder(userId, _sellAmount, _buyAmount),
+      IterableOrderedOrderSet.encodeOrder(userId, _buyAmount, _sellAmount),
       bytes32(0),
+      0,
       0
     );
     emit NewAuction(auctionCounter, _sellToken, _buyToken);
@@ -105,23 +102,30 @@ contract EasyAuction {
   ) public atStageOrderplacement(auctionId) {
     (
       ,
-      uint96 sellAmountOfSellOrder,
-      uint96 buyAmountOfSellOrder
+      uint96 buyAmountOfSellOrder,
+      uint96 sellAmountOfSellOrder
     ) = auctionData[auctionId].sellOrder.decodeOrder();
     uint256 sumOfBuyAmounts = 0;
     uint64 userId = getUserId(msg.sender);
     for (uint256 i = 0; i < _buyAmount.length; i++) {
-      sumOfBuyAmounts = sumOfBuyAmounts.add(_buyAmount[i]);
+      sumOfBuyAmounts = sumOfBuyAmounts.add(
+        _buyAmount[i].mul(_buyAmount[i]).div(_sellAmount[i])
+      );
       require(
-        _buyAmount[i].mul(buyAmountOfSellOrder) <
+        _buyAmount[i].mul(buyAmountOfSellOrder) >
           sellAmountOfSellOrder.mul(_sellAmount[i]),
         "limit price not better than mimimal offer"
+      );
+      // small orders can not be allowed to quarantee price calculation
+      require(
+        _buyAmount[i] > buyAmountOfSellOrder / 5000,
+        "buyOrder too small"
       );
       buyOrders[auctionId].insert(
         IterableOrderedOrderSet.encodeOrder(
           userId,
-          _sellAmount[i],
-          _buyAmount[i]
+          _buyAmount[i],
+          _sellAmount[i]
         ),
         _prevBuyOrders[i]
       );
@@ -142,101 +146,131 @@ contract EasyAuction {
     atStageSolutionSubmission(auctionId)
     returns (uint96 priceNumerator, uint96 priceDenominator)
   {
-    (, uint96 sellAmount, ) = auctionData[auctionId].sellOrder.decodeOrder();
+    (, , uint96 sellAmount) = auctionData[auctionId].sellOrder.decodeOrder();
 
-    // Search for single partically filled order or last fully filled order:
-    uint96 sumBuyAmount = 0;
-    bytes32 iterOrder = IterableOrderedOrderSet.QUEUE_START;
     bool buyAmountExceedsSellAmount = true;
-    while (sumBuyAmount < sellAmount) {
-      iterOrder = buyOrders[auctionId].next(iterOrder);
-      if (iterOrder == IterableOrderedOrderSet.QUEUE_END) {
-        buyAmountExceedsSellAmount = false;
-        break;
+    uint96 sumBuyAmount = 0;
+    if (buyOrders[auctionId].size > 0) {
+      // Search for single partically filled order or last fully filled order:
+      bytes32 iterOrder = IterableOrderedOrderSet.QUEUE_START;
+      while (sumBuyAmount < sellAmount) {
+        iterOrder = buyOrders[auctionId].next(iterOrder);
+        if (iterOrder == IterableOrderedOrderSet.QUEUE_END) {
+          buyAmountExceedsSellAmount = false;
+          break;
+        }
+        (, uint96 buyAmountOfIter, ) = iterOrder.decodeOrder();
+        sumBuyAmount = uint96(sumBuyAmount.add(buyAmountOfIter)); // todo check correctness
       }
-      (, , uint96 buyAmountOfIter) = iterOrder.decodeOrder();
-      sumBuyAmount = uint96(sumBuyAmount.add(buyAmountOfIter)); // todo check correctness
-    }
-
-    // Store result:
-    bytes32 clearingPriceOrder = iterOrder;
-    if (!buyAmountExceedsSellAmount) {
-      clearingPriceOrder = auctionData[auctionId].sellOrder;
-      auctionData[auctionId].volumeClearingPriceOrder = uint96(sumBuyAmount);
+      if (buyAmountExceedsSellAmount) {
+        bytes32 clearingPriceOrder = iterOrder;
+        (, priceNumerator, priceDenominator) = clearingPriceOrder.decodeOrder();
+        auctionData[auctionId].volumeClearingPriceOrder = uint96(
+          priceNumerator.sub(sumBuyAmount.sub(sellAmount))
+        );
+        auctionData[auctionId].clearingPriceOrder = clearingPriceOrder;
+      }
     } else {
-      auctionData[auctionId].volumeClearingPriceOrder = uint96(
-        sumBuyAmount.sub(sellAmount)
-      );
+      buyAmountExceedsSellAmount = false;
     }
-    auctionData[auctionId].clearingPriceOrder = clearingPriceOrder;
-    (, priceNumerator, priceDenominator) = clearingPriceOrder.decodeOrder();
+    if (!buyAmountExceedsSellAmount) {
+      bytes32 clearingPriceOrder = auctionData[auctionId].sellOrder;
+      auctionData[auctionId].volumeClearingPriceOrder = uint96(sumBuyAmount);
+      (, priceNumerator, priceDenominator) = clearingPriceOrder.decodeOrder();
+      auctionData[auctionId].clearingPriceOrder = clearingPriceOrder;
+    }
+    auctionData[auctionId].rewardFactor = uint96(
+      uint256(10000)
+        .div(
+        (block.timestamp.sub(auctionData[auctionId].auctionEndDate) / 60) + 1
+      )
+        .add(1)
+    );
+    claimSellFunds(auctionId, false);
   }
 
   function claimFromBuyOrder(uint256 auctionId, bytes32[] memory orders)
     public
     atStageFinished(auctionId)
-    returns (uint256 sumSellToken, uint256 sumBuyToken)
+    returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
   {
     AuctionData memory auction = auctionData[auctionId];
-    (uint64 userId, uint96 priceDenominator, uint96 priceNumerator) = auction
+    (, uint96 priceNumerator, uint96 priceDenominator) = auction
       .clearingPriceOrder
       .decodeOrder();
     for (uint256 i = 0; i < orders.length; i++) {
-      (, , uint96 buyAmount) = orders[i].decodeOrder();
+      (uint64 userId, uint96 buyAmount, ) = orders[i].decodeOrder();
       if (orders[i] == auction.clearingPriceOrder) {
-        sumSellToken = sumSellToken.add(
-          auction.volumeClearingPriceOrder.mul(priceNumerator).div(
-            priceDenominator
-          )
-        );
-        sumBuyToken = sumBuyToken.add(
-          buyAmount.sub(auction.volumeClearingPriceOrder)
-        );
+        sellTokenAmount = auction
+          .volumeClearingPriceOrder
+          .mul(priceNumerator)
+          .div(priceDenominator);
+        buyTokenAmount = buyAmount.sub(auction.volumeClearingPriceOrder);
       } else {
         if (orders[i].biggerThan(auction.clearingPriceOrder)) {
-          sumSellToken = sumSellToken.add(
-            buyAmount.mul(priceNumerator).div(priceDenominator)
-          );
+          sellTokenAmount = buyAmount.mul(priceNumerator).div(priceDenominator);
         } else {
-          sumBuyToken = sumBuyToken.add(buyAmount);
+          buyTokenAmount = buyAmount;
         }
       }
+      sendOutTokens(auctionId, sellTokenAmount, buyTokenAmount, userId);
     }
-    sendOutTokens(auctionId, sumSellToken, sumBuyToken, userId);
   }
 
   function claimFromSellOrder(uint256 auctionId)
     public
     atStageFinished(auctionId)
-    returns (uint256 sumSellToken, uint256 sumBuyToken)
+    returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
+  {
+    return claimSellFunds(auctionId, true);
+  }
+
+  function claimSellFunds(uint256 auctionId, bool isOriginalSeller)
+    internal
+    returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
   {
     (
       uint64 userId,
-      uint96 sellAmount,
-      uint96 buyAmount
+      uint96 buyAmount,
+      uint96 sellAmount
     ) = auctionData[auctionId].sellOrder.decodeOrder();
     if (
       auctionData[auctionId].sellOrder ==
       auctionData[auctionId].clearingPriceOrder
     ) {
-      sumSellToken = sellAmount.sub(
+      sellTokenAmount = sellAmount.sub(
         auctionData[auctionId].volumeClearingPriceOrder
       );
-      sumBuyToken = auctionData[auctionId]
+      buyTokenAmount = auctionData[auctionId]
         .volumeClearingPriceOrder
         .mul(buyAmount)
         .div(sellAmount);
     } else {
       (
         ,
-        uint96 priceDenominator,
-        uint96 priceNumerator
+        uint96 priceNumerator,
+        uint96 priceDenominator
       ) = IterableOrderedOrderSet.decodeOrder(
         auctionData[auctionId].clearingPriceOrder
       );
-      sumBuyToken = sellAmount.mul(priceNumerator).div(priceDenominator);
+      buyTokenAmount = sellAmount.mul(priceNumerator).div(priceDenominator);
     }
-    sendOutTokens(auctionId, sumSellToken, sumBuyToken, userId);
+    uint96 rewardFactor = auctionData[auctionId].rewardFactor;
+    if (isOriginalSeller) {
+      sendOutTokens(
+        auctionId,
+        sellTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
+        buyTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
+        userId
+      );
+    } else {
+      sendOutTokens(
+        auctionId,
+        sellTokenAmount.div(rewardFactor),
+        buyTokenAmount.div(rewardFactor),
+        getUserId(msg.sender)
+      );
+    }
   }
 
   function sendOutTokens(
@@ -252,7 +286,7 @@ contract EasyAuction {
     );
     require(
       auctionData[auctionId].buyToken.transfer(userAddress, buyTokenAmount),
-      "Claim transfer for sellToken failed"
+      "Claim transfer for buyToken failed"
     );
   }
 
