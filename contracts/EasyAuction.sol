@@ -1,6 +1,7 @@
 pragma solidity >=0.6.8;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./libraries/IterableOrderedOrderSet.sol";
+import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "@openzeppelin/contracts/utils/SafeCast.sol";
@@ -179,14 +180,16 @@ contract EasyAuction {
       (, priceNumerator, priceDenominator) = clearingPriceOrder.decodeOrder();
       auctionData[auctionId].clearingPriceOrder = clearingPriceOrder;
     }
-    auctionData[auctionId].rewardFactor = uint96(
-      uint256(10000)
-        .div(
-        (block.timestamp.sub(auctionData[auctionId].auctionEndDate) / 60) + 1
-      )
-        .add(1)
+    uint256 submissionTime = block.timestamp.sub(
+      auctionData[auctionId].auctionEndDate
     );
-    claimSellFunds(auctionId, false);
+    auctionData[auctionId].rewardFactor = uint96(
+      Math.min(
+        uint256(100000000).div(submissionTime.mul(submissionTime).add(1)),
+        10
+      )
+    );
+    claimSellerFunds(auctionId, false);
   }
 
   function claimFromBuyOrder(uint256 auctionId, bytes32[] memory orders)
@@ -195,17 +198,20 @@ contract EasyAuction {
     returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
   {
     AuctionData memory auction = auctionData[auctionId];
-    (, uint96 priceNumerator, uint96 priceDenominator) = auction
+    (, uint96 priceDenominator, uint96 priceNumerator) = auction
       .clearingPriceOrder
       .decodeOrder();
     for (uint256 i = 0; i < orders.length; i++) {
-      (uint64 userId, uint96 buyAmount, ) = orders[i].decodeOrder();
+      (uint64 userId, uint96 buyAmount, uint96 sellAmount) = orders[i]
+        .decodeOrder();
       if (orders[i] == auction.clearingPriceOrder) {
         sellTokenAmount = auction
           .volumeClearingPriceOrder
           .mul(priceNumerator)
           .div(priceDenominator);
-        buyTokenAmount = buyAmount.sub(auction.volumeClearingPriceOrder);
+        buyTokenAmount = buyAmount.mul(buyAmount).div(sellAmount).sub(
+          auction.volumeClearingPriceOrder
+        );
       } else {
         if (orders[i].biggerThan(auction.clearingPriceOrder)) {
           sellTokenAmount = buyAmount.mul(priceNumerator).div(priceDenominator);
@@ -222,10 +228,10 @@ contract EasyAuction {
     atStageFinished(auctionId)
     returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
   {
-    return claimSellFunds(auctionId, true);
+    return claimSellerFunds(auctionId, true);
   }
 
-  function claimSellFunds(uint256 auctionId, bool isOriginalSeller)
+  function claimSellerFunds(uint256 auctionId, bool isOriginalSeller)
     internal
     returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
   {

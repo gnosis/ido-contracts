@@ -7,6 +7,7 @@ import { EasyAuctionInstance } from "../types/truffle-typings";
 const {
   toPrice,
   toAuctionDataResult,
+  toReceivedFunds,
   encodeOrder,
   queueStartElement,
   sendTxAndGetReturnValue,
@@ -616,6 +617,54 @@ contract("EasyAuction", async (accounts) => {
           .toString()
       );
     });
+    it("checks the claimed amounts for a partially matched sellOrder and buyOrder", async () => {
+      const sellOrder = {
+        sellAmount: new BN(10).pow(new BN(18)),
+        buyAmount: new BN(10).pow(new BN(18)),
+        owner: user_1,
+      };
+      const buyOrders = [
+        {
+          sellAmount: new BN(10).pow(new BN(18)).div(new BN(2)).sub(new BN(1)),
+          buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
+          owner: user_1,
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1]);
+
+      const auctionId = await sendTxAndGetReturnValue(
+        easyAuction.initiateAuction,
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        sellOrder.sellAmount,
+        sellOrder.buyAmount
+      );
+      await easyAuction.placeBuyOrders(
+        auctionId,
+        buyOrders.map((buyOrder) => buyOrder.buyAmount),
+        buyOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(buyOrders.length).fill(queueStartElement)
+      );
+      await closeAuction(easyAuction, auctionId);
+      const price = toPrice(
+        await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId)
+      );
+      const receivedAmounts = await easyAuction.claimFromSellOrder.call(
+        auctionId
+      );
+      assert.equal(
+        receivedAmounts[0].toString(),
+        sellOrder.sellAmount.sub(buyOrders[0].buyAmount).toString()
+      );
+      assert.equal(
+        receivedAmounts[1].toString(),
+        buyOrders[0].buyAmount.toString()
+      );
+    });
   });
   describe("claimFromBuyOrder", async () => {
     it("checks that claiming only works after the finishing of the auction", async () => {
@@ -669,6 +718,140 @@ contract("EasyAuction", async (accounts) => {
         ),
         "Auction not yet finished"
       );
+    });
+    it("checks the claimed amounts for a partially matched buyOrder", async () => {
+      const sellOrder = {
+        sellAmount: new BN(10).pow(new BN(18)),
+        buyAmount: new BN(10).pow(new BN(18)),
+        owner: user_1,
+      };
+      const buyOrders = [
+        {
+          sellAmount: new BN(10).pow(new BN(18)).div(new BN(2)).sub(new BN(1)),
+          buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
+          owner: user_1,
+        },
+        {
+          sellAmount: new BN(10)
+            .pow(new BN(18))
+            .mul(new BN(2))
+            .div(new BN(3))
+            .sub(new BN(1)),
+          buyAmount: new BN(10).pow(new BN(18)).mul(new BN(2)).div(new BN(3)),
+          owner: user_1,
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1]);
+
+      const auctionId = await sendTxAndGetReturnValue(
+        easyAuction.initiateAuction,
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        sellOrder.sellAmount,
+        sellOrder.buyAmount
+      );
+      await easyAuction.placeBuyOrders(
+        auctionId,
+        buyOrders.map((buyOrder) => buyOrder.buyAmount),
+        buyOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(buyOrders.length).fill(queueStartElement)
+      );
+      await closeAuction(easyAuction, auctionId);
+      const price = toPrice(
+        await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId)
+      );
+      const receivedAmounts = toReceivedFunds(
+        await easyAuction.claimFromBuyOrder.call(auctionId, [
+          encodeOrder(0, buyOrders[1].buyAmount, buyOrders[1].sellAmount),
+        ])
+      );
+      const settledBuyAmount = buyOrders[1].buyAmount.sub(
+        buyOrders[0].buyAmount
+          .add(buyOrders[1].buyAmount)
+          .sub(sellOrder.sellAmount)
+      );
+
+      assert.equal(
+        receivedAmounts.buyTokenAmount.toString(),
+        buyOrders[1].buyAmount
+          .mul(buyOrders[1].buyAmount)
+          .div(buyOrders[1].sellAmount)
+          .sub(settledBuyAmount)
+          .toString()
+      );
+      assert.equal(
+        receivedAmounts.sellTokenAmount.toString(),
+        settledBuyAmount
+          .mul(buyOrders[1].sellAmount)
+          .div(buyOrders[1].buyAmount)
+          .toString()
+      );
+    });
+    it("checks the claimed amounts for a fully matched buyOrder", async () => {
+      const sellOrder = {
+        sellAmount: new BN(10).pow(new BN(18)),
+        buyAmount: new BN(10).pow(new BN(18)),
+        owner: user_1,
+      };
+      const buyOrders = [
+        {
+          sellAmount: new BN(10).pow(new BN(18)).div(new BN(2)).sub(new BN(1)),
+          buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
+          owner: user_1,
+        },
+        {
+          sellAmount: new BN(10)
+            .pow(new BN(18))
+            .mul(new BN(2))
+            .div(new BN(3))
+            .sub(new BN(1)),
+          buyAmount: new BN(10).pow(new BN(18)).mul(new BN(2)).div(new BN(3)),
+          owner: user_1,
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1]);
+
+      const auctionId = await sendTxAndGetReturnValue(
+        easyAuction.initiateAuction,
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        sellOrder.sellAmount,
+        sellOrder.buyAmount
+      );
+      await easyAuction.placeBuyOrders(
+        auctionId,
+        buyOrders.map((buyOrder) => buyOrder.buyAmount),
+        buyOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(buyOrders.length).fill(queueStartElement)
+      );
+      await closeAuction(easyAuction, auctionId);
+      const price = toPrice(
+        await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId)
+      );
+      const receivedAmounts = toReceivedFunds(
+        await easyAuction.claimFromBuyOrder.call(auctionId, [
+          encodeOrder(0, buyOrders[0].buyAmount, buyOrders[0].sellAmount),
+        ])
+      );
+      const unsettledBuyAmount = buyOrders[0].buyAmount
+        .add(buyOrders[1].buyAmount)
+        .sub(sellOrder.sellAmount);
+      assert.equal(
+        receivedAmounts.sellTokenAmount.toString(),
+        buyOrders[0].buyAmount
+          .mul(buyOrders[1].sellAmount)
+          .div(buyOrders[1].buyAmount)
+          .toString()
+      );
+      assert.equal(receivedAmounts.buyTokenAmount.toString(), "0");
     });
   });
 });

@@ -94,9 +94,21 @@ export function toPrice(result: [BN, BN]): Price {
   };
 }
 
+export function toReceivedFunds(result: [BN, BN]): ReceivedFunds {
+  return {
+    sellTokenAmount: result[0],
+    buyTokenAmount: result[1],
+  };
+}
+
 export interface Price {
   priceNumerator: BN;
   priceDenominator: BN;
+}
+
+export interface ReceivedFunds {
+  sellTokenAmount: BN;
+  buyTokenAmount: BN;
 }
 
 export interface OrderResult {
