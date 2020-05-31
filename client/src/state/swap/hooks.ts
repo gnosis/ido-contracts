@@ -7,39 +7,16 @@ import { useTokenByAddressAndAutomaticallyAdd } from "../../hooks/Tokens";
 import { useTradeExactIn, useTradeExactOut } from "../../hooks/Trades";
 import { AppDispatch, AppState } from "../index";
 import { useTokenBalancesTreatWETHAsETH } from "../wallet/hooks";
-import {
-  Field,
-  selectToken,
-  setDefaultsFromURLSearch,
-  switchTokens,
-  typeInput,
-} from "./actions";
+import { Field, setDefaultsFromURLSearch, typeInput } from "./actions";
 
 export function useSwapState(): AppState["swap"] {
   return useSelector<AppState, AppState["swap"]>((state) => state.swap);
 }
 
 export function useSwapActionHandlers(): {
-  onTokenSelection: (field: Field, address: string) => void;
-  onSwitchTokens: () => void;
   onUserInput: (field: Field, typedValue: string) => void;
 } {
   const dispatch = useDispatch<AppDispatch>();
-  const onTokenSelection = useCallback(
-    (field: Field, address: string) => {
-      dispatch(
-        selectToken({
-          field,
-          address,
-        })
-      );
-    },
-    [dispatch]
-  );
-
-  const onSwapTokens = useCallback(() => {
-    dispatch(switchTokens());
-  }, [dispatch]);
 
   const onUserInput = useCallback(
     (field: Field, typedValue: string) => {
@@ -49,8 +26,6 @@ export function useSwapActionHandlers(): {
   );
 
   return {
-    onSwitchTokens: onSwapTokens,
-    onTokenSelection,
     onUserInput,
   };
 }

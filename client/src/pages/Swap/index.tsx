@@ -65,7 +65,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     tokens,
     error,
   } = useDerivedSwapInfo();
-  const { onTokenSelection, onUserInput } = useSwapActionHandlers();
+  const { onUserInput } = useSwapActionHandlers();
   const isValid = !error;
   const dependentField: Field =
     independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT;
@@ -221,7 +221,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
         <Wrapper id="swap-page">
           <ConfirmationModal
             isOpen={showConfirm}
-            title="Confirm Swap"
+            title="Confirm Order"
             onDismiss={() => {
               resetModal();
               setShowConfirm(false);
@@ -251,9 +251,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                   maxAmountInput &&
                     onUserInput(Field.INPUT, maxAmountInput.toExact());
                 }}
-                onTokenSelection={(address) =>
-                  onTokenSelection(Field.INPUT, address)
-                }
                 otherSelectedTokenAddress={tokens[Field.OUTPUT]?.address}
                 id="swap-currency-input"
               />
@@ -266,9 +263,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 label={independentField === Field.INPUT ? "Price" : "Price"}
                 showMaxButton={false}
                 token={tokens[Field.OUTPUT]}
-                onTokenSelection={(address) =>
-                  onTokenSelection(Field.OUTPUT, address)
-                }
                 otherSelectedTokenAddress={tokens[Field.INPUT]?.address}
                 id="swap-currency-output"
               />
