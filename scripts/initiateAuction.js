@@ -1,5 +1,5 @@
+const BN = require("bn.js");
 const EasyAuction = artifacts.require("./EasyAuction.sol");
-import BN from "bn.js";
 
 const argv = require("yargs")
   .option("sellAmount", {

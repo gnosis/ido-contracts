@@ -1,4 +1,5 @@
 const truffleConfig = require("@gnosis.pm/util-contracts/src/util/truffleConfig");
+const path = require("path");
 const argv = require("yargs")
   .option("gas", {
     alias: "g",
@@ -75,6 +76,7 @@ module.exports = {
     },
     grep,
   },
+  contracts_build_directory: path.join(__dirname, "client/src/contracts"),
   test_file_extension_regexp: /.*\.js$/,
   plugins: ["truffle-plugin-verify", "solidity-coverage"],
   api_keys: {

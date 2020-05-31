@@ -1,57 +1,73 @@
-import { Interface, FunctionFragment } from '@ethersproject/abi'
-import { BigNumber } from '@ethersproject/bignumber'
-import { Contract } from '@ethersproject/contracts'
-import { useEffect, useMemo } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
-import { useBlockNumber } from '../application/hooks'
-import { AppDispatch, AppState } from '../index'
+import { Interface, FunctionFragment } from "@ethersproject/abi";
+import { BigNumber } from "@ethersproject/bignumber";
+import { Contract } from "@ethersproject/contracts";
+import { useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useActiveWeb3React } from "../../hooks";
+import { useBlockNumber } from "../application/hooks";
+import { AppDispatch, AppState } from "../index";
 import {
   addMulticallListeners,
   Call,
   removeMulticallListeners,
   parseCallKey,
   toCallKey,
-  ListenerOptions
-} from './actions'
+  ListenerOptions,
+} from "./actions";
 
 export interface Result extends ReadonlyArray<any> {
-  readonly [key: string]: any
+  readonly [key: string]: any;
 }
 
-type MethodArg = string | number | BigNumber
-type MethodArgs = Array<MethodArg | MethodArg[]>
+type MethodArg = string | number | BigNumber;
+type MethodArgs = Array<MethodArg | MethodArg[]>;
 
-type OptionalMethodInputs = Array<MethodArg | MethodArg[] | undefined> | undefined
+type OptionalMethodInputs =
+  | Array<MethodArg | MethodArg[] | undefined>
+  | undefined;
 
 function isMethodArg(x: unknown): x is MethodArg {
-  return ['string', 'number'].indexOf(typeof x) !== -1
+  return ["string", "number"].indexOf(typeof x) !== -1;
 }
 
 function isValidMethodArgs(x: unknown): x is MethodArgs | undefined {
   return (
-    x === undefined || (Array.isArray(x) && x.every(y => isMethodArg(y) || (Array.isArray(y) && y.every(isMethodArg))))
-  )
+    x === undefined ||
+    (Array.isArray(x) &&
+      x.every(
+        (y) => isMethodArg(y) || (Array.isArray(y) && y.every(isMethodArg))
+      ))
+  );
 }
 
 interface CallResult {
-  readonly valid: boolean
-  readonly data: string | undefined
-  readonly blockNumber: number | undefined
+  readonly valid: boolean;
+  readonly data: string | undefined;
+  readonly blockNumber: number | undefined;
 }
 
-const INVALID_RESULT: CallResult = { valid: false, blockNumber: undefined, data: undefined }
+const INVALID_RESULT: CallResult = {
+  valid: false,
+  blockNumber: undefined,
+  data: undefined,
+};
 
 // use this options object
 export const NEVER_RELOAD: ListenerOptions = {
-  blocksPerFetch: Infinity
-}
+  blocksPerFetch: Infinity,
+};
 
 // the lowest level call for subscribing to contract data
-function useCallsData(calls: (Call | undefined)[], options?: ListenerOptions): CallResult[] {
-  const { chainId } = useActiveWeb3React()
-  const callResults = useSelector<AppState, AppState['multicall']['callResults']>(state => state.multicall.callResults)
-  const dispatch = useDispatch<AppDispatch>()
+function useCallsData(
+  calls: (Call | undefined)[],
+  options?: ListenerOptions
+): CallResult[] {
+  const { chainId } = useActiveWeb3React();
+  const callResults = useSelector<
+    AppState,
+    AppState["multicall"]["callResults"]
+  >((state) => state.multicall.callResults);
+  const dispatch = useDispatch<AppDispatch>();
 
   const serializedCallKeys: string = useMemo(
     () =>
@@ -62,63 +78,75 @@ function useCallsData(calls: (Call | undefined)[], options?: ListenerOptions): C
           ?.sort() ?? []
       ),
     [calls]
-  )
+  );
 
   // update listeners when there is an actual change that persists for at least 100ms
   useEffect(() => {
-    const callKeys: string[] = JSON.parse(serializedCallKeys)
-    if (!chainId || callKeys.length === 0) return
-    const calls = callKeys.map(key => parseCallKey(key))
+    const callKeys: string[] = JSON.parse(serializedCallKeys);
+    if (!chainId || callKeys.length === 0) return;
+    const calls = callKeys.map((key) => parseCallKey(key));
     dispatch(
       addMulticallListeners({
         chainId,
         calls,
-        options
+        options,
       })
-    )
+    );
 
     return () => {
       dispatch(
         removeMulticallListeners({
           chainId,
           calls,
-          options
+          options,
         })
-      )
-    }
-  }, [chainId, dispatch, options, serializedCallKeys])
+      );
+    };
+  }, [chainId, dispatch, options, serializedCallKeys]);
 
   return useMemo(
     () =>
-      calls.map<CallResult>(call => {
-        if (!chainId || !call) return INVALID_RESULT
+      calls.map<CallResult>((call) => {
+        if (!chainId || !call) return INVALID_RESULT;
 
-        const result = callResults[chainId]?.[toCallKey(call)]
-        let data
-        if (result?.data && result?.data !== '0x') {
-          data = result.data
+        const result = callResults[chainId]?.[toCallKey(call)];
+        let data;
+        if (result?.data && result?.data !== "0x") {
+          data = result.data;
         }
 
-        return { valid: true, data, blockNumber: result?.blockNumber }
+        return { valid: true, data, blockNumber: result?.blockNumber };
       }),
     [callResults, calls, chainId]
-  )
+  );
 }
 
 interface CallState {
-  readonly valid: boolean
+  readonly valid: boolean;
   // the result, or undefined if loading or errored/no data
-  readonly result: Result | undefined
+  readonly result: Result | undefined;
   // true if the result has never been fetched
-  readonly loading: boolean
+  readonly loading: boolean;
   // true if the result is not for the latest block
-  readonly syncing: boolean
+  readonly syncing: boolean;
   // true if the call was made and is synced, but the return data is invalid
-  readonly error: boolean
+  readonly error: boolean;
 }
 
-const INVALID_CALL_STATE: CallState = { valid: false, result: undefined, loading: false, syncing: false, error: false }
-const LOADING_CALL_STATE: CallState = { valid: true, result: undefined, loading: true, syncing: true, error: false }
+const INVALID_CALL_STATE: CallState = {
+  valid: false,
+  result: undefined,
+  loading: false,
+  syncing: false,
+  error: false,
+};
+const LOADING_CALL_STATE: CallState = {
+  valid: true,
+  result: undefined,
+  loading: true,
+  syncing: true,
+  error: false,
+};
 
 function toCallState(
   result: CallResult | undefined,
@@ -126,19 +154,23 @@ function toCallState(
   fragment: FunctionFragment | undefined,
   latestBlockNumber: number | undefined
 ): CallState {
-  if (!result) return INVALID_CALL_STATE
-  const { valid, data, blockNumber } = result
-  if (!valid) return INVALID_CALL_STATE
-  if (valid && !blockNumber) return LOADING_CALL_STATE
-  if (!contractInterface || !fragment || !latestBlockNumber) return LOADING_CALL_STATE
-  const success = data && data.length > 2
+  if (!result) return INVALID_CALL_STATE;
+  const { valid, data, blockNumber } = result;
+  if (!valid) return INVALID_CALL_STATE;
+  if (valid && !blockNumber) return LOADING_CALL_STATE;
+  if (!contractInterface || !fragment || !latestBlockNumber)
+    return LOADING_CALL_STATE;
+  const success = data && data.length > 2;
   return {
     valid: true,
     loading: false,
     syncing: (blockNumber ?? 0) < latestBlockNumber,
-    result: success && data ? contractInterface.decodeFunctionResult(fragment, data) : undefined,
-    error: !success
-  }
+    result:
+      success && data
+        ? contractInterface.decodeFunctionResult(fragment, data)
+        : undefined,
+    error: !success,
+  };
 }
 
 export function useSingleContractMultipleData(
@@ -147,28 +179,33 @@ export function useSingleContractMultipleData(
   callInputs: OptionalMethodInputs[],
   options?: ListenerOptions
 ): CallState[] {
-  const fragment = useMemo(() => contract?.interface?.getFunction(methodName), [contract, methodName])
+  const fragment = useMemo(() => contract?.interface?.getFunction(methodName), [
+    contract,
+    methodName,
+  ]);
 
   const calls = useMemo(
     () =>
       contract && fragment && callInputs && callInputs.length > 0
-        ? callInputs.map<Call>(inputs => {
+        ? callInputs.map<Call>((inputs) => {
             return {
               address: contract.address,
-              callData: contract.interface.encodeFunctionData(fragment, inputs)
-            }
+              callData: contract.interface.encodeFunctionData(fragment, inputs),
+            };
           })
         : [],
     [callInputs, contract, fragment]
-  )
+  );
 
-  const results = useCallsData(calls, options)
+  const results = useCallsData(calls, options);
 
-  const latestBlockNumber = useBlockNumber()
+  const latestBlockNumber = useBlockNumber();
 
   return useMemo(() => {
-    return results.map(result => toCallState(result, contract?.interface, fragment, latestBlockNumber))
-  }, [fragment, contract, results, latestBlockNumber])
+    return results.map((result) =>
+      toCallState(result, contract?.interface, fragment, latestBlockNumber)
+    );
+  }, [fragment, contract, results, latestBlockNumber]);
 }
 
 export function useMultipleContractSingleData(
@@ -178,37 +215,42 @@ export function useMultipleContractSingleData(
   callInputs?: OptionalMethodInputs,
   options?: ListenerOptions
 ): CallState[] {
-  const fragment = useMemo(() => contractInterface.getFunction(methodName), [contractInterface, methodName])
+  const fragment = useMemo(() => contractInterface.getFunction(methodName), [
+    contractInterface,
+    methodName,
+  ]);
   const callData: string | undefined = useMemo(
     () =>
       fragment && isValidMethodArgs(callInputs)
         ? contractInterface.encodeFunctionData(fragment, callInputs)
         : undefined,
     [callInputs, contractInterface, fragment]
-  )
+  );
 
   const calls = useMemo(
     () =>
       fragment && addresses && addresses.length > 0 && callData
-        ? addresses.map<Call | undefined>(address => {
+        ? addresses.map<Call | undefined>((address) => {
             return address && callData
               ? {
                   address,
-                  callData
+                  callData,
                 }
-              : undefined
+              : undefined;
           })
         : [],
     [addresses, callData, fragment]
-  )
+  );
 
-  const results = useCallsData(calls, options)
+  const results = useCallsData(calls, options);
 
-  const latestBlockNumber = useBlockNumber()
+  const latestBlockNumber = useBlockNumber();
 
   return useMemo(() => {
-    return results.map(result => toCallState(result, contractInterface, fragment, latestBlockNumber))
-  }, [fragment, results, contractInterface, latestBlockNumber])
+    return results.map((result) =>
+      toCallState(result, contractInterface, fragment, latestBlockNumber)
+    );
+  }, [fragment, results, contractInterface, latestBlockNumber]);
 }
 
 export function useSingleCallResult(
@@ -217,23 +259,36 @@ export function useSingleCallResult(
   inputs?: OptionalMethodInputs,
   options?: ListenerOptions
 ): CallState {
-  const fragment = useMemo(() => contract?.interface?.getFunction(methodName), [contract, methodName])
+  const fragment = useMemo(() => contract?.interface?.getFunction(methodName), [
+    contract,
+    methodName,
+  ]);
+
+  console.log("fragment", fragment);
+  console.log("contract", contract);
 
   const calls = useMemo<Call[]>(() => {
-    return contract && fragment && isValidMethodArgs(inputs)
+    return fragment && contract && isValidMethodArgs(inputs)
       ? [
           {
             address: contract.address,
-            callData: contract.interface.encodeFunctionData(fragment, inputs)
-          }
+            callData: contract.interface.encodeFunctionData(fragment, inputs),
+          },
         ]
-      : []
-  }, [contract, fragment, inputs])
+      : [];
+  }, [contract, fragment, inputs]);
+  console.log(calls);
 
-  const result = useCallsData(calls, options)[0]
-  const latestBlockNumber = useBlockNumber()
+  const result = useCallsData(calls, options)[0];
+  console.log(result);
 
+  const latestBlockNumber = useBlockNumber();
   return useMemo(() => {
-    return toCallState(result, contract?.interface, fragment, latestBlockNumber)
-  }, [result, contract, fragment, latestBlockNumber])
+    return toCallState(
+      result,
+      contract?.interface,
+      fragment,
+      latestBlockNumber
+    );
+  }, [result, contract, fragment, latestBlockNumber]);
 }
