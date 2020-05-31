@@ -1,8 +1,11 @@
 import { parseUnits } from "@ethersproject/units";
+import { Contract } from "@ethersproject/contracts";
+import { ChainId } from "@uniswap/sdk";
+
 import { JSBI, Token, TokenAmount, Trade } from "@uniswap/sdk";
 import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { EASY_EXCHANGE_ADDRESS } from "../../constants/";
+import { EASY_AUCTIONO_NETWORKS } from "../../constants/";
 import { useContract } from "../../hooks/useContract";
 import { useSingleCallResult } from "../../state/multicall/hooks";
 import EasyAuctionTruffle from "../../contracts/EasyAuction.json";
@@ -67,27 +70,25 @@ export function useDerivedSwapInfo(): {
   error?: string;
   sellToken?: Token | null;
 } {
-  const { account } = useActiveWeb3React();
+  const { chainId, account } = useActiveWeb3React();
 
-  console.log(EasyAuctionTruffle.abi);
-  const easyAuctionInstance = useContract(
-    EASY_EXCHANGE_ADDRESS,
+  const easyAuctionInstance: Contract | null = useContract(
+    EASY_AUCTIONO_NETWORKS[chainId as ChainId],
     EasyAuctionTruffle.abi
   );
-  console.log(easyAuctionInstance);
   const auctionId = 1;
 
   const sellTokenAddress:
     | string
     | null = useSingleCallResult(easyAuctionInstance, "auctionData", [
     auctionId,
-  ]).result?.[0].toString();
+  ]).result?.sellToken.toString();
   console.log("sellTokenAddress:", sellTokenAddress);
   const fetchTokenByAddress = useFetchTokenByAddress();
 
   let sellToken: Token | null;
   if (sellTokenAddress) {
-    fetchTokenByAddress(sellTokenAddress.toString()).then((token) => {
+    fetchTokenByAddress(sellTokenAddress).then((token) => {
       sellToken = token;
     });
   } else {

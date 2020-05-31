@@ -1,5 +1,7 @@
-const BN = require("bn.js");
 const EasyAuction = artifacts.require("./EasyAuction.sol");
+const ERC20 = artifacts.require("ERC20Mintable.sol");
+
+const BN = require("bn.js");
 
 const argv = require("yargs")
   .option("sellAmount", {
@@ -12,7 +14,7 @@ const argv = require("yargs")
   })
   .option("duration", {
     describe: "Duration of auction",
-    default: 360,
+    default: 360000,
   })
   .help(false)
   .version(false).argv;
@@ -23,8 +25,8 @@ module.exports = async function (callback) {
     const easyAuction = await EasyAuction.deployed();
 
     // fake minting, to be removed
-    const buyToken = await ERC20.new("BT", "BT");
-    const sellToken = await ERC20.new("BT", "BT");
+    const buyToken = await ERC20.new("DAI", "DAI");
+    const sellToken = await ERC20.new("ETH", "ETH");
     for (const user of [account]) {
       await buyToken.mint(user, new BN(10).pow(new BN(30)));
       await buyToken.approve(easyAuction.address, new BN(10).pow(new BN(30)), {

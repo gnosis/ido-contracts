@@ -264,9 +264,6 @@ export function useSingleCallResult(
     methodName,
   ]);
 
-  console.log("fragment", fragment);
-  console.log("contract", contract);
-
   const calls = useMemo<Call[]>(() => {
     return fragment && contract && isValidMethodArgs(inputs)
       ? [

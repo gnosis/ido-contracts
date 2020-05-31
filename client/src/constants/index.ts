@@ -8,8 +8,14 @@ import {
 } from "../connectors";
 
 export const ROUTER_ADDRESS = "0xf164fC0Ec4E93095b804a4795bBe1e041497b92a";
-export const EASY_EXCHANGE_ADDRESS =
-  "0xCfEB869F69431e42cdB54A4F4f105C19C080A601";
+export const EASY_AUCTIONO_NETWORKS: { [chainId in ChainId]: string } = {
+  [ChainId.MAINNET]: "0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441",
+  [ChainId.ROPSTEN]: "0x53C43764255c17BD724F74c4eF150724AC50a3ed",
+  [ChainId.KOVAN]: "0x2cc8688C5f75E365aaEEb4ea8D6a480405A48D2A",
+  [ChainId.RINKEBY]: "0x70F31D47f857C6334Cda4c358ba35754b512A8b3",
+  [ChainId.GÖRLI]: "0x77dCa2C955b15e9dE4dbBCf1246B4B85b651e50e",
+  [ChainId.LOCAL]: "0xCfEB869F69431e42cdB54A4F4f105C19C080A601",
+};
 // used for display in the default list when adding liquidity
 export const COMMON_BASES = {
   [ChainId.MAINNET]: [
