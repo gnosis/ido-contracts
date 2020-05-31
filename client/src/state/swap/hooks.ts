@@ -58,7 +58,6 @@ export function useDerivedSwapInfo(): {
   parsedAmounts: { [field in Field]?: TokenAmount };
   bestTrade: Trade | null;
   error?: string;
-  v1TradeLinkIfBetter?: string;
 } {
   const { account } = useActiveWeb3React();
 
