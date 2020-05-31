@@ -18,7 +18,6 @@ export default function SwapModalFooter({
   showInverted,
   setShowInverted,
   severity,
-  slippageAdjustedAmounts,
   onSwap,
   parsedAmounts,
   realizedLPFee,
@@ -29,7 +28,6 @@ export default function SwapModalFooter({
   showInverted: boolean;
   setShowInverted: (inverted: boolean) => void;
   severity: number;
-  slippageAdjustedAmounts?: { [field in Field]?: TokenAmount };
   onSwap: () => any;
   parsedAmounts?: { [field in Field]?: TokenAmount };
   realizedLPFee?: TokenAmount;
@@ -75,11 +73,6 @@ export default function SwapModalFooter({
             <QuestionHelper text="Your transaction will revert if there is a large, unfavorable price movement before it is confirmed." />
           </RowFixed>
           <RowFixed>
-            <TYPE.black fontSize={14}>
-              {trade?.tradeType === TradeType.EXACT_INPUT
-                ? slippageAdjustedAmounts[Field.OUTPUT]?.toSignificant(4) ?? "-"
-                : slippageAdjustedAmounts[Field.INPUT]?.toSignificant(4) ?? "-"}
-            </TYPE.black>
             {parsedAmounts[Field.OUTPUT] && parsedAmounts[Field.INPUT] && (
               <TYPE.black fontSize={14} marginLeft={"4px"}>
                 {trade?.tradeType === TradeType.EXACT_INPUT

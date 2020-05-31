@@ -40,7 +40,6 @@ import {
 } from "../../state/swap/hooks";
 import { TYPE } from "../../theme";
 import {
-  computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
   warningSeverity,
 } from "../../utils/prices";
@@ -125,11 +124,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
       ? maxAmountInput.equalTo(parsedAmounts[Field.INPUT])
       : undefined;
 
-  const slippageAdjustedAmounts = computeSlippageAdjustedAmounts(
-    bestTrade,
-    allowedSlippage
-  );
-
   // reset modal state when closed
   function resetModal() {
     // clear input if txn submitted
@@ -185,7 +179,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
         priceImpactSeverity={priceImpactSeverity}
         tokens={tokens}
         formattedAmounts={formattedAmounts}
-        slippageAdjustedAmounts={slippageAdjustedAmounts}
       />
     );
   }
@@ -201,7 +194,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
         realizedLPFee={realizedLPFee}
         parsedAmounts={parsedAmounts}
         priceImpactWithoutFee={priceImpactWithoutFee}
-        slippageAdjustedAmounts={slippageAdjustedAmounts}
         trade={bestTrade}
       />
     );
