@@ -1,6 +1,5 @@
 import { JSBI, TokenAmount, WETH } from "@uniswap/sdk";
 import React, { useContext, useState } from "react";
-import { ArrowDown } from "react-feather";
 import ReactGA from "react-ga";
 import { RouteComponentProps } from "react-router-dom";
 import { Text } from "rebass";
@@ -15,16 +14,10 @@ import { RowBetween, RowFixed } from "../../components/Row";
 import AdvancedSwapDetailsDropdown from "../../components/swap/AdvancedSwapDetailsDropdown";
 import confirmPriceImpactWithoutFee from "../../components/swap/confirmPriceImpactWithoutFee";
 import FormattedPriceImpact from "../../components/swap/FormattedPriceImpact";
-import {
-  ArrowWrapper,
-  BottomGrouping,
-  Dots,
-  Wrapper,
-} from "../../components/swap/styleds";
+import { BottomGrouping, Dots, Wrapper } from "../../components/swap/styleds";
 import SwapModalFooter from "../../components/swap/SwapModalFooter";
 import SwapModalHeader from "../../components/swap/SwapModalHeader";
 import TradePrice from "../../components/swap/TradePrice";
-import V1TradeLink from "../../components/swap/V1TradeLink";
 import { TokenWarningCards } from "../../components/TokenWarningCard";
 import {
   DEFAULT_DEADLINE_FROM_NOW,
@@ -45,7 +38,7 @@ import {
   useSwapActionHandlers,
   useSwapState,
 } from "../../state/swap/hooks";
-import { CursorPointer, TYPE } from "../../theme";
+import { TYPE } from "../../theme";
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
@@ -71,13 +64,8 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     parsedAmounts,
     tokens,
     error,
-    v1TradeLinkIfBetter,
   } = useDerivedSwapInfo();
-  const {
-    onSwitchTokens,
-    onTokenSelection,
-    onUserInput,
-  } = useSwapActionHandlers();
+  const { onTokenSelection, onUserInput } = useSwapActionHandlers();
   const isValid = !error;
   const dependentField: Field =
     independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT;
@@ -253,7 +241,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 label={
                   independentField === Field.OUTPUT
                     ? "From (estimated)"
-                    : "From"
+                    : "BuyAmount"
                 }
                 value={formattedAmounts[Field.INPUT]}
                 showMaxButton={!atMaxAmountInput}
@@ -270,30 +258,12 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 id="swap-currency-input"
               />
 
-              <CursorPointer>
-                <AutoColumn style={{ padding: "0 1rem" }}>
-                  <ArrowWrapper>
-                    <ArrowDown
-                      size="16"
-                      onClick={onSwitchTokens}
-                      color={
-                        tokens[Field.INPUT] && tokens[Field.OUTPUT]
-                          ? theme.primary1
-                          : theme.text2
-                      }
-                    />
-                  </ArrowWrapper>
-                </AutoColumn>
-              </CursorPointer>
-
               <CurrencyInputPanel
                 field={Field.OUTPUT}
                 value={formattedAmounts[Field.OUTPUT]}
                 onUserInput={onUserInput}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
-                label={
-                  independentField === Field.INPUT ? "To (estimated)" : "To"
-                }
+                label={independentField === Field.INPUT ? "Price" : "Price"}
                 showMaxButton={false}
                 token={tokens[Field.OUTPUT]}
                 onTokenSelection={(address) =>
@@ -379,7 +349,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 </Text>
               </ButtonError>
             )}
-            <V1TradeLink v1TradeLinkIfBetter={v1TradeLinkIfBetter} />
           </BottomGrouping>
         </Wrapper>
       </AppBody>
