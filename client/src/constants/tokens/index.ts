@@ -16,14 +16,7 @@ export const ALL_TOKENS: AllTokens = [
   ...KOVAN_TOKENS,
   ...ROPSTEN_TOKENS,
 ]
-  // remap WETH to ETH
-  .map((token) => {
-    if (token.equals(WETH[token.chainId])) {
-      (token as any).symbol = "ETH";
-      (token as any).name = "Ether";
-    }
-    return token;
-  })
+
   // put into an object
   .reduce<AllTokens>(
     (tokenMap, token) => {

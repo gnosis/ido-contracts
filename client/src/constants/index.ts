@@ -8,7 +8,8 @@ import {
 } from "../connectors";
 
 export const ROUTER_ADDRESS = "0xf164fC0Ec4E93095b804a4795bBe1e041497b92a";
-
+export const EASY_EXCHANGE_ADDRESS =
+  "0xCfEB869F69431e42cdB54A4F4f105C19C080A601";
 // used for display in the default list when adding liquidity
 export const COMMON_BASES = {
   [ChainId.MAINNET]: [

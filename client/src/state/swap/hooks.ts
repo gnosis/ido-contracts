@@ -2,6 +2,7 @@ import { parseUnits } from "@ethersproject/units";
 import { JSBI, Token, TokenAmount, Trade } from "@uniswap/sdk";
 import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { EASY_EXCHANGE_ADDRESS } from "../../constants/";
 import { useActiveWeb3React } from "../../hooks";
 import { useTokenByAddressAndAutomaticallyAdd } from "../../hooks/Tokens";
 import { useTradeExactIn, useTradeExactOut } from "../../hooks/Trades";
@@ -53,6 +54,7 @@ export function tryParseAmount(
 
 // from the current swap inputs, compute the best trade and return it.
 export function useDerivedSwapInfo(): {
+  auctionId: number;
   tokens: { [field in Field]?: Token };
   tokenBalances: { [field in Field]?: TokenAmount };
   parsedAmounts: { [field in Field]?: TokenAmount };
@@ -60,7 +62,7 @@ export function useDerivedSwapInfo(): {
   error?: string;
 } {
   const { account } = useActiveWeb3React();
-
+  const { easyAuctionInstance } = EASY_EXCHANGE_ADDRESS;
   const {
     independentField,
     typedValue,
