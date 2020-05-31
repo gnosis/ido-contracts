@@ -12,7 +12,6 @@ import CurrencyInputPanel from "../../components/CurrencyInputPanel";
 import QuestionHelper from "../../components/QuestionHelper";
 import { RowBetween, RowFixed } from "../../components/Row";
 import AdvancedSwapDetailsDropdown from "../../components/swap/AdvancedSwapDetailsDropdown";
-import confirmPriceImpactWithoutFee from "../../components/swap/confirmPriceImpactWithoutFee";
 import FormattedPriceImpact from "../../components/swap/FormattedPriceImpact";
 import { BottomGrouping, Dots, Wrapper } from "../../components/swap/styleds";
 import SwapModalFooter from "../../components/swap/SwapModalFooter";
@@ -143,13 +142,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
   );
 
   function onSwap() {
-    if (
-      priceImpactWithoutFee &&
-      !confirmPriceImpactWithoutFee(priceImpactWithoutFee)
-    ) {
-      return;
-    }
-
     setAttemptingTxn(true);
     swapCallback().then((hash) => {
       setTxHash(hash);
