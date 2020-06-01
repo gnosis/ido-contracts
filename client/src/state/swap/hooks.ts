@@ -9,7 +9,6 @@ import { EASY_AUCTIONO_NETWORKS } from "../../constants/";
 import { useContract } from "../../hooks/useContract";
 import { useSingleCallResult } from "../../state/multicall/hooks";
 import EasyAuctionTruffle from "../../contracts/EasyAuction.json";
-import { useFetchTokenByAddress } from "../../state/user/hooks";
 
 import { useActiveWeb3React } from "../../hooks";
 import { useTokenByAddressAndAutomaticallyAdd } from "../../hooks/Tokens";
@@ -69,6 +68,7 @@ export function useDerivedSwapInfo(): {
   bestTrade: Trade | null;
   error?: string;
   sellToken?: Token | null;
+  buyToken?: Token | null;
 } {
   const { chainId, account } = useActiveWeb3React();
 
@@ -78,22 +78,19 @@ export function useDerivedSwapInfo(): {
   );
   const auctionId = 1;
 
+  const auctionInfo = useSingleCallResult(easyAuctionInstance, "auctionData", [
+    auctionId,
+  ]).result;
   const sellTokenAddress:
     | string
-    | null = useSingleCallResult(easyAuctionInstance, "auctionData", [
-    auctionId,
-  ]).result?.sellToken.toString();
-  console.log("sellTokenAddress:", sellTokenAddress);
-  const fetchTokenByAddress = useFetchTokenByAddress();
+    | undefined = auctionInfo?.sellToken.toString();
 
-  let sellToken: Token | null;
-  if (sellTokenAddress) {
-    fetchTokenByAddress(sellTokenAddress).then((token) => {
-      sellToken = token;
-    });
-  } else {
-    sellToken = null;
-  }
+  const buyTokenAddress: string | undefined = auctionInfo?.buyToken.toString();
+  console.log("sellTokenAddress:", sellTokenAddress);
+
+  let buyToken = useTokenByAddressAndAutomaticallyAdd(buyTokenAddress);
+
+  let sellToken = useTokenByAddressAndAutomaticallyAdd(sellTokenAddress);
 
   const {
     independentField,
@@ -168,6 +165,7 @@ export function useDerivedSwapInfo(): {
     bestTrade,
     error,
     sellToken,
+    buyToken,
   };
 }
 

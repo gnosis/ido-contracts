@@ -62,6 +62,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     parsedAmounts,
     tokens,
     error,
+    sellToken,
   } = useDerivedSwapInfo();
   const { onUserInput } = useSwapActionHandlers();
   const isValid = !error;
@@ -229,7 +230,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 }
                 value={formattedAmounts[Field.INPUT]}
                 showMaxButton={!atMaxAmountInput}
-                token={tokens[Field.INPUT]}
+                token={sellToken}
                 onUserInput={onUserInput}
                 onMax={() => {
                   maxAmountInput &&
