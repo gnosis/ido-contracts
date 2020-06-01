@@ -9,6 +9,7 @@ import Card, { GreyCard } from "../../components/Card";
 import { AutoColumn } from "../../components/Column";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import CurrencyInputPanel from "../../components/CurrencyInputPanel";
+import PriceInputPanel from "../../components/PriceInputPanel";
 import QuestionHelper from "../../components/QuestionHelper";
 import { RowBetween, RowFixed } from "../../components/Row";
 import AdvancedSwapDetailsDropdown from "../../components/swap/AdvancedSwapDetailsDropdown";
@@ -63,6 +64,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     tokens,
     error,
     sellToken,
+    buyToken,
   } = useDerivedSwapInfo(auctionId);
   const { onUserInput } = useSwapActionHandlers();
   const isValid = !error;
@@ -240,14 +242,15 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 id="swap-currency-input"
               />
 
-              <CurrencyInputPanel
+              <PriceInputPanel
                 field={Field.OUTPUT}
                 value={formattedAmounts[Field.OUTPUT]}
                 onUserInput={onUserInput}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 label={independentField === Field.INPUT ? "Price" : "Price"}
                 showMaxButton={false}
-                token={tokens[Field.OUTPUT]}
+                sellToken={sellToken}
+                buyToken={buyToken}
                 otherSelectedTokenAddress={tokens[Field.INPUT]?.address}
                 id="swap-currency-output"
               />
