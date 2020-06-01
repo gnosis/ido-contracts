@@ -7,6 +7,7 @@ import { ThemeContext } from "styled-components";
 import { ButtonError, ButtonLight } from "../../components/Button";
 import Card, { GreyCard } from "../../components/Card";
 import { AutoColumn } from "../../components/Column";
+import CountdownTimer from "../../components/CountDown";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import CurrencyInputPanel from "../../components/CurrencyInputPanel";
 import PriceInputPanel from "../../components/PriceInputPanel";
@@ -65,6 +66,8 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     error,
     sellToken,
     buyToken,
+    auctionEndDate,
+    sellOrder,
   } = useDerivedSwapInfo(auctionId);
   const { onUserInput } = useSwapActionHandlers();
   const isValid = !error;
@@ -203,6 +206,15 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
 
   return (
     <>
+      <div>
+        <h2>Auction</h2>
+        <h3>
+          Selling {sellOrder?.sellAmount} {sellToken?.symbol} for at least{" "}
+          {sellOrder?.sellAmount} {buyToken?.symbol}
+        </h3>
+        <CountdownTimer auctionEndDate={auctionEndDate} />
+        <br></br>
+      </div>
       <TokenWarningCards tokens={tokens} />
       <AppBody>
         <Wrapper id="swap-page">
@@ -220,7 +232,6 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
             bottomContent={modalBottom}
             pendingText={pendingText}
           />
-
           <AutoColumn gap={"md"}>
             <>
               <CurrencyInputPanel

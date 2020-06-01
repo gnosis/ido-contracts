@@ -17,6 +17,25 @@ import { AppDispatch, AppState } from "../index";
 import { useTokenBalancesTreatWETHAsETH } from "../wallet/hooks";
 import { Field, setDefaultsFromURLSearch, typeInput } from "./actions";
 
+export interface SellOrder {
+  sellAmount: number;
+  buyAmount: number;
+}
+
+function decodeOrder(orderBytes: string): SellOrder | null {
+  return {
+    sellAmount:
+      parseInt(orderBytes?.substring(64 / 4 + 2, 64 / 4 + 96 / 4 + 2), 16) /
+      10 ** 18,
+    buyAmount:
+      parseInt(
+        orderBytes?.substring(64 / 4 + 96 / 4 - 2, 64 / 4 + 96 / 2 + 2),
+        16
+      ) /
+      10 ** 18,
+  };
+}
+
 export function useSwapState(): AppState["swap"] {
   return useSelector<AppState, AppState["swap"]>((state) => state.swap);
 }
@@ -70,6 +89,8 @@ export function useDerivedSwapInfo(
   error?: string;
   sellToken?: Token | null;
   buyToken?: Token | null;
+  sellOrder?: SellOrder | null;
+  auctionEndDate?: number | null;
 } {
   const { chainId, account } = useActiveWeb3React();
 
@@ -84,6 +105,9 @@ export function useDerivedSwapInfo(
   const sellTokenAddress:
     | string
     | undefined = auctionInfo?.sellToken.toString();
+  console.log(sellTokenAddress);
+  const sellOrder: SellOrder | null = decodeOrder(auctionInfo?.sellOrder);
+  const auctionEndDate = auctionInfo?.auctionEndDate;
 
   const buyTokenAddress: string | undefined = auctionInfo?.buyToken.toString();
 
@@ -164,6 +188,8 @@ export function useDerivedSwapInfo(
     error,
     sellToken,
     buyToken,
+    sellOrder,
+    auctionEndDate,
   };
 }
 
