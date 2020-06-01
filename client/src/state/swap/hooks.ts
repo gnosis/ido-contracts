@@ -60,8 +60,9 @@ export function tryParseAmount(
 }
 
 // from the current swap inputs, compute the best trade and return it.
-export function useDerivedSwapInfo(): {
-  auctionId: number;
+export function useDerivedSwapInfo(
+  auctionId: number
+): {
   tokens: { [field in Field]?: Token };
   tokenBalances: { [field in Field]?: TokenAmount };
   parsedAmounts: { [field in Field]?: TokenAmount };
@@ -76,7 +77,6 @@ export function useDerivedSwapInfo(): {
     EASY_AUCTIONO_NETWORKS[chainId as ChainId],
     EasyAuctionTruffle.abi
   );
-  const auctionId = 1;
 
   const auctionInfo = useSingleCallResult(easyAuctionInstance, "auctionData", [
     auctionId,
@@ -86,7 +86,6 @@ export function useDerivedSwapInfo(): {
     | undefined = auctionInfo?.sellToken.toString();
 
   const buyTokenAddress: string | undefined = auctionInfo?.buyToken.toString();
-  console.log("sellTokenAddress:", sellTokenAddress);
 
   let buyToken = useTokenByAddressAndAutomaticallyAdd(buyTokenAddress);
 
@@ -158,7 +157,6 @@ export function useDerivedSwapInfo(): {
   }
 
   return {
-    auctionId,
     tokens,
     tokenBalances,
     parsedAmounts,

@@ -6,11 +6,17 @@ const BN = require("bn.js");
 const argv = require("yargs")
   .option("sellAmount", {
     describe: "Amount of tokens to be sold",
-    default: new BN(10).pow(new BN(18)),
+    default: new BN(1).pow(new BN(17)),
   })
   .option("buyAmount", {
     describe: "Amount of tokens to be bought",
-    default: new BN(10).pow(new BN(18)),
+    default: new BN(1).pow(new BN(17)),
+  })
+  .option("sellToken", {
+    describe: "Address of sellToken",
+  })
+  .option("buyToken", {
+    describe: "Address of buyToken",
   })
   .option("duration", {
     describe: "Duration of auction",
@@ -25,19 +31,9 @@ module.exports = async function (callback) {
     const easyAuction = await EasyAuction.deployed();
 
     // fake minting, to be removed
-    const buyToken = await ERC20.new("DAI", "DAI");
-    const sellToken = await ERC20.new("ETH", "ETH");
-    for (const user of [account]) {
-      await buyToken.mint(user, new BN(10).pow(new BN(30)));
-      await buyToken.approve(easyAuction.address, new BN(10).pow(new BN(30)), {
-        from: user,
-      });
-
-      await sellToken.mint(user, new BN(10).pow(new BN(30)));
-      await sellToken.approve(easyAuction.address, new BN(10).pow(new BN(30)), {
-        from: user,
-      });
-    }
+    const buyToken = await ERC20.at(argv.buyToken);
+    const sellToken = await ERC20.at(argv.sellToken);
+    await sellToken.approve(easyAuction.address, new BN(10).pow(new BN(30)));
 
     //initiating
     await easyAuction.initiateAuction(

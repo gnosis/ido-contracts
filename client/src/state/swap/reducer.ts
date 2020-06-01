@@ -1,116 +1,96 @@
-import { parse } from 'qs'
-import { createReducer } from '@reduxjs/toolkit'
-import { ChainId, WETH } from '@uniswap/sdk'
-import { isAddress } from '../../utils'
-import { Field, selectToken, setDefaultsFromURLSearch, switchTokens, typeInput } from './actions'
+import { parse } from "qs";
+import { createReducer } from "@reduxjs/toolkit";
+import {
+  Field,
+  selectToken,
+  setDefaultsFromURLSearch,
+  switchTokens,
+  typeInput,
+} from "./actions";
 
 export interface SwapState {
-  readonly independentField: Field
-  readonly typedValue: string
+  readonly independentField: Field;
+  readonly typedValue: string;
+  readonly auctionId: number;
   readonly [Field.INPUT]: {
-    readonly address: string | undefined
-  }
+    readonly address: string | undefined;
+  };
   readonly [Field.OUTPUT]: {
-    readonly address: string | undefined
-  }
+    readonly address: string | undefined;
+  };
 }
 
 const initialState: SwapState = {
   independentField: Field.INPUT,
-  typedValue: '',
+  auctionId: 1,
+  typedValue: "",
   [Field.INPUT]: {
-    address: ''
+    address: "",
   },
   [Field.OUTPUT]: {
-    address: ''
-  }
+    address: "",
+  },
+};
+
+function parseAuctionIdParameter(urlParam: any): number {
+  return typeof urlParam === "string" && !isNaN(parseInt(urlParam))
+    ? parseInt(urlParam)
+    : 1;
 }
 
-function parseCurrencyFromURLParameter(urlParam: any, chainId: number): string {
-  if (typeof urlParam === 'string') {
-    const valid = isAddress(urlParam)
-    if (valid) return valid
-    if (urlParam.toLowerCase() === 'eth') return WETH[chainId as ChainId]?.address ?? ''
-    if (valid === false) return WETH[chainId as ChainId]?.address ?? ''
-  }
-
-  return WETH[chainId as ChainId]?.address
-}
-
-function parseTokenAmountURLParameter(urlParam: any): string {
-  return typeof urlParam === 'string' && !isNaN(parseFloat(urlParam)) ? urlParam : ''
-}
-
-function parseIndependentFieldURLParameter(urlParam: any): Field {
-  return typeof urlParam === 'string' && urlParam.toLowerCase() === 'output' ? Field.OUTPUT : Field.INPUT
-}
-
-export default createReducer<SwapState>(initialState, builder =>
+export default createReducer<SwapState>(initialState, (builder) =>
   builder
-    .addCase(setDefaultsFromURLSearch, (_, { payload: { queryString, chainId } }) => {
+    .addCase(setDefaultsFromURLSearch, (_, { payload: { queryString } }) => {
       if (queryString && queryString.length > 1) {
-        const parsedQs = parse(queryString, { parseArrays: false, ignoreQueryPrefix: true })
-
-        let inputCurrency = parseCurrencyFromURLParameter(parsedQs.inputCurrency, chainId)
-        let outputCurrency = parseCurrencyFromURLParameter(parsedQs.outputCurrency, chainId)
-        if (inputCurrency === outputCurrency) {
-          if (typeof parsedQs.outputCurrency === 'string') {
-            inputCurrency = ''
-          } else {
-            outputCurrency = ''
-          }
-        }
+        const parsedQs = parse(queryString, {
+          parseArrays: false,
+          ignoreQueryPrefix: true,
+        });
 
         return {
-          [Field.INPUT]: {
-            address: inputCurrency
-          },
-          [Field.OUTPUT]: {
-            address: outputCurrency
-          },
-          typedValue: parseTokenAmountURLParameter(parsedQs.exactAmount),
-          independentField: parseIndependentFieldURLParameter(parsedQs.exactField)
-        }
+          ...initialState,
+          auctionId: parseAuctionIdParameter(parsedQs.auctionId),
+        };
       }
 
       return {
         ...initialState,
-        [Field.INPUT]: {
-          address: WETH[chainId as ChainId]?.address ?? ''
-        }
-      }
+        auctionId: 1,
+      };
     })
     .addCase(selectToken, (state, { payload: { address, field } }) => {
-      const otherField = field === Field.INPUT ? Field.OUTPUT : Field.INPUT
+      const otherField = field === Field.INPUT ? Field.OUTPUT : Field.INPUT;
       if (address === state[otherField].address) {
         // the case where we have to swap the order
         return {
           ...state,
-          independentField: state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
+          independentField:
+            state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
           [field]: { address },
-          [otherField]: { address: state[field].address }
-        }
+          [otherField]: { address: state[field].address },
+        };
       } else {
         // the normal case
         return {
           ...state,
-          [field]: { address }
-        }
+          [field]: { address },
+        };
       }
     })
-    .addCase(switchTokens, state => {
+    .addCase(switchTokens, (state) => {
       return {
         ...state,
-        independentField: state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
+        independentField:
+          state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
         [Field.INPUT]: { address: state[Field.OUTPUT].address },
-        [Field.OUTPUT]: { address: state[Field.INPUT].address }
-      }
+        [Field.OUTPUT]: { address: state[Field.INPUT].address },
+      };
     })
     .addCase(typeInput, (state, { payload: { field, typedValue } }) => {
       return {
         ...state,
         independentField: field,
-        typedValue
-      }
+        typedValue,
+      };
     })
-)
+);

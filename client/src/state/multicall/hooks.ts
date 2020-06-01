@@ -274,10 +274,8 @@ export function useSingleCallResult(
         ]
       : [];
   }, [contract, fragment, inputs]);
-  console.log(calls);
 
   const result = useCallsData(calls, options)[0];
-  console.log(result);
 
   const latestBlockNumber = useBlockNumber();
   return useMemo(() => {

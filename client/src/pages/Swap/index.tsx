@@ -55,7 +55,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
   const toggleWalletModal = useWalletModalToggle();
 
   // swap state
-  const { independentField, typedValue } = useSwapState();
+  const { auctionId, independentField, typedValue } = useSwapState();
   const {
     bestTrade,
     tokenBalances,
@@ -63,7 +63,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     tokens,
     error,
     sellToken,
-  } = useDerivedSwapInfo();
+  } = useDerivedSwapInfo(auctionId);
   const { onUserInput } = useSwapActionHandlers();
   const isValid = !error;
   const dependentField: Field =
