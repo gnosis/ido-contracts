@@ -13,12 +13,7 @@ import { WETH, ChainId } from "@uniswap/sdk";
 import { isMobile } from "react-device-detect";
 import { YellowCard } from "../Card";
 import { useActiveWeb3React } from "../../hooks";
-import { useDarkModeManager } from "../../state/user/hooks";
 
-import Logo from "../../assets/svg/logo.svg";
-import Wordmark from "../../assets/svg/wordmark.svg";
-import LogoDark from "../../assets/svg/logo_white.svg";
-import WordmarkDark from "../../assets/svg/wordmark_white.svg";
 import { RowBetween } from "../Row";
 
 const HeaderFrame = styled.div`
@@ -93,13 +88,6 @@ const NetworkCard = styled(YellowCard)`
   padding: 8px 12px;
 `;
 
-const UniIcon = styled(HistoryLink)<{ to: string }>`
-  transition: transform 0.3s ease;
-  :hover {
-    transform: rotate(-5deg);
-  }
-`;
-
 export default function Header() {
   const { account, chainId } = useActiveWeb3React();
 
@@ -107,24 +95,16 @@ export default function Header() {
     account,
     WETH[chainId]
   );
-  const [isDark] = useDarkModeManager();
 
   return (
     <HeaderFrame>
       <RowBetween padding="1rem">
         <HeaderElement>
           <Title>
-            <UniIcon id="link" to="/">
-              <img src={isDark ? LogoDark : Logo} alt="logo" />
-            </UniIcon>
             {!isMobile && (
               <TitleText>
                 <HistoryLink id="link" to="/">
-                  <img
-                    style={{ marginLeft: "4px", marginTop: "4px" }}
-                    src={isDark ? WordmarkDark : Wordmark}
-                    alt="logo"
-                  />
+                  EasyAuction
                 </HistoryLink>
               </TitleText>
             )}
