@@ -49,6 +49,8 @@
     "@openzeppelin/contracts": "^3.0.1",
     "@truffle/contract": "^4.2.4",
     "@types/chai": "^4.2.11",
+    "truffle-typings": "^1.0.8",
+    "@types/bn.js": "^4.11.6",
     "@typescript-eslint/eslint-plugin": "^2.33.0",
     "@typescript-eslint/parser": "^2.33.0",
     "bignumber.js": "^9.0.0",

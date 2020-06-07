@@ -6,11 +6,13 @@ import {
   setDefaultsFromURLSearch,
   switchTokens,
   typeInput,
+  priceInput,
 } from "./actions";
 
 export interface SwapState {
   readonly independentField: Field;
-  readonly typedValue: string;
+  readonly price: string;
+  readonly buyAmount: string;
   readonly auctionId: number;
   readonly [Field.INPUT]: {
     readonly address: string | undefined;
@@ -22,8 +24,9 @@ export interface SwapState {
 
 const initialState: SwapState = {
   independentField: Field.INPUT,
+  price: "1",
   auctionId: 1,
-  typedValue: "",
+  buyAmount: "",
   [Field.INPUT]: {
     address: "",
   },
@@ -64,8 +67,6 @@ export default createReducer<SwapState>(initialState, (builder) =>
         // the case where we have to swap the order
         return {
           ...state,
-          independentField:
-            state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
           [field]: { address },
           [otherField]: { address: state[field].address },
         };
@@ -80,17 +81,20 @@ export default createReducer<SwapState>(initialState, (builder) =>
     .addCase(switchTokens, (state) => {
       return {
         ...state,
-        independentField:
-          state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
         [Field.INPUT]: { address: state[Field.OUTPUT].address },
         [Field.OUTPUT]: { address: state[Field.INPUT].address },
       };
     })
-    .addCase(typeInput, (state, { payload: { field, typedValue } }) => {
+    .addCase(typeInput, (state, { payload: { buyAmount } }) => {
       return {
         ...state,
-        independentField: field,
-        typedValue,
+        buyAmount,
+      };
+    })
+    .addCase(priceInput, (state, { payload: { price } }) => {
+      return {
+        ...state,
+        price,
       };
     })
 );

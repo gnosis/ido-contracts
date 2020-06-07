@@ -1,4 +1,5 @@
 const truffleConfig = require("@gnosis.pm/util-contracts/src/util/truffleConfig");
+require("ts-node/register");
 const path = require("path");
 const argv = require("yargs")
   .option("gas", {

@@ -57,7 +57,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
   const toggleWalletModal = useWalletModalToggle();
 
   // swap state
-  const { auctionId, independentField, typedValue } = useSwapState();
+  const { auctionId, independentField, buyAmount, price } = useSwapState();
   const {
     bestTrade,
     tokenBalances,
@@ -69,7 +69,9 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
     auctionEndDate,
     sellOrder,
   } = useDerivedSwapInfo(auctionId);
-  const { onUserInput } = useSwapActionHandlers();
+  const { onUserBuyAmountInput } = useSwapActionHandlers();
+  const { onUserPriceInput } = useSwapActionHandlers();
+
   const isValid = !error;
   const dependentField: Field =
     independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT;
@@ -88,7 +90,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
   );
 
   const formattedAmounts = {
-    [independentField]: typedValue,
+    [independentField]: buyAmount,
     [dependentField]: parsedAmounts[dependentField]
       ? parsedAmounts[dependentField].toSignificant(6)
       : "",
@@ -133,7 +135,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
   function resetModal() {
     // clear input if txn submitted
     if (!pendingConfirmation) {
-      onUserInput(Field.INPUT, "");
+      onUserBuyAmountInput("");
     }
     setPendingConfirmation(true);
     setAttemptingTxn(false);
@@ -184,7 +186,7 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
   function modalBottom() {
     return (
       <SwapModalFooter
-        confirmText={priceImpactSeverity > 2 ? "Swap Anyway" : "Confirm Swap"}
+        confirmText={"Confirm Order"}
         showInverted={showInverted}
         severity={priceImpactSeverity}
         setShowInverted={setShowInverted}
@@ -236,38 +238,32 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
             <>
               <CurrencyInputPanel
                 field={Field.INPUT}
-                label={
-                  independentField === Field.OUTPUT
-                    ? "From (estimated)"
-                    : "BuyAmount"
-                }
-                value={formattedAmounts[Field.INPUT]}
+                label={"BuyAmount"}
+                value={buyAmount}
                 showMaxButton={!atMaxAmountInput}
                 token={sellToken}
-                onUserInput={onUserInput}
+                onUserBuyAmountInput={onUserBuyAmountInput}
                 onMax={() => {
                   maxAmountInput &&
-                    onUserInput(Field.INPUT, maxAmountInput.toExact());
+                    onUserBuyAmountInput(maxAmountInput.toExact());
                 }}
-                otherSelectedTokenAddress={tokens[Field.OUTPUT]?.address}
                 id="swap-currency-input"
               />
 
               <PriceInputPanel
                 field={Field.OUTPUT}
-                value={formattedAmounts[Field.OUTPUT]}
-                onUserInput={onUserInput}
+                value={price}
+                onUserPriceInput={onUserPriceInput}
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
-                label={independentField === Field.INPUT ? "Price" : "Price"}
+                label={"Price"}
                 showMaxButton={false}
                 sellToken={sellToken}
                 buyToken={buyToken}
-                otherSelectedTokenAddress={tokens[Field.INPUT]?.address}
                 id="swap-currency-output"
               />
             </>
 
-            {!noRoute && tokens[Field.OUTPUT] && tokens[Field.INPUT] && (
+            {!noRoute && (
               <Card padding={".25rem 1.25rem 0 .75rem"} borderRadius={"20px"}>
                 <AutoColumn gap="4px">
                   <RowBetween align="center">
@@ -335,10 +331,10 @@ export default function Swap({ location: { search } }: RouteComponentProps) {
                 }}
                 id="swap-button"
                 disabled={!isValid}
-                error={isValid && priceImpactSeverity > 2}
+                error={isValid}
               >
                 <Text fontSize={20} fontWeight={500}>
-                  {error ?? `Swap${priceImpactSeverity > 2 ? " Anyway" : ""}`}
+                  {error ?? `Execute Order`}
                 </Text>
               </ButtonError>
             )}

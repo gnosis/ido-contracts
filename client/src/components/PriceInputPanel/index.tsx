@@ -75,7 +75,7 @@ const Container = styled.div<{ hideInput: boolean }>`
 interface CurrencyInputPanelProps {
   value: string;
   field: string;
-  onUserInput: (field: string, val: string) => void;
+  onUserPriceInput: (val: string) => void;
   onMax?: () => void;
   showMaxButton: boolean;
   label?: string;
@@ -95,7 +95,7 @@ interface CurrencyInputPanelProps {
 export default function PriceInputPanel({
   value,
   field,
-  onUserInput,
+  onUserPriceInput,
   onMax,
   showMaxButton,
   label = "Input",
@@ -128,8 +128,8 @@ export default function PriceInputPanel({
               <NumericalInput
                 className="price"
                 value={value}
-                onUserInput={(val) => {
-                  onUserInput(field, val);
+                onUserBuyAmountInput={(val) => {
+                  onUserPriceInput(val);
                 }}
               />
             </>

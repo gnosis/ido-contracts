@@ -15,7 +15,12 @@ import { useTokenByAddressAndAutomaticallyAdd } from "../../hooks/Tokens";
 import { useTradeExactIn, useTradeExactOut } from "../../hooks/Trades";
 import { AppDispatch, AppState } from "../index";
 import { useTokenBalancesTreatWETHAsETH } from "../wallet/hooks";
-import { Field, setDefaultsFromURLSearch, typeInput } from "./actions";
+import {
+  Field,
+  setDefaultsFromURLSearch,
+  typeInput,
+  priceInput,
+} from "./actions";
 
 export interface SellOrder {
   sellAmount: number;
@@ -41,20 +46,25 @@ export function useSwapState(): AppState["swap"] {
 }
 
 export function useSwapActionHandlers(): {
-  onUserInput: (field: Field, typedValue: string) => void;
+  onUserBuyAmountInput: (buyAmount: string) => void;
+  onUserPriceInput: (price: string) => void;
 } {
   const dispatch = useDispatch<AppDispatch>();
 
-  const onUserInput = useCallback(
-    (field: Field, typedValue: string) => {
-      dispatch(typeInput({ field, typedValue }));
+  const onUserBuyAmountInput = useCallback(
+    (buyAmount: string) => {
+      dispatch(typeInput({ buyAmount }));
+    },
+    [dispatch]
+  );
+  const onUserPriceInput = useCallback(
+    (price: string) => {
+      dispatch(priceInput({ price }));
     },
     [dispatch]
   );
 
-  return {
-    onUserInput,
-  };
+  return { onUserPriceInput, onUserBuyAmountInput };
 }
 
 // try to parse a user entered amount for a given token
@@ -66,9 +76,9 @@ export function tryParseAmount(
     return;
   }
   try {
-    const typedValueParsed = parseUnits(value, token.decimals).toString();
-    if (typedValueParsed !== "0") {
-      return new TokenAmount(token, JSBI.BigInt(typedValueParsed));
+    const buyAmountParsed = parseUnits(value, token.decimals).toString();
+    if (buyAmountParsed !== "0") {
+      return new TokenAmount(token, JSBI.BigInt(buyAmountParsed));
     }
   } catch (error) {
     // should fail if the user specifies too many decimal places of precision (or maybe exceed max uint?)
@@ -105,7 +115,6 @@ export function useDerivedSwapInfo(
   const sellTokenAddress:
     | string
     | undefined = auctionInfo?.sellToken.toString();
-  console.log(sellTokenAddress);
   const sellOrder: SellOrder | null = decodeOrder(auctionInfo?.sellOrder);
   const auctionEndDate = auctionInfo?.auctionEndDate;
 
@@ -117,7 +126,8 @@ export function useDerivedSwapInfo(
 
   const {
     independentField,
-    typedValue,
+    buyAmount,
+    price,
     [Field.INPUT]: { address: tokenInAddress },
     [Field.OUTPUT]: { address: tokenOutAddress },
   } = useSwapState();
@@ -127,11 +137,11 @@ export function useDerivedSwapInfo(
 
   const relevantTokenBalances = useTokenBalancesTreatWETHAsETH(
     account ?? undefined,
-    [tokenIn, tokenOut]
+    [buyToken, tokenOut]
   );
 
   const isExactIn: boolean = independentField === Field.INPUT;
-  const amount = tryParseAmount(typedValue, isExactIn ? tokenIn : tokenOut);
+  const amount = tryParseAmount(buyAmount, isExactIn ? tokenIn : tokenOut);
 
   const bestTradeExactIn = useTradeExactIn(
     isExactIn ? amount : undefined,
@@ -164,11 +174,7 @@ export function useDerivedSwapInfo(
     error = "Connect Wallet";
   }
 
-  if (!parsedAmounts[Field.INPUT]) {
-    error = error ?? "Enter an amount";
-  }
-
-  if (!parsedAmounts[Field.OUTPUT]) {
+  if (!buyAmount || !price) {
     error = error ?? "Enter an amount";
   }
 
