@@ -2,8 +2,6 @@ const EasyAuction = artifacts.require("EasyAuction.sol");
 const ERC20 = artifacts.require("ERC20Mintable.sol");
 import BN from "bn.js";
 
-import { EasyAuctionInstance } from "../types/truffle-typings";
-
 const {
   encodeOrder,
   toPrice,
@@ -16,7 +14,7 @@ const {
 contract("IterableOrderedOrderSet", async (accounts) => {
   const [user_1] = accounts;
 
-  let easyAuction: EasyAuctionInstance;
+  let easyAuction = await EasyAuction.new();
   let buyToken;
   let sellToken;
   beforeEach(async () => {

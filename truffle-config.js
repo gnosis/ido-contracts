@@ -77,8 +77,10 @@ module.exports = {
     },
     grep,
   },
-  contracts_build_directory: path.join(__dirname, "client/src/contracts"),
-  test_file_extension_regexp: /.*\.js$/,
+  contracts_build_directory: [
+    path.join(__dirname, "client/src/contracts"),
+    "build/contracts",
+  ],
   plugins: ["truffle-plugin-verify", "solidity-coverage"],
   api_keys: {
     etherscan: process.env.MY_ETHERSCAN_API_KEY,

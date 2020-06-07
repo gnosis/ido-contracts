@@ -2,8 +2,6 @@ const EasyAuction = artifacts.require("EasyAuction.sol");
 import BN from "bn.js";
 import truffleAssert from "truffle-assertions";
 
-import { EasyAuctionInstance } from "../types/truffle-typings";
-
 const {
   toPrice,
   toAuctionDataResult,
@@ -18,7 +16,7 @@ const {
 contract("EasyAuction", async (accounts) => {
   const [user_1, user_2, user_3] = accounts;
 
-  let easyAuction: EasyAuctionInstance;
+  let easyAuction = await EasyAuction.new();
   beforeEach(async () => {
     easyAuction = await EasyAuction.new();
   });
