@@ -66,5 +66,3 @@ yarn test
 ```
 
 ### Frontend
-
-The frontend is just some sample code - much of it copied from uniswap - and is not yet usable.
