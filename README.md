@@ -18,6 +18,10 @@ Auction based mechanisms are also seen picking up in the traditional finance wor
 
 Many decentralized governance projects have to buy back their tokens or auctioning off their tokens to clear deficits within their protocol. This EasyAuction platform allows them to schedule individual auctions to facilitate these kind of operations.
 
+### Initial credit offering
+
+First implementations of [yTokens are live](https://defirate.com/uma-ycomp-shorts/) on the ethereum blockchain. The initial price finding and matching of creditor and debtor for such credit instruments can be done in a very fair manner for these kind of financial contracts.
+
 ## Protocol description
 
 ### The batch auction mechanism
