@@ -15,7 +15,7 @@ export function toAuctionDataResult(
     sellToken: result[0],
     buyToken: result[1],
     auctionEndDate: result[2],
-    sellOrder: result[3],
+    initialAuctionOrder: result[3],
     clearingPriceOrder: result[4],
     volumeClearingPriceOrder: result[5],
     rewardFactor: result[6],
@@ -115,7 +115,7 @@ export interface OrderResult {
   sellToken: string;
   buyToken: string;
   auctionEndDate: BN;
-  sellOrder: string;
+  initialAuctionOrder: string;
   clearingPriceOrder: string;
   volumeClearingPriceOrder: BN;
   rewardFactor: BN;
