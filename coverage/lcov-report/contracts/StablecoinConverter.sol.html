@@ -1144,7 +1144,7 @@ contract StablecoinConverter is EpochTokenLocker {
     }
 &nbsp;
     function getTradedAmounts(uint128 volume, Order memory order) private view returns (uint128, uint128) {
-        // TODO: implement logic also for buyOrders
+        // TODO: implement logic also for sellOrders
         uint128 executedBuyAmount = volume;
         require(currentPrices[order.sellToken] != 0, "prices are not allowed to be zero");
         uint128 executedSellAmount = getExecutedSellAmount(

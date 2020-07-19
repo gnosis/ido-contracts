@@ -12,7 +12,7 @@ const {
   queueLastElement,
   queueStartElement,
   encodeOrder,
-} = require("./utilities");
+} = require("../src/priceCalculation");
 
 const BYTES32_ZERO = encodeOrder(0, 0, 0);
 const BYTES32_ONE = encodeOrder(1, 1, 1);

@@ -2,14 +2,13 @@ const EasyAuction = artifacts.require("EasyAuction.sol");
 const ERC20 = artifacts.require("ERC20Mintable.sol");
 import BN from "bn.js";
 
+const { encodeOrder, closeAuction } = require("./utilities");
 const {
-  encodeOrder,
   toPrice,
   Price,
   queueStartElement,
   sendTxAndGetReturnValue,
-  closeAuction,
-} = require("./utilities");
+} = require("../src/priceCalculation");
 
 contract("IterableOrderedOrderSet", async (accounts) => {
   const [user_1] = accounts;
@@ -21,7 +20,7 @@ contract("IterableOrderedOrderSet", async (accounts) => {
     easyAuction = await EasyAuction.new();
   });
 
-  it("e2e - places a lot of buyOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of calculatePrice", async () => {
+  it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of calculatePrice", async () => {
     buyToken = await ERC20.new("BT", "BT");
     await buyToken.mint(user_1, new BN(10).pow(new BN(30)));
     await buyToken.approve(easyAuction.address, new BN(10).pow(new BN(30)));
@@ -40,7 +39,7 @@ contract("IterableOrderedOrderSet", async (accounts) => {
     );
     for (let i = 2; i < nrTests; i++) {
       let prevBuyOrder = queueStartElement;
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
         [new BN(10).pow(new BN(18)).div(new BN(nrTests - 2))],
         [

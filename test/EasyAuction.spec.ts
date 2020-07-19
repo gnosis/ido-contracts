@@ -2,16 +2,19 @@ const EasyAuction = artifacts.require("EasyAuction.sol");
 import BN from "bn.js";
 import truffleAssert from "truffle-assertions";
 
+const { sendTxAndGetReturnValue, closeAuction } = require("./utilities");
+
 const {
   toPrice,
   toAuctionDataResult,
   toReceivedFunds,
   encodeOrder,
   queueStartElement,
-  sendTxAndGetReturnValue,
   createTokensAndMintAndApprove,
-  closeAuction,
-} = require("./utilities");
+  getAllSellOrders,
+  getInitialOrder,
+  calculateClearingPrice,
+} = require("../src/priceCalculation");
 
 contract("EasyAuction", async (accounts) => {
   const [user_1, user_2, user_3] = accounts;
@@ -85,7 +88,7 @@ contract("EasyAuction", async (accounts) => {
   describe("placeOrders", async () => {
     it("one can not place orders, if auction is not yet initiated", async () => {
       await truffleAssert.reverts(
-        easyAuction.placeBuyOrders(
+        easyAuction.placeSellOrders(
           0,
           [new BN(10).pow(new BN(18))],
           [new BN(10).pow(new BN(18)).add(new BN(1))],
@@ -109,7 +112,7 @@ contract("EasyAuction", async (accounts) => {
       );
       await closeAuction(easyAuction, auctionId);
       await truffleAssert.reverts(
-        easyAuction.placeBuyOrders(
+        easyAuction.placeSellOrders(
           0,
           [new BN(10).pow(new BN(18))],
           [new BN(10).pow(new BN(18)).add(new BN(1))],
@@ -132,7 +135,7 @@ contract("EasyAuction", async (accounts) => {
         new BN(10).pow(new BN(18))
       );
       await truffleAssert.reverts(
-        easyAuction.placeBuyOrders(
+        easyAuction.placeSellOrders(
           auctionId,
           [new BN(10).pow(new BN(18)).sub(new BN(1))],
           [new BN(10).pow(new BN(18))],
@@ -141,7 +144,7 @@ contract("EasyAuction", async (accounts) => {
         "limit price not better than mimimal offer"
       );
       await truffleAssert.reverts(
-        easyAuction.placeBuyOrders(
+        easyAuction.placeSellOrders(
           auctionId,
           [new BN(10).pow(new BN(18))],
           [new BN(10).pow(new BN(18))],
@@ -166,16 +169,15 @@ contract("EasyAuction", async (accounts) => {
       const balanceBeforeOrderPlacement = await buyToken.balanceOf(user_1);
       const sellAmount = new BN(10).pow(new BN(18)).sub(new BN(1));
       const buyAmount = new BN(10).pow(new BN(18));
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
         [buyAmount, buyAmount],
         [sellAmount, sellAmount.sub(new BN(1))],
         [queueStartElement, queueStartElement]
       );
-      const transferredBuyTokenAmount = buyAmount
-        .mul(buyAmount)
-        .div(sellAmount)
-        .add(buyAmount.mul(buyAmount).div(sellAmount.sub(new BN(1))));
+      const transferredBuyTokenAmount = sellAmount.add(
+        sellAmount.sub(new BN(1))
+      );
       assert.equal(
         (await buyToken.balanceOf(easyAuction.address)).toString(),
         transferredBuyTokenAmount.toString()
@@ -191,7 +193,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(10000)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(5000)),
@@ -213,13 +215,13 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.buyAmount
       );
       await truffleAssert.reverts(
-        easyAuction.placeBuyOrders(
+        easyAuction.placeSellOrders(
           auctionId,
-          buyOrders.map((buyOrder) => buyOrder.buyAmount),
-          buyOrders.map((buyOrder) => buyOrder.sellAmount),
-          Array(buyOrders.length).fill(queueStartElement)
+          sellOrders.map((buyOrder) => buyOrder.buyAmount),
+          sellOrders.map((buyOrder) => buyOrder.sellAmount),
+          Array(sellOrders.length).fill(queueStartElement)
         ),
-        "buyOrder too small"
+        "order too small"
       );
     });
     it("fails, if transfers are failing", async () => {
@@ -241,7 +243,7 @@ contract("EasyAuction", async (accounts) => {
       await buyToken.approve(easyAuction.address, new BN(0));
 
       await truffleAssert.reverts(
-        easyAuction.placeBuyOrders(
+        easyAuction.placeSellOrders(
           auctionId,
           [buyAmount, buyAmount],
           [sellAmount, sellAmount.sub(new BN(1))],
@@ -253,13 +255,13 @@ contract("EasyAuction", async (accounts) => {
   });
 
   describe("calculatePrice", async () => {
-    it("calculates the auction price in case of clearing order == initialAuctionOrder", async () => {
+    it.only("calculates the auction price in case of clearing order == initialAuctionOrder", async () => {
       const initialAuctionOrder = {
         sellAmount: new BN(10).pow(new BN(18)),
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(20)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(10)),
@@ -280,19 +282,24 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
-      const price = toPrice(
-        await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId)
+      const orders = await getAllSellOrders(easyAuction, auctionId.toNumber());
+      const initOrder = await getInitialOrder(
+        easyAuction,
+        auctionId.toNumber()
       );
+      console.log(initOrder);
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
       assert.equal(
         price.priceNumerator.toString(),
-        price.priceNumerator.toString()
+        initialAuctionOrder.buyAmount.toString()
       );
       assert.equal(
         price.priceDenominator.toString(),
@@ -303,10 +310,10 @@ contract("EasyAuction", async (accounts) => {
       );
       assert.equal(
         auctionData.volumeClearingPriceOrder.toString(),
-        buyOrders[0].buyAmount.toString()
+        sellOrders[0].buyAmount.toString()
       );
     });
-    it("calculates the auction price in case of no buyOrders", async () => {
+    it("calculates the auction price in case of no sellOrders", async () => {
       const initialAuctionOrder = {
         sellAmount: new BN(10).pow(new BN(18)),
         buyAmount: new BN(10).pow(new BN(18)),
@@ -342,13 +349,13 @@ contract("EasyAuction", async (accounts) => {
       );
       assert.equal(auctionData.volumeClearingPriceOrder.toString(), "0");
     });
-    it("calculates the auction price in case of one buyOrders eating initialAuctionOrder completely", async () => {
+    it("calculates the auction price in case of one sellOrders eating initialAuctionOrder completely", async () => {
       const initialAuctionOrder = {
         sellAmount: new BN(10).pow(new BN(18)),
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).mul(new BN(10)),
           buyAmount: new BN(10).pow(new BN(18)).mul(new BN(20)),
@@ -368,11 +375,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -380,11 +387,11 @@ contract("EasyAuction", async (accounts) => {
       );
       assert.equal(
         price.priceNumerator.toString(),
-        buyOrders[0].buyAmount.toString()
+        sellOrders[0].buyAmount.toString()
       );
       assert.equal(
         price.priceDenominator.toString(),
-        buyOrders[0].sellAmount.toString()
+        sellOrders[0].sellAmount.toString()
       );
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId)
@@ -394,13 +401,13 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount.toString()
       );
     });
-    it("calculates the auction price in case of 2 of 3 buyOrders eating initialAuctionOrder completely", async () => {
+    it("calculates the auction price in case of 2 of 3 sellOrders eating initialAuctionOrder completely", async () => {
       const initialAuctionOrder = {
         sellAmount: new BN(10).pow(new BN(18)),
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(4)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
@@ -430,11 +437,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -442,18 +449,18 @@ contract("EasyAuction", async (accounts) => {
       );
       assert.equal(
         price.priceNumerator.toString(),
-        buyOrders[1].buyAmount.toString()
+        sellOrders[1].buyAmount.toString()
       );
       assert.equal(
         price.priceDenominator.toString(),
-        buyOrders[1].sellAmount.toString()
+        sellOrders[1].sellAmount.toString()
       );
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId)
       );
       assert.equal(
         auctionData.volumeClearingPriceOrder.toString(),
-        buyOrders[1].buyAmount.toString()
+        sellOrders[1].buyAmount.toString()
       );
     });
     it("simple version of e2e gas test", async () => {
@@ -462,7 +469,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(8)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(4)),
@@ -497,11 +504,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -509,18 +516,18 @@ contract("EasyAuction", async (accounts) => {
       );
       assert.equal(
         price.priceNumerator.toString(),
-        buyOrders[0].buyAmount.toString()
+        sellOrders[0].buyAmount.toString()
       );
       assert.equal(
         price.priceDenominator.toString(),
-        buyOrders[0].sellAmount.toString()
+        sellOrders[0].sellAmount.toString()
       );
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId)
       );
       assert.equal(
         auctionData.volumeClearingPriceOrder.toString(),
-        buyOrders[1].buyAmount.toString()
+        sellOrders[1].buyAmount.toString()
       );
     });
   });
@@ -531,7 +538,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).sub(new BN(1)),
           buyAmount: new BN(10).pow(new BN(18)),
@@ -551,11 +558,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await truffleAssert.reverts(
         easyAuction.claimFromSellOrder(auctionId),
@@ -573,7 +580,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).sub(new BN(1)),
           buyAmount: new BN(10).pow(new BN(18)),
@@ -593,11 +600,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -610,8 +617,8 @@ contract("EasyAuction", async (accounts) => {
       assert.equal(
         receivedAmounts[1].toString(),
         initialAuctionOrder.sellAmount
-          .mul(buyOrders[0].buyAmount)
-          .div(buyOrders[0].sellAmount)
+          .mul(sellOrders[0].buyAmount)
+          .div(sellOrders[0].sellAmount)
           .toString()
       );
     });
@@ -621,7 +628,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(2)).sub(new BN(1)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
@@ -641,11 +648,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -656,11 +663,11 @@ contract("EasyAuction", async (accounts) => {
       );
       assert.equal(
         receivedAmounts[0].toString(),
-        initialAuctionOrder.sellAmount.sub(buyOrders[0].buyAmount).toString()
+        initialAuctionOrder.sellAmount.sub(sellOrders[0].buyAmount).toString()
       );
       assert.equal(
         receivedAmounts[1].toString(),
-        buyOrders[0].buyAmount.toString()
+        sellOrders[0].buyAmount.toString()
       );
     });
   });
@@ -671,7 +678,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).sub(new BN(1)),
           buyAmount: new BN(10).pow(new BN(18)),
@@ -691,16 +698,16 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await truffleAssert.reverts(
         easyAuction.claimFromBuyOrder(
           auctionId,
-          buyOrders.map((order) =>
+          sellOrders.map((order) =>
             encodeOrder(order.buyAmount, order.sellAmount, 0)
           )
         ),
@@ -710,7 +717,7 @@ contract("EasyAuction", async (accounts) => {
       await truffleAssert.reverts(
         easyAuction.claimFromBuyOrder(
           auctionId,
-          buyOrders.map((order) =>
+          sellOrders.map((order) =>
             encodeOrder(order.buyAmount, order.sellAmount, 0)
           )
         ),
@@ -723,7 +730,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(2)).sub(new BN(1)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
@@ -752,11 +759,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -764,28 +771,28 @@ contract("EasyAuction", async (accounts) => {
       );
       const receivedAmounts = toReceivedFunds(
         await easyAuction.claimFromBuyOrder.call(auctionId, [
-          encodeOrder(0, buyOrders[1].buyAmount, buyOrders[1].sellAmount),
+          encodeOrder(0, sellOrders[1].buyAmount, sellOrders[1].sellAmount),
         ])
       );
-      const settledBuyAmount = buyOrders[1].buyAmount.sub(
-        buyOrders[0].buyAmount
-          .add(buyOrders[1].buyAmount)
+      const settledBuyAmount = sellOrders[1].buyAmount.sub(
+        sellOrders[0].buyAmount
+          .add(sellOrders[1].buyAmount)
           .sub(initialAuctionOrder.sellAmount)
       );
 
       assert.equal(
         receivedAmounts.buyTokenAmount.toString(),
-        buyOrders[1].buyAmount
-          .mul(buyOrders[1].buyAmount)
-          .div(buyOrders[1].sellAmount)
+        sellOrders[1].buyAmount
+          .mul(sellOrders[1].buyAmount)
+          .div(sellOrders[1].sellAmount)
           .sub(settledBuyAmount)
           .toString()
       );
       assert.equal(
         receivedAmounts.sellTokenAmount.toString(),
         settledBuyAmount
-          .mul(buyOrders[1].sellAmount)
-          .div(buyOrders[1].buyAmount)
+          .mul(sellOrders[1].sellAmount)
+          .div(sellOrders[1].buyAmount)
           .toString()
       );
     });
@@ -795,7 +802,7 @@ contract("EasyAuction", async (accounts) => {
         buyAmount: new BN(10).pow(new BN(18)),
         owner: user_1,
       };
-      const buyOrders = [
+      const sellOrders = [
         {
           sellAmount: new BN(10).pow(new BN(18)).div(new BN(2)).sub(new BN(1)),
           buyAmount: new BN(10).pow(new BN(18)).div(new BN(2)),
@@ -824,11 +831,11 @@ contract("EasyAuction", async (accounts) => {
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount
       );
-      await easyAuction.placeBuyOrders(
+      await easyAuction.placeSellOrders(
         auctionId,
-        buyOrders.map((buyOrder) => buyOrder.buyAmount),
-        buyOrders.map((buyOrder) => buyOrder.sellAmount),
-        Array(buyOrders.length).fill(queueStartElement)
+        sellOrders.map((buyOrder) => buyOrder.buyAmount),
+        sellOrders.map((buyOrder) => buyOrder.sellAmount),
+        Array(sellOrders.length).fill(queueStartElement)
       );
       await closeAuction(easyAuction, auctionId);
       const price = toPrice(
@@ -836,17 +843,17 @@ contract("EasyAuction", async (accounts) => {
       );
       const receivedAmounts = toReceivedFunds(
         await easyAuction.claimFromBuyOrder.call(auctionId, [
-          encodeOrder(0, buyOrders[0].buyAmount, buyOrders[0].sellAmount),
+          encodeOrder(0, sellOrders[0].buyAmount, sellOrders[0].sellAmount),
         ])
       );
-      const unsettledBuyAmount = buyOrders[0].buyAmount
-        .add(buyOrders[1].buyAmount)
+      const unsettledBuyAmount = sellOrders[0].buyAmount
+        .add(sellOrders[1].buyAmount)
         .sub(initialAuctionOrder.sellAmount);
       assert.equal(
         receivedAmounts.sellTokenAmount.toString(),
-        buyOrders[0].buyAmount
-          .mul(buyOrders[1].sellAmount)
-          .div(buyOrders[1].buyAmount)
+        sellOrders[0].buyAmount
+          .mul(sellOrders[1].sellAmount)
+          .div(sellOrders[1].buyAmount)
           .toString()
       );
       assert.equal(receivedAmounts.buyTokenAmount.toString(), "0");
