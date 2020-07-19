@@ -1,8 +1,8 @@
 const IterableOrderedOrderSet = artifacts.require(
-  "libraries/IterableOrderedOrderSet.sol"
+  "libraries/IterableOrderedOrderSet.sol",
 );
 const IterableOrderedOrderSetWrapper = artifacts.require(
-  "test/IterableOrderedOrderSetWrapper.sol"
+  "test/IterableOrderedOrderSetWrapper.sol",
 );
 const truffleAssert = require("truffle-assertions");
 
@@ -42,7 +42,7 @@ contract("IterableOrderedOrderSet", function () {
     assert.equal(
       await set.contains(BYTES32_ONE),
       false,
-      "The element should not be there"
+      "The element should not be there",
     );
     const bool = await set.insert.call(BYTES32_ONE);
     assert.equal(bool, true, "The element could not be inserted");
@@ -50,7 +50,7 @@ contract("IterableOrderedOrderSet", function () {
     assert.equal(
       await set.contains(BYTES32_ONE),
       true,
-      "The element should be there"
+      "The element should be there",
     );
     assert.deepEqual(await getSetContent(set), [BYTES32_ONE]);
   });
@@ -61,7 +61,7 @@ contract("IterableOrderedOrderSet", function () {
     assert.equal(
       await set.insert.call(BYTES32_ONE),
       true,
-      "First insert should insert"
+      "First insert should insert",
     );
     await set.insert(BYTES32_ONE);
     assert.deepEqual(await getSetContent(set), [BYTES32_ONE]);
@@ -69,7 +69,7 @@ contract("IterableOrderedOrderSet", function () {
     assert.equal(
       await set.insert.call(BYTES32_ONE),
       false,
-      "Second insert should do nothing"
+      "Second insert should do nothing",
     );
     await set.insert(BYTES32_ONE);
     assert.deepEqual(await getSetContent(set), [BYTES32_ONE]);
@@ -103,7 +103,7 @@ contract("IterableOrderedOrderSet", function () {
     await set.insert(BYTES32_ONE);
     await truffleAssert.reverts(
       set.insert(BYTES32_ONE_DIFFERENT),
-      "user is not allowed to place same order twice"
+      "user is not allowed to place same order twice",
     );
   });
 
@@ -137,7 +137,7 @@ contract("IterableOrderedOrderSet", function () {
     const set = await IterableOrderedOrderSetWrapper.new();
     await truffleAssert.reverts(
       set.insert(BYTES32_ZERO),
-      "Inserting uint96(0) is not supported"
+      "Inserting uint96(0) is not supported",
     );
   });
 
@@ -145,7 +145,7 @@ contract("IterableOrderedOrderSet", function () {
     const set = await IterableOrderedOrderSetWrapper.new();
     await truffleAssert.reverts(
       set.first(),
-      "Trying to get first from empty set"
+      "Trying to get first from empty set",
     );
   });
 
@@ -238,7 +238,7 @@ contract("IterableOrderedOrderSet", function () {
     const ans = await set.decodeOrder(BYTES32_ONE);
     assert.equal(
       await set.encodeOrder.call(ans[0], ans[1], ans[2]),
-      BYTES32_ONE
+      BYTES32_ONE,
     );
   });
 });

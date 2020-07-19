@@ -30,21 +30,21 @@ declare module "truffle-assertions" {
       result: TransactionResult,
       eventType: string,
       filterOrObject?: FilterOrObject,
-      message?: string
+      message?: string,
     ) => void;
     eventNotEmitted: (
       result: TransactionResult,
       eventType: string,
       filterOrObject?: FilterOrObject,
-      message?: string
+      message?: string,
     ) => void;
     prettyPrintEmittedEvents: (
       result: TransactionResult,
-      indentationSize: number
+      indentationSize: number,
     ) => void;
     createTransactionResult: <T>(
       contract: Truffle.Contract<T>,
-      transactionHash: string
+      transactionHash: string,
     ) => TransactionResult;
 
     passes: (asyncFn: Promise<unknown>, message?: string) => void;
@@ -52,12 +52,12 @@ declare module "truffle-assertions" {
       asyncFn: Promise<unknown>,
       errorType: ErrorTypeValue,
       reason?: string,
-      message?: string
+      message?: string,
     ) => void;
     reverts: (
       asyncFn: Promise<unknown>,
       reason?: string,
-      message?: string
+      message?: string,
     ) => void;
 
     ErrorType: ErrorType;

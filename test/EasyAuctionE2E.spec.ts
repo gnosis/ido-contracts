@@ -35,10 +35,10 @@ contract("IterableOrderedOrderSet", async (accounts) => {
       sellToken.address,
       60 * 60,
       new BN(10).pow(new BN(18)),
-      new BN(10).pow(new BN(18))
+      new BN(10).pow(new BN(18)),
     );
     for (let i = 2; i < nrTests; i++) {
-      let prevBuyOrder = queueStartElement;
+      const prevBuyOrder = queueStartElement;
       await easyAuction.placeSellOrders(
         auctionId,
         [new BN(10).pow(new BN(18)).div(new BN(nrTests - 2))],
@@ -48,19 +48,19 @@ contract("IterableOrderedOrderSet", async (accounts) => {
             .div(new BN(nrTests - 2))
             .div(new BN(i)),
         ],
-        [prevBuyOrder]
+        [prevBuyOrder],
       );
     }
     await closeAuction(easyAuction, auctionId, web3);
     const price = toPrice(
-      await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId)
+      await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId),
     );
     assert.equal(
       price.priceNumerator.toString(),
       new BN(10)
         .pow(new BN(18))
         .div(new BN(nrTests - 2))
-        .toString()
+        .toString(),
     );
     assert.equal(
       price.priceDenominator.toString(),
@@ -68,7 +68,7 @@ contract("IterableOrderedOrderSet", async (accounts) => {
         .pow(new BN(18))
         .div(new BN(nrTests - 2))
         .div(new BN(2))
-        .toString()
+        .toString(),
     );
   });
 });
