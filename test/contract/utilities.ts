@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 
 export async function closeAuction(
   instance: Contract,
-  auctionId: number,
+  auctionId: BigNumber,
 ): Promise<void> {
   const time_remaining = (
     await instance.getSecondsRemainingInBatch(auctionId)

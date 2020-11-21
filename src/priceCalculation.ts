@@ -72,7 +72,7 @@ export function toReceivedFunds(result: [BigNumber, BigNumber]): ReceivedFunds {
 
 export async function getInitialOrder(
   easyAuction: Contract,
-  auctionId: number,
+  auctionId: BigNumber,
 ) {
   const auctionDataStruct = await easyAuction.auctionData(auctionId);
   return decodeOrder(auctionDataStruct[3]);
@@ -90,7 +90,7 @@ export function hasLowerClearingPrice(order1: Order, order2: Order): number {
 
 export async function calculateClearingPrice(
   easyAuction: Contract,
-  auctionId: number,
+  auctionId: BigNumber,
 ): Promise<Price> {
   const initialOrder = await getInitialOrder(easyAuction, auctionId);
   console.log("initial order", initialOrder);
@@ -142,10 +142,15 @@ export function findClearingPrice(
 
 export async function getAllSellOrders(
   easyAuction: Contract,
-  auctionId: number,
-) {
-  const filterSellOrders = easyAuction.filters.NewSellOrders;
-  const logs = await easyAuction.queryFilter(filterSellOrders(), 0, "latest");
+  auctionId: BigNumber,
+): Promise<Order[]> {
+  const filterSellOrders = easyAuction.filters.NewSellOrders(
+    auctionId,
+    null,
+    null,
+    null,
+  );
+  const logs = await easyAuction.queryFilter(filterSellOrders, 0, "latest");
   const events = logs.map((log: any) => easyAuction.interface.parseLog(log));
   const sellOrdersNestedArrays = events.map((x: any) => x.args);
   console.log("nested event arrays", sellOrdersNestedArrays);
@@ -161,7 +166,7 @@ export async function getAllSellOrders(
         };
       }),
   );
-  sellOrders = [].concat.apply([], sellOrders);
+  sellOrders = [].concat([], ...sellOrders);
 
   const filterOrderCancellations = easyAuction.filters.CancellationSellOrders;
   const logsForCancellations = await easyAuction.queryFilter(
@@ -183,7 +188,7 @@ export async function getAllSellOrders(
 export async function createTokensAndMintAndApprove(
   easyAuction: Contract,
   users: Wallet[],
-) {
+): Promise<{ sellToken: Contract; buyToken: Contract }> {
   const ERC20 = await ethers.getContractFactory("ERC20Mintable");
   const buyToken = await ERC20.deploy("BT", "BT");
   const sellToken = await ERC20.deploy("BT", "BT");
