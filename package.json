@@ -11,9 +11,9 @@
     "build": "hardhat compile",
     "test": "hardhat test",
     "lint": "yarn lint:sol && yarn lint:ts",
-    "lint:sol": "solhint 'src/contracts/**/*.sol'",
+    "lint:sol": "solhint 'contracts/**/*.sol'",
     "lint:ts": "eslint --max-warnings 0 .",
-    "fmt:sol": "prettier 'src/contracts/**/*.sol' -w"
+    "fmt:sol": "prettier 'contracts/**/*.sol' -w"
   },
   "repository": {
     "type": "git"
