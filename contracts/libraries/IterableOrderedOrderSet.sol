@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-or-newer
 pragma solidity >=0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -31,7 +32,7 @@ library IterableOrderedOrderSet {
     bytes32 elmentBeforeNewOne
   ) internal returns (bool) {
     (, , uint96 denominator) = decodeOrder(elementToInsert);
-    require(denominator != uint96(0), "Inserting uint96(0) is not supported");
+    require(denominator != uint96(0), "Inserting zero is not supported");
 
     if (contains(self, elementToInsert)) {
       return false;
