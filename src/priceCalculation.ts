@@ -27,9 +27,9 @@ export interface Order {
 }
 
 export const queueStartElement =
-  "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
-export const queueLastElement =
   "0x0000000000000000000000000000000000000000000000000000000000000001";
+export const queueLastElement =
+  "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 
 export function toAuctionDataResult(
   result: [string, string, BigNumber, string, string, BigNumber, BigNumber],
@@ -91,22 +91,19 @@ export function hasLowerClearingPrice(order1: Order, order2: Order): number {
 export async function calculateClearingPrice(
   easyAuction: Contract,
   auctionId: BigNumber,
-): Promise<Price> {
+): Promise<Order> {
   const initialOrder = await getInitialOrder(easyAuction, auctionId);
-  console.log("initial order", initialOrder);
   const sellOrders = await getAllSellOrders(easyAuction, auctionId);
   sellOrders.sort(function (a: Order, b: Order) {
     return hasLowerClearingPrice(a, b);
   });
-
-  console.log("all orders sorted", sellOrders);
   return findClearingPrice(sellOrders, initialOrder);
 }
 
 export function findClearingPrice(
   sellOrders: Order[],
   initialAuctionOrder: Order,
-): Price {
+): Order {
   sellOrders.forEach(function (order, index) {
     if (index > 1) {
       if (!hasLowerClearingPrice(sellOrders[index - 1], order)) {
@@ -114,30 +111,42 @@ export function findClearingPrice(
       }
     }
   });
-  let price = toPrice([
-    initialAuctionOrder.buyAmount,
-    initialAuctionOrder.sellAmount,
-  ]);
-  for (const clearingOrder of sellOrders) {
-    let totalSellVolume = BigNumber.from(0);
-    for (const order of sellOrders) {
-      totalSellVolume = totalSellVolume.add(
-        order.sellAmount
-          .mul(clearingOrder.buyAmount)
-          .div(clearingOrder.sellAmount),
+  let totalSellVolume = BigNumber.from(0);
+
+  for (const order of sellOrders) {
+    totalSellVolume = totalSellVolume.add(order.sellAmount);
+    if (
+      totalSellVolume
+        .mul(order.buyAmount)
+        .div(order.sellAmount)
+        .gt(initialAuctionOrder.sellAmount)
+    ) {
+      const coveredBuyAmount = initialAuctionOrder.sellAmount.sub(
+        totalSellVolume
+          .sub(order.sellAmount)
+          .mul(order.buyAmount)
+          .div(order.sellAmount),
       );
-      if (order === clearingOrder) {
-        break;
+      const sellAmountClearingOrder = coveredBuyAmount
+        .mul(order.sellAmount)
+        .div(order.buyAmount);
+      if (sellAmountClearingOrder.gt(BigNumber.from(0))) {
+        return order;
+      } else {
+        return {
+          userId: BigNumber.from(0),
+          buyAmount: initialAuctionOrder.sellAmount,
+          sellAmount: totalSellVolume.sub(order.sellAmount),
+        };
       }
     }
-    console.log(totalSellVolume);
-    if (totalSellVolume.gte(initialAuctionOrder.sellAmount)) {
-      price = toPrice([clearingOrder.sellAmount, clearingOrder.buyAmount]);
-      console.log("found the clearning Price", price);
-      break;
-    }
   }
-  return price;
+  // otherwise, clearing price is initialAuctionOrder
+  return {
+    userId: BigNumber.from(0),
+    buyAmount: initialAuctionOrder.sellAmount,
+    sellAmount: initialAuctionOrder.buyAmount,
+  };
 }
 
 export async function getAllSellOrders(
@@ -153,7 +162,6 @@ export async function getAllSellOrders(
   const logs = await easyAuction.queryFilter(filterSellOrders, 0, "latest");
   const events = logs.map((log: any) => easyAuction.interface.parseLog(log));
   const sellOrdersNestedArrays = events.map((x: any) => x.args);
-  console.log("nested event arrays", sellOrdersNestedArrays);
   let sellOrders = sellOrdersNestedArrays.map((x: any) =>
     x.sellAmount
       .slice()

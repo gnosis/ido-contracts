@@ -25,13 +25,13 @@ const BYTES32_ONE_DIFFERENT = encodeOrder({
 });
 const BYTES32_TWO = encodeOrder({
   userId: BigNumber.from(1),
-  sellAmount: BigNumber.from(8),
-  buyAmount: BigNumber.from(4),
+  buyAmount: BigNumber.from(8),
+  sellAmount: BigNumber.from(4),
 });
 const BYTES32_THREE = encodeOrder({
   userId: BigNumber.from(1),
-  sellAmount: BigNumber.from(6),
-  buyAmount: BigNumber.from(2),
+  buyAmount: BigNumber.from(6),
+  sellAmount: BigNumber.from(2),
 });
 
 async function getSetContent(set: Contract) {
@@ -91,9 +91,9 @@ describe("IterableOrderedOrderSet", function () {
     const second = await set.next(first);
     const third = await set.next(second);
 
-    expect(third).to.equal(BYTES32_ONE);
+    expect(first).to.equal(BYTES32_ONE);
     expect(second).to.equal(BYTES32_TWO);
-    expect(first).to.equal(BYTES32_THREE);
+    expect(third).to.equal(BYTES32_THREE);
   });
   it("should not allow to insert same limit price with same user", async () => {
     await set.insert(BYTES32_ONE);
@@ -106,10 +106,10 @@ describe("IterableOrderedOrderSet", function () {
     await set.insert(BYTES32_ONE);
     await set.insert(BYTES32_THREE);
 
-    expect(await set.callStatic.insertAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
+    expect(await set.callStatic.insertAt(BYTES32_TWO, BYTES32_ONE)).to.equal(
       true,
     );
-    expect(await set.callStatic.insertAt(BYTES32_TWO, BYTES32_ONE)).to.equal(
+    expect(await set.callStatic.insertAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
       false,
     );
   });
@@ -123,9 +123,9 @@ describe("IterableOrderedOrderSet", function () {
     const second = await set.next(first);
     const third = await set.next(second);
 
-    expect(third).to.equal(BYTES32_ONE);
+    expect(first).to.equal(BYTES32_ONE);
     expect(second).to.equal(BYTES32_TWO);
-    expect(first).to.equal(BYTES32_THREE);
+    expect(third).to.equal(BYTES32_THREE);
   });
 
   it("doesn't allow to insert a number with denominator == 0", async () => {
@@ -155,8 +155,8 @@ describe("IterableOrderedOrderSet", function () {
     const first = await set.first();
     const second = await set.next(first);
 
-    expect(second).to.equal(BYTES32_ONE);
-    expect(first).to.equal(BYTES32_THREE);
+    expect(first).to.equal(BYTES32_ONE);
+    expect(second).to.equal(BYTES32_THREE);
   });
 
   it("returns the correct size of queue", async () => {
@@ -183,10 +183,10 @@ describe("IterableOrderedOrderSet", function () {
     await set.insert(BYTES32_TWO);
     await set.insert(BYTES32_THREE);
 
-    expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
+    expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_ONE)).to.equal(
       true,
     );
-    expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_ONE)).to.equal(
+    expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
       false,
     );
   });

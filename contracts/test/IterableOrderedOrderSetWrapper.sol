@@ -64,11 +64,11 @@ contract IterableOrderedOrderSetWrapper {
             IterableOrderedOrderSet.encodeOrder(userId, sellAmount, buyAmount);
     }
 
-    function biggerThan(bytes32 orderLeft, bytes32 orderRight)
+    function smallerThan(bytes32 orderLeft, bytes32 orderRight)
         public
         pure
         returns (bool)
     {
-        return IterableOrderedOrderSet.biggerThan(orderLeft, orderRight);
+        return IterableOrderedOrderSet.smallerThan(orderLeft, orderRight);
     }
 }

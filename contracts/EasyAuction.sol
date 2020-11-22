@@ -191,12 +191,15 @@ contract EasyAuction {
         );
     }
 
-    function calculatePrice(
-        uint256 auctionId,
-        uint96 priceNumerator,
-        uint96 priceDenominator,
-        uint64 userIdForClearingOrder
-    ) public atStageSolutionSubmission(auctionId) {
+    function calculatePrice(uint256 auctionId, bytes32 price)
+        public
+        atStageSolutionSubmission(auctionId)
+    {
+        (
+            ,
+            uint96 priceNumerator,
+            uint96 priceDenominator
+        ) = price.decodeOrder();
         (, , uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
 
@@ -204,72 +207,45 @@ contract EasyAuction {
         uint96 sumBuyAmount = 0;
         bytes32 iterOrder = IterableOrderedOrderSet.QUEUE_START;
         if (sellOrders[auctionId].size > 0) {
-            bytes32 clearingPriceOrder =
-                IterableOrderedOrderSet.encodeOrder(
-                    userIdForClearingOrder,
-                    priceNumerator,
-                    priceDenominator
-                );
+            iterOrder = sellOrders[auctionId].next(iterOrder);
 
-            while (
-                IterableOrderedOrderSet.biggerThan(
-                    clearingPriceOrder,
-                    iterOrder
-                )
-            ) {
-                iterOrder = sellOrders[auctionId].next(iterOrder);
+            while (iterOrder != price && iterOrder.smallerThan(price)) {
                 (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
                 sumBuyAmount = uint96(
                     sumBuyAmount.add(sellAmountOfIter).mul(priceNumerator).div(
                         priceDenominator
                     )
                 );
+                iterOrder = sellOrders[auctionId].next(iterOrder);
             }
         }
-
-        // Set auction clearing data
-        if (sumBuyAmount < sellAmount) {
-            // case 1: initialAuction order is partically filled
+        (, , uint96 sellAmountOfIter) =
+            iterOrder.decodeOrder();
+        if (price == iterOrder) {
+            // case 1: one sellOrder is partically filled
+            uint256 clearingOrderBuyAmount = sellAmount.sub(sumBuyAmount);
             auctionData[auctionId].volumeClearingPriceOrder = uint96(
-                sumBuyAmount
+                clearingOrderBuyAmount.mul(priceDenominator).div(priceNumerator)
             );
-            auctionData[auctionId].clearingPriceOrder = auctionData[auctionId]
-                .initialAuctionOrder;
+            require(
+                auctionData[auctionId].volumeClearingPriceOrder <=
+                    sellAmountOfIter,
+                "order can not be clearing order"
+            );
+            auctionData[auctionId].clearingPriceOrder = iterOrder;
         } else {
-            (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
-                iterOrder.decodeOrder();
-            if (
-                buyAmountOfIter == priceNumerator &&
-                sellAmountOfIter == priceDenominator
-            ) {
-                // case 2: one sellOrder is partically filled
-                uint256 buyAmountIter =
-                    sellAmountOfIter.mul(priceNumerator).div(priceDenominator);
+            if (sumBuyAmount < sellAmount) {
+                // case 2: initialAuction order is partically filled
                 auctionData[auctionId].volumeClearingPriceOrder = uint96(
-                    sellAmount
-                        .sub(sumBuyAmount.sub(buyAmountIter))
-                        .mul(priceDenominator)
-                        .div(priceNumerator)
+                    sumBuyAmount
                 );
-                require(
-                    auctionData[auctionId].volumeClearingPriceOrder <=
-                        sellAmountOfIter,
-                    "order can not be clearing order"
-                );
-                auctionData[auctionId]
-                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
-                    0,
-                    priceNumerator,
-                    priceDenominator
-                );
+                auctionData[auctionId].clearingPriceOrder = auctionData[
+                    auctionId
+                ]
+                    .initialAuctionOrder;
             } else {
                 // case 3: no order is partically filled
-                auctionData[auctionId]
-                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
-                    0,
-                    priceNumerator,
-                    priceDenominator
-                );
+                auctionData[auctionId].clearingPriceOrder = price;
                 require(
                     sumBuyAmount.mul(priceDenominator) ==
                         sellAmount.mul(priceNumerator),
@@ -277,6 +253,7 @@ contract EasyAuction {
                 );
             }
         }
+
         uint256 submissionTime =
             block.timestamp.sub(auctionData[auctionId].auctionEndDate);
         auctionData[auctionId].rewardFactor = uint96(
@@ -310,7 +287,7 @@ contract EasyAuction {
                     auction.volumeClearingPriceOrder
                 );
             } else {
-                if (orders[i].biggerThan(auction.clearingPriceOrder)) {
+                if (orders[i].smallerThan(auction.clearingPriceOrder)) {
                     sellTokenAmount = buyAmount.mul(priceNumerator).div(
                         priceDenominator
                     );

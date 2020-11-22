@@ -11,10 +11,10 @@ library IterableOrderedOrderSet {
 
     // getValue(QUEUE_START) returns 0
     bytes32 internal constant QUEUE_START =
-        0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001;
+        0x0000000000000000000000000000000000000000000000000000000000000001;
     // getValue(QUEUE_END) returns MaxValue in uint64
     bytes32 internal constant QUEUE_END =
-        0x0000000000000000000000000000000000000000000000000000000000000001;
+        0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001;
 
     struct Data {
         mapping(bytes32 => bytes32) nextMap;
@@ -50,9 +50,9 @@ library IterableOrderedOrderSet {
             );
             bytes32 elmentBeforeNewOneNext = elmentBeforeNewOne;
             while (!foundposition) {
-                if (elmentBeforeNewOneNext.biggerThan(elementToInsert)) {
+                if (elmentBeforeNewOneNext.smallerThan(elementToInsert)) {
                     if (
-                        !self.nextMap[elmentBeforeNewOneNext].biggerThan(
+                        !self.nextMap[elmentBeforeNewOneNext].smallerThan(
                             elementToInsert
                         )
                     ) {
@@ -106,7 +106,7 @@ library IterableOrderedOrderSet {
         return self.nextMap[value] != bytes32(0);
     }
 
-    function biggerThan(bytes32 orderLeft, bytes32 orderRight)
+    function smallerThan(bytes32 orderLeft, bytes32 orderRight)
         internal
         pure
         returns (bool)
@@ -123,11 +123,11 @@ library IterableOrderedOrderSet {
         ) = decodeOrder(orderRight);
 
         if (
-            priceNumeratorLeft.mul(priceDenominatorRight) >
+            priceNumeratorLeft.mul(priceDenominatorRight) <
             priceNumeratorRight.mul(priceDenominatorLeft)
         ) return true;
         if (
-            priceNumeratorLeft.mul(priceDenominatorRight) <
+            priceNumeratorLeft.mul(priceDenominatorRight) >
             priceNumeratorRight.mul(priceDenominatorLeft)
         ) return false;
 
@@ -135,7 +135,7 @@ library IterableOrderedOrderSet {
             userIdLeft != userIdRight,
             "user is not allowed to place same order twice"
         );
-        if (userIdLeft > userIdRight) {
+        if (userIdLeft < userIdRight) {
             return true;
         }
         return false;
