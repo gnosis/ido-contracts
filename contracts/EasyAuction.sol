@@ -223,7 +223,7 @@ contract EasyAuction {
             }
         }
         uint256 sumBuyAmount =
-            uint96(sumSellAmount.mul(priceNumerator).div(priceDenominator));
+            sumSellAmount.mul(priceNumerator).div(priceDenominator);
         if (price == iterOrder) {
             // case 1: one sellOrder is partically filled
             // The partially filled order is the correct one, if:
@@ -265,7 +265,7 @@ contract EasyAuction {
                 // In this case the sumBuyAmount must be equal to
                 // the sellAmount of the initialAuctionOrder, without
                 // any rounding errors.
-                // This price is always existing as we can choose 
+                // This price is always existing as we can choose
                 // priceNumerator = sellAmount and priceDenominator = sumSellAmount
                 auctionData[auctionId].clearingPriceOrder = price;
                 require(

@@ -3,15 +3,12 @@ import { Contract, BigNumber } from "ethers";
 import { ethers, waffle } from "hardhat";
 
 import {
-  toPrice,
   toAuctionDataResult,
   toReceivedFunds,
   encodeOrder,
   queueStartElement,
   createTokensAndMintAndApprove,
   placeOrders,
-  getAllSellOrders,
-  getInitialOrder,
   calculateClearingPrice,
 } from "../../src/priceCalculation";
 
@@ -247,9 +244,6 @@ describe("EasyAuction", async () => {
         60 * 60,
         ethers.utils.parseEther("1"),
         ethers.utils.parseEther("1"),
-      );
-      const balanceBeforeOrderPlacement = await buyToken.balanceOf(
-        user_1.address,
       );
       const sellAmount = ethers.utils.parseEther("1").add(1);
       const buyAmount = ethers.utils.parseEther("1");
@@ -995,9 +989,6 @@ describe("EasyAuction", async () => {
           }),
         ]),
       );
-      const unsettledBuyAmount = sellOrders[0].buyAmount
-        .add(sellOrders[1].buyAmount)
-        .sub(initialAuctionOrder.sellAmount);
       expect(receivedAmounts.sellTokenAmount).to.equal(
         sellOrders[0].buyAmount
           .mul(sellOrders[1].sellAmount)
