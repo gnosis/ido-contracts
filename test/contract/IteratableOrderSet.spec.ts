@@ -23,6 +23,11 @@ const BYTES32_ONE_DIFFERENT = encodeOrder({
   sellAmount: BigNumber.from(2),
   buyAmount: BigNumber.from(2),
 });
+const BYTES32_ONE_BEST_USER = encodeOrder({
+  userId: BigNumber.from(0),
+  sellAmount: BigNumber.from(2),
+  buyAmount: BigNumber.from(2),
+});
 const BYTES32_TWO = encodeOrder({
   userId: BigNumber.from(1),
   buyAmount: BigNumber.from(8),
@@ -86,14 +91,17 @@ describe("IterableOrderedOrderSet", function () {
     await set.insert(BYTES32_ONE);
     await set.insert(BYTES32_TWO);
     await set.insert(BYTES32_THREE);
+    await set.insert(BYTES32_ONE_BEST_USER);
 
     const first = await set.first();
     const second = await set.next(first);
     const third = await set.next(second);
+    const fourth = await set.next(third);
 
-    expect(first).to.equal(BYTES32_ONE);
-    expect(second).to.equal(BYTES32_TWO);
-    expect(third).to.equal(BYTES32_THREE);
+    expect(first).to.equal(BYTES32_ONE_BEST_USER);
+    expect(second).to.equal(BYTES32_ONE);
+    expect(third).to.equal(BYTES32_TWO);
+    expect(fourth).to.equal(BYTES32_THREE);
   });
   it("should not allow to insert same limit price with same user", async () => {
     await set.insert(BYTES32_ONE);

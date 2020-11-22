@@ -20,7 +20,7 @@
 //     easyAuction = await EasyAuction.new();
 //   });
 
-//   it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of calculatePrice", async () => {
+//   it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of verifyPrice", async () => {
 //     buyToken = await ERC20.new("BT", "BT");
 //     await buyToken.mint(user_1, BigNumber.from(10).pow(BigNumber.from(30)));
 //     await buyToken.approve(easyAuction.address, BigNumber.from(10).pow(BigNumber.from(30)));
@@ -53,7 +53,7 @@
 //     }
 //     await closeAuction(easyAuction, auctionId, web3);
 //     const price = toPrice(
-//       await sendTxAndGetReturnValue(easyAuction.calculatePrice, auctionId),
+//       await sendTxAndGetReturnValue(easyAuction.verifyPrice, auctionId),
 //     );
 //     assert.equal(
 //       price.priceNumerator.toString(),

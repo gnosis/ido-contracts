@@ -1,5 +1,5 @@
 import { Contract, BigNumber, Wallet } from "ethers";
-import { ethers } from "hardhat";
+import { ethers, waffle } from "hardhat";
 export interface Price {
   priceNumerator: BigNumber;
   priceDenominator: BigNumber;
@@ -73,7 +73,7 @@ export function toReceivedFunds(result: [BigNumber, BigNumber]): ReceivedFunds {
 export async function getInitialOrder(
   easyAuction: Contract,
   auctionId: BigNumber,
-) {
+): Promise<Order> {
   const auctionDataStruct = await easyAuction.auctionData(auctionId);
   return decodeOrder(auctionDataStruct[3]);
 }
@@ -85,6 +85,13 @@ export function hasLowerClearingPrice(order1: Order, order2: Order): number {
       .lt(order2.buyAmount.mul(order1.sellAmount))
   )
     return -1;
+  if (
+    order1.buyAmount
+      .mul(order2.sellAmount)
+      .eq(order2.buyAmount.mul(order1.sellAmount))
+  ) {
+    if (order1.userId < order2.userId) return -1;
+  }
   return 1;
 }
 
@@ -153,7 +160,7 @@ export async function getAllSellOrders(
   easyAuction: Contract,
   auctionId: BigNumber,
 ): Promise<Order[]> {
-  const filterSellOrders = easyAuction.filters.NewSellOrders(
+  const filterSellOrders = easyAuction.filters.NewSellOrder(
     auctionId,
     null,
     null,
@@ -161,20 +168,14 @@ export async function getAllSellOrders(
   );
   const logs = await easyAuction.queryFilter(filterSellOrders, 0, "latest");
   const events = logs.map((log: any) => easyAuction.interface.parseLog(log));
-  const sellOrdersNestedArrays = events.map((x: any) => x.args);
-  let sellOrders = sellOrdersNestedArrays.map((x: any) =>
-    x.sellAmount
-      .slice()
-      .map((k: any, i: number) => [k, x.buyAmount.slice()[i]])
-      .map((y: any) => {
-        return {
-          userId: x.userId,
-          sellAmount: y[0],
-          buyAmount: y[1],
-        };
-      }),
-  );
-  sellOrders = [].concat([], ...sellOrders);
+  const sellOrders = events.map((x: any) => {
+    const order: Order = {
+      userId: x.args[1],
+      sellAmount: x.args[3],
+      buyAmount: x.args[2],
+    };
+    return order;
+  });
 
   const filterOrderCancellations = easyAuction.filters.CancellationSellOrders;
   const logsForCancellations = await easyAuction.queryFilter(
@@ -185,10 +186,16 @@ export async function getAllSellOrders(
   const eventsForCancellations = logsForCancellations.map((log: any) =>
     easyAuction.interface.parseLog(log),
   );
-  const sellOrdersDeletions = eventsForCancellations.map((x: any) => x.args);
-
-  for (const order in sellOrdersDeletions) {
-    sellOrders.splice(sellOrders.indexOf(order), 1);
+  const sellOrdersDeletions = eventsForCancellations.map((x: any) => {
+    const order: Order = {
+      userId: x.args[1],
+      sellAmount: x.args[3],
+      buyAmount: x.args[2],
+    };
+    return order;
+  });
+  for (const orderDeletion of sellOrdersDeletions) {
+    sellOrders.splice(sellOrders.indexOf(orderDeletion), 1);
   }
   return sellOrders;
 }
@@ -220,4 +227,21 @@ export function toPrice(result: [BigNumber, BigNumber]): Price {
     priceNumerator: result[0],
     priceDenominator: result[1],
   };
+}
+
+export async function placeOrders(
+  easyAuction: Contract,
+  sellOrders: Order[],
+  auctionId: BigNumber,
+): Promise<void> {
+  for (const sellOrder of sellOrders) {
+    await easyAuction
+      .connect(waffle.provider.getWallets()[sellOrder.userId.toNumber()])
+      .placeSellOrders(
+        auctionId,
+        [sellOrder.buyAmount],
+        [sellOrder.sellAmount],
+        [queueStartElement],
+      );
+  }
 }

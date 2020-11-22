@@ -42,12 +42,14 @@ contract EasyAuction {
         );
         _;
     }
+    event Log(bytes32 a);
+    event Log2(uint a);
 
-    event NewSellOrders(
+    event NewSellOrder(
         uint256 indexed auctionId,
         uint64 indexed userId,
-        uint96[] buyAmount,
-        uint96[] sellAmount
+        uint96 buyAmount,
+        uint96 sellAmount
     );
     event CancellationSellOrders(
         uint256 indexed auctionId,
@@ -133,16 +135,24 @@ contract EasyAuction {
                     sellAmountOfInitialAuctionOrder / MAX_BATCH_SIZE,
                 "order too small"
             );
-            sellOrders[auctionId].insert(
-                IterableOrderedOrderSet.encodeOrder(
+            bool success =
+                sellOrders[auctionId].insert(
+                    IterableOrderedOrderSet.encodeOrder(
+                        userId,
+                        _minBuyAmounts[i],
+                        _sellAmounts[i]
+                    ),
+                    _prevSellOrders[i]
+                );
+            if (success) {
+                emit NewSellOrder(
+                    auctionId,
                     userId,
                     _minBuyAmounts[i],
                     _sellAmounts[i]
-                ),
-                _prevSellOrders[i]
-            );
+                );
+            }
         }
-        emit NewSellOrders(auctionId, userId, _minBuyAmounts, _sellAmounts);
         require(
             auctionData[auctionId].buyToken.transferFrom(
                 msg.sender,
@@ -191,17 +201,16 @@ contract EasyAuction {
         );
     }
 
-    function calculatePrice(uint256 auctionId, bytes32 price)
+    function verifyPrice(uint256 auctionId, bytes32 price)
         public
         atStageSolutionSubmission(auctionId)
     {
-        (
-            ,
-            uint96 priceNumerator,
-            uint96 priceDenominator
-        ) = price.decodeOrder();
-        (, , uint96 sellAmount) =
+        (, uint96 priceNumerator, uint96 priceDenominator) =
+            price.decodeOrder();
+        (, uint96 buyAmount, uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
+
+        require(priceNumerator > 0, "price must be postive");
 
         // Calculate the bought volume of auctioneer's sell volume
         uint96 sumBuyAmount = 0;
@@ -210,6 +219,7 @@ contract EasyAuction {
             iterOrder = sellOrders[auctionId].next(iterOrder);
 
             while (iterOrder != price && iterOrder.smallerThan(price)) {
+                emit Log(iterOrder);
                 (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
                 sumBuyAmount = uint96(
                     sumBuyAmount.add(sellAmountOfIter).mul(priceNumerator).div(
@@ -219,10 +229,10 @@ contract EasyAuction {
                 iterOrder = sellOrders[auctionId].next(iterOrder);
             }
         }
-        (, , uint96 sellAmountOfIter) =
-            iterOrder.decodeOrder();
+
         if (price == iterOrder) {
             // case 1: one sellOrder is partically filled
+            (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
             uint256 clearingOrderBuyAmount = sellAmount.sub(sumBuyAmount);
             auctionData[auctionId].volumeClearingPriceOrder = uint96(
                 clearingOrderBuyAmount.mul(priceDenominator).div(priceNumerator)
@@ -236,6 +246,11 @@ contract EasyAuction {
         } else {
             if (sumBuyAmount < sellAmount) {
                 // case 2: initialAuction order is partically filled
+                require(
+                    priceNumerator.mul(buyAmount) ==
+                        sellAmount.mul(priceDenominator),
+                    "supplied price must be inverse initialOrderLimit"
+                );
                 auctionData[auctionId].volumeClearingPriceOrder = uint96(
                     sumBuyAmount
                 );
@@ -247,8 +262,8 @@ contract EasyAuction {
                 // case 3: no order is partically filled
                 auctionData[auctionId].clearingPriceOrder = price;
                 require(
-                    sumBuyAmount.mul(priceDenominator) ==
-                        sellAmount.mul(priceNumerator),
+                    sumBuyAmount ==
+                        sellAmount,
                     "price is not clearing price"
                 );
             }
