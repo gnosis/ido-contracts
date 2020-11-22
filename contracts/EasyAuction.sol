@@ -42,8 +42,6 @@ contract EasyAuction {
         );
         _;
     }
-    event Log(bytes32 a);
-    event Log2(uint a);
 
     event NewSellOrder(
         uint256 indexed auctionId,
@@ -213,25 +211,26 @@ contract EasyAuction {
         require(priceNumerator > 0, "price must be postive");
 
         // Calculate the bought volume of auctioneer's sell volume
-        uint96 sumBuyAmount = 0;
+        uint256 sumSellAmount = 0;
         bytes32 iterOrder = IterableOrderedOrderSet.QUEUE_START;
         if (sellOrders[auctionId].size > 0) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
 
             while (iterOrder != price && iterOrder.smallerThan(price)) {
-                emit Log(iterOrder);
                 (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
-                sumBuyAmount = uint96(
-                    sumBuyAmount.add(sellAmountOfIter).mul(priceNumerator).div(
-                        priceDenominator
-                    )
-                );
+                sumSellAmount = sumSellAmount.add(sellAmountOfIter);
                 iterOrder = sellOrders[auctionId].next(iterOrder);
             }
         }
-
+        uint256 sumBuyAmount =
+            uint96(sumSellAmount.mul(priceNumerator).div(priceDenominator));
         if (price == iterOrder) {
             // case 1: one sellOrder is partically filled
+            // The partially filled order is the correct one, if:
+            // 1) The sum of buyAmounts is not bigger than the intitial order sell amount
+            // i.e, sellAmount >= sumBuyAmount
+            // 2) The volume of the particial order is not bigger than its sell volume
+            // i.e. auctionData[auctionId].volumeClearingPriceOrder <= sellAmountOfIter,
             (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
             uint256 clearingOrderBuyAmount = sellAmount.sub(sumBuyAmount);
             auctionData[auctionId].volumeClearingPriceOrder = uint96(
@@ -246,6 +245,9 @@ contract EasyAuction {
         } else {
             if (sumBuyAmount < sellAmount) {
                 // case 2: initialAuction order is partically filled
+                // We require that the price was the initialOrderLimit price's inverse
+                // as this ensure that the for loop iterated through all orders
+                // and all orders are considered
                 require(
                     priceNumerator.mul(buyAmount) ==
                         sellAmount.mul(priceDenominator),
@@ -260,10 +262,14 @@ contract EasyAuction {
                     .initialAuctionOrder;
             } else {
                 // case 3: no order is partically filled
+                // In this case the sumBuyAmount must be equal to
+                // the sellAmount of the initialAuctionOrder, without
+                // any rounding errors.
+                // This price is always existing as we can choose 
+                // priceNumerator = sellAmount and priceDenominator = sumSellAmount
                 auctionData[auctionId].clearingPriceOrder = price;
                 require(
-                    sumBuyAmount ==
-                        sellAmount,
+                    sumBuyAmount == sellAmount,
                     "price is not clearing price"
                 );
             }
