@@ -126,7 +126,7 @@ export function findClearingPrice(
       totalSellVolume
         .mul(order.buyAmount)
         .div(order.sellAmount)
-        .gt(initialAuctionOrder.sellAmount)
+        .gte(initialAuctionOrder.sellAmount)
     ) {
       const coveredBuyAmount = initialAuctionOrder.sellAmount.sub(
         totalSellVolume

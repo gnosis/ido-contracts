@@ -11,7 +11,7 @@ contract EasyAuction {
     using SafeMath for uint64;
     using SafeMath for uint96;
     using SafeMath for uint256;
-    using SafeCast for uint256;
+    using SafeCast for uint256; // Todo actually use safecast
     using IterableOrderedOrderSet for IterableOrderedOrderSet.Data;
     using IterableOrderedOrderSet for bytes32;
     using IdToAddressBiMap for IdToAddressBiMap.Data;
@@ -60,6 +60,10 @@ contract EasyAuction {
         ERC20 indexed _sellToken,
         ERC20 indexed _buyToken
     );
+    event AuctionCleared(uint256 auctionId,
+    uint96 priceNumerator, 
+    uint96 priceDenominator,
+    uint256 rewardFactor);
     event UserRegistration(address user, uint64 userId);
 
     struct AuctionData {
@@ -69,7 +73,6 @@ contract EasyAuction {
         bytes32 initialAuctionOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
-        uint96 rewardFactor;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) public sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -100,7 +103,6 @@ contract EasyAuction {
                 _sellAmount
             ),
             bytes32(0),
-            0,
             0
         );
         emit NewAuction(auctionCounter, _sellToken, _buyToken);
@@ -205,7 +207,7 @@ contract EasyAuction {
     {
         (, uint96 priceNumerator, uint96 priceDenominator) =
             price.decodeOrder();
-        (, uint96 buyAmount, uint96 sellAmount) =
+        (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
 
         require(priceNumerator > 0, "price must be postive");
@@ -256,10 +258,12 @@ contract EasyAuction {
                 auctionData[auctionId].volumeClearingPriceOrder = uint96(
                     sumBuyAmount
                 );
-                auctionData[auctionId].clearingPriceOrder = auctionData[
-                    auctionId
-                ]
-                    .initialAuctionOrder;
+                auctionData[auctionId]
+                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
+                    auctioneerId,
+                    priceNumerator,
+                    priceDenominator
+                );
             } else {
                 // case 3: no order is partically filled
                 // In this case the sumBuyAmount must be equal to
@@ -275,101 +279,94 @@ contract EasyAuction {
             }
         }
 
-        uint256 submissionTime =
+        uint256 submissionDelay =
             block.timestamp.sub(auctionData[auctionId].auctionEndDate);
-        auctionData[auctionId].rewardFactor = uint96(
+        uint256 rewardFactor =
             Math.min(
                 uint256(100000000).div(
-                    submissionTime.mul(submissionTime).add(1)
+                    submissionDelay.mul(submissionDelay).add(1)
                 ),
                 10
-            )
-        );
-        claimSellerFunds(auctionId, false);
+            );
+
+        emit AuctionCleared(auctionId, priceNumerator, priceDenominator, rewardFactor);
+        claimAuctioneerFunds(auctionId, rewardFactor);
     }
 
-    function claimFromBuyOrder(uint256 auctionId, bytes32[] memory orders)
+    function claimFromParticipantOrder(
+        uint256 auctionId,
+        bytes32[] memory orders,
+        bytes32[] memory previousOrders
+    )
         public
         atStageFinished(auctionId)
         returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
     {
         AuctionData memory auction = auctionData[auctionId];
-        (, uint96 priceDenominator, uint96 priceNumerator) =
+        (, uint96 priceNumerator, uint96 priceDenominator) =
             auction.clearingPriceOrder.decodeOrder();
         for (uint256 i = 0; i < orders.length; i++) {
-            (uint64 userId, uint96 buyAmount, uint96 sellAmount) =
-                orders[i].decodeOrder();
+            require(
+                sellOrders[auctionId].remove(orders[i], previousOrders[i]),
+                "order is no longer claimable"
+            );
+            (uint64 userId, , uint96 sellAmount) = orders[i].decodeOrder();
             if (orders[i] == auction.clearingPriceOrder) {
                 sellTokenAmount = auction
                     .volumeClearingPriceOrder
                     .mul(priceNumerator)
                     .div(priceDenominator);
-                buyTokenAmount = buyAmount.mul(buyAmount).div(sellAmount).sub(
+                buyTokenAmount = sellAmount.sub(
                     auction.volumeClearingPriceOrder
                 );
             } else {
                 if (orders[i].smallerThan(auction.clearingPriceOrder)) {
-                    sellTokenAmount = buyAmount.mul(priceNumerator).div(
+                    sellTokenAmount = sellAmount.mul(priceNumerator).div(
                         priceDenominator
                     );
                 } else {
-                    buyTokenAmount = buyAmount;
+                    buyTokenAmount = sellAmount;
                 }
             }
             sendOutTokens(auctionId, sellTokenAmount, buyTokenAmount, userId);
         }
     }
 
-    function claimFromSellOrder(uint256 auctionId)
-        public
-        atStageFinished(auctionId)
-        returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
-    {
-        return claimSellerFunds(auctionId, true);
-    }
-
-    function claimSellerFunds(uint256 auctionId, bool isOriginalSeller)
+    function claimAuctioneerFunds(uint256 auctionId, uint256 rewardFactor)
         internal
         returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
     {
-        (uint64 userId, uint96 buyAmount, uint96 sellAmount) =
+        (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
-        if (
-            auctionData[auctionId].initialAuctionOrder ==
-            auctionData[auctionId].clearingPriceOrder
-        ) {
+        auctionData[auctionId].initialAuctionOrder = bytes32(0);
+        (, uint96 priceNumerator, uint96 priceDenominator) =
+            auctionData[auctionId].clearingPriceOrder.decodeOrder();
+        if (priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)) {
+            // In this case we have a partial match of the initialSellOrder
             sellTokenAmount = sellAmount.sub(
                 auctionData[auctionId].volumeClearingPriceOrder
             );
             buyTokenAmount = auctionData[auctionId]
                 .volumeClearingPriceOrder
-                .mul(buyAmount)
-                .div(sellAmount);
+                .mul(priceDenominator)
+                .div(priceNumerator);
         } else {
-            (, uint96 priceNumerator, uint96 priceDenominator) =
-                IterableOrderedOrderSet.decodeOrder(
-                    auctionData[auctionId].clearingPriceOrder
-                );
-            buyTokenAmount = sellAmount.mul(priceNumerator).div(
-                priceDenominator
+            buyTokenAmount = sellAmount.mul(priceDenominator).div(
+                priceNumerator
             );
         }
-        uint96 rewardFactor = auctionData[auctionId].rewardFactor;
-        if (isOriginalSeller) {
-            sendOutTokens(
-                auctionId,
-                sellTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
-                buyTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
-                userId
-            );
-        } else {
-            sendOutTokens(
-                auctionId,
-                sellTokenAmount.div(rewardFactor),
-                buyTokenAmount.div(rewardFactor),
-                getUserId(msg.sender)
-            );
-        }
+        sendOutTokens(
+            auctionId,
+            sellTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
+            buyTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
+            auctioneerId
+        );
+        sendOutTokens(
+            auctionId,
+            sellTokenAmount.div(rewardFactor),
+            buyTokenAmount.div(rewardFactor),
+            getUserId(msg.sender)
+        );
     }
 
     function sendOutTokens(

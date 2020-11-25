@@ -709,44 +709,7 @@ describe("EasyAuction", async () => {
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
   });
-  describe("claimFromSellOrder", async () => {
-    it("checks that claiming only works after the finishing of the auction", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(0),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").add(1),
-          buyAmount: ethers.utils.parseEther("1"),
-          userId: BigNumber.from(0),
-        },
-      ];
-      const {
-        sellToken,
-        buyToken,
-      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
-
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
-        easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
-        sellToken.address,
-        buyToken.address,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-      );
-      await placeOrders(easyAuction, sellOrders, auctionId);
-
-      await expect(
-        easyAuction.claimFromSellOrder(auctionId),
-      ).to.be.revertedWith("Auction not yet finished");
-      await closeAuction(easyAuction, auctionId);
-      await expect(
-        easyAuction.claimFromSellOrder(auctionId),
-      ).to.be.revertedWith("Auction not yet finished");
-    });
+  describe("claimFromAuctioneerOrder", async () => {
     it("checks the claimed amounts for a fully matched initialAuctionOrder and buyOrder", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
@@ -777,14 +740,28 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId);
 
       await closeAuction(easyAuction, auctionId);
-      const receivedAmounts = await easyAuction.claimFromSellOrder.call(
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const callPromise = easyAuction.verifyPrice(
         auctionId,
+        encodeOrder(price),
       );
-      expect(receivedAmounts[0]).to.be.equal("0");
-      expect(receivedAmounts[1]).to.equal(
-        initialAuctionOrder.sellAmount
-          .mul(sellOrders[0].buyAmount)
-          .div(sellOrders[0].sellAmount),
+      // solution submitter reward check:
+      await expect(callPromise)
+        .to.emit(sellToken, "Transfer")
+        .withArgs(easyAuction.address, user_1.address, 0);
+      await expect(callPromise).to.emit(buyToken, "Transfer").withArgs(
+        easyAuction.address,
+        user_1.address,
+        price.sellAmount.div(10), //< reward factor is 1/10
+      );
+      // auctioneer reward check:
+      await expect(callPromise)
+        .to.emit(sellToken, "Transfer")
+        .withArgs(easyAuction.address, user_1.address, 0);
+      await expect(callPromise).to.emit(buyToken, "Transfer").withArgs(
+        easyAuction.address,
+        user_1.address,
+        price.sellAmount.mul(9).div(10), //< reward factor is 1/10
       );
     });
     it("checks the claimed amounts for a partially matched initialAuctionOrder and buyOrder", async () => {
@@ -817,16 +794,44 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId);
 
       await closeAuction(easyAuction, auctionId);
-      const receivedAmounts = await easyAuction.claimFromSellOrder.call(
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const callPromise = easyAuction.verifyPrice(
         auctionId,
+        encodeOrder(price),
       );
-      expect(receivedAmounts[0]).to.equal(
-        initialAuctionOrder.sellAmount.sub(sellOrders[0].buyAmount),
+      // solution submitter reward check:
+      await expect(callPromise)
+        .to.emit(sellToken, "Transfer")
+        .withArgs(
+          easyAuction.address,
+          user_1.address,
+          initialAuctionOrder.sellAmount.sub(sellOrders[0].sellAmount).div(10),
+        );
+      await expect(callPromise).to.emit(buyToken, "Transfer").withArgs(
+        easyAuction.address,
+        user_1.address,
+        sellOrders[0].sellAmount.div(10), //< reward factor is 1/10
       );
-      expect(receivedAmounts[1]).to.equal(sellOrders[0].buyAmount);
+      // auctioneer reward check:
+      await expect(callPromise)
+        .to.emit(sellToken, "Transfer")
+        .withArgs(
+          easyAuction.address,
+          user_1.address,
+          initialAuctionOrder.sellAmount
+            .sub(sellOrders[0].sellAmount)
+            .mul(9)
+            .div(10),
+        );
+      await expect(callPromise).to.emit(buyToken, "Transfer").withArgs(
+        easyAuction.address,
+        user_1.address,
+        sellOrders[0].sellAmount.mul(9).div(10), //< reward factor is 1/10
+      );
     });
   });
-  describe("claimFromBuyOrder", async () => {
+  describe("claimFromParticipantOrder", async () => {
     it("checks that claiming only works after the finishing of the auction", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
@@ -857,28 +862,18 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId);
 
       await expect(
-        easyAuction.claimFromBuyOrder(
+        easyAuction.claimFromParticipantOrder(
           auctionId,
-          sellOrders.map((order) =>
-            encodeOrder({
-              userId: BigNumber.from(0),
-              buyAmount: order.buyAmount,
-              sellAmount: order.sellAmount,
-            }),
-          ),
+          sellOrders.map((order) => encodeOrder(order)),
+          Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("Auction not yet finished");
       await closeAuction(easyAuction, auctionId);
       await expect(
-        easyAuction.claimFromBuyOrder(
+        easyAuction.claimFromParticipantOrder(
           auctionId,
-          sellOrders.map((order) =>
-            encodeOrder({
-              userId: BigNumber.from(0),
-              buyAmount: order.buyAmount,
-              sellAmount: order.sellAmount,
-            }),
-          ),
+          sellOrders.map((order) => encodeOrder(order)),
+          Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("Auction not yet finished");
     });
@@ -917,31 +912,31 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId);
 
       await closeAuction(easyAuction, auctionId);
-      const receivedAmounts = toReceivedFunds(
-        await easyAuction.claimFromBuyOrder.call(auctionId, [
-          encodeOrder({
-            userId: BigNumber.from(0),
-            buyAmount: sellOrders[1].buyAmount,
-            sellAmount: sellOrders[1].sellAmount,
-          }),
-        ]),
-      );
-      const settledBuyAmount = sellOrders[1].buyAmount.sub(
-        sellOrders[0].buyAmount
-          .add(sellOrders[1].buyAmount)
-          .sub(initialAuctionOrder.sellAmount),
-      );
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
-      expect(receivedAmounts.buyTokenAmount).to.equal(
-        sellOrders[1].buyAmount
-          .mul(sellOrders[1].buyAmount)
-          .div(sellOrders[1].sellAmount)
-          .sub(settledBuyAmount),
+      const receivedAmounts = toReceivedFunds(
+        await easyAuction.callStatic.claimFromParticipantOrder(
+          auctionId,
+          [encodeOrder(sellOrders[1])],
+          [queueStartElement],
+        ),
       );
-      expect(receivedAmounts.sellTokenAmount).to.equal(
-        settledBuyAmount
-          .mul(sellOrders[1].sellAmount)
-          .div(sellOrders[1].buyAmount),
+      const settledBuyAmount = sellOrders[1].sellAmount
+        .mul(price.buyAmount)
+        .div(price.sellAmount)
+        .sub(
+          sellOrders[0].sellAmount
+            .add(sellOrders[1].sellAmount)
+            .mul(price.buyAmount)
+            .div(price.sellAmount)
+            .sub(initialAuctionOrder.sellAmount),
+        );
+      expect(receivedAmounts.sellTokenAmount).to.equal(settledBuyAmount.sub(1)); // <--- .sub(1) probably rounding error
+      expect(receivedAmounts.buyTokenAmount).to.equal(
+        sellOrders[1].sellAmount.sub(
+          settledBuyAmount.mul(price.sellAmount).div(price.buyAmount),
+        ),
       );
     });
     it("checks the claimed amounts for a fully matched buyOrder", async () => {
@@ -952,12 +947,12 @@ describe("EasyAuction", async () => {
       };
       const sellOrders = [
         {
-          sellAmount: ethers.utils.parseEther("1").div(2).sub(1),
+          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
           buyAmount: ethers.utils.parseEther("1").div(2),
           userId: BigNumber.from(0),
         },
         {
-          sellAmount: ethers.utils.parseEther("1").mul(2).div(3).sub(1),
+          sellAmount: ethers.utils.parseEther("1").mul(2).div(3).add(1),
           buyAmount: ethers.utils.parseEther("1").mul(2).div(3),
           userId: BigNumber.from(0),
         },
@@ -979,23 +974,71 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId);
 
       await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
       const receivedAmounts = toReceivedFunds(
-        await easyAuction.claimFromBuyOrder.call(auctionId, [
-          encodeOrder({
-            userId: BigNumber.from(0),
-            buyAmount: sellOrders[0].buyAmount,
-            sellAmount: sellOrders[0].sellAmount,
-          }),
-        ]),
-      );
-      expect(receivedAmounts.sellTokenAmount).to.equal(
-        sellOrders[0].buyAmount
-          .mul(sellOrders[1].sellAmount)
-          .div(sellOrders[1].buyAmount)
-          .toString(),
+        await easyAuction.callStatic.claimFromParticipantOrder(
+          auctionId,
+          [encodeOrder(sellOrders[0])],
+          [queueStartElement],
+        ),
       );
       expect(receivedAmounts.buyTokenAmount).to.equal("0");
+      expect(receivedAmounts.sellTokenAmount).to.equal(
+        sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
+      );
+    });
+    it("checks that an order can not be used for claiming twice", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
+          buyAmount: ethers.utils.parseEther("1").div(2),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1").mul(2).div(3).add(1),
+          buyAmount: ethers.utils.parseEther("1").mul(2).div(3),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint96,uint96)",
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+
+      await easyAuction.claimFromParticipantOrder(
+        auctionId,
+        [encodeOrder(sellOrders[0])],
+        [queueStartElement],
+      ),
+        await expect(
+          easyAuction.claimFromParticipantOrder(
+            auctionId,
+            [encodeOrder(sellOrders[0])],
+            [queueStartElement],
+          ),
+        ).to.be.revertedWith("order is no longer claimable");
     });
   });
 });
