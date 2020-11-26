@@ -761,7 +761,7 @@ describe("EasyAuction", async () => {
       await expect(callPromise).to.emit(buyToken, "Transfer").withArgs(
         easyAuction.address,
         user_1.address,
-        price.sellAmount.mul(9).div(10), //< reward factor is 1/10
+        price.sellAmount.mul(9).div(10), //< reward factor is 9/10
       );
     });
     it("checks the claimed amounts for a partially matched initialAuctionOrder and buyOrder", async () => {
@@ -827,7 +827,7 @@ describe("EasyAuction", async () => {
       await expect(callPromise).to.emit(buyToken, "Transfer").withArgs(
         easyAuction.address,
         user_1.address,
-        sellOrders[0].sellAmount.mul(9).div(10), //< reward factor is 1/10
+        sellOrders[0].sellAmount.mul(9).div(10), //< reward factor is 9/10
       );
     });
   });

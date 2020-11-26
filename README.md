@@ -65,4 +65,12 @@ ganache-cli  -l 8e8 -i 5777 -p 8545 -d
 yarn test
 ```
 
+Deploy:
+
+```sh
+NETWORK='rinkeby'
+GAS_PRICE_WEI='1000000000'
+yarn deploy --network $NETWORK --gasprice $GAS_PRICE_WEI
+```
+
 ### Frontend
