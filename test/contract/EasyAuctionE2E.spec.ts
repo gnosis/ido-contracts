@@ -25,7 +25,7 @@ describe("EasyAuction", async () => {
       sellToken,
       buyToken,
     } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
-    const nrTests = 120; // increase here for better gas estimations, nrTests-2 must be a divisor of 10**18
+    const nrTests = 12; // increase here for better gas estimations, nrTests-2 must be a divisor of 10**18
     const auctionId: BigNumber = await sendTxAndGetReturnValue(
       easyAuction,
       "initiateAuction(address,address,uint256,uint96,uint96)",
