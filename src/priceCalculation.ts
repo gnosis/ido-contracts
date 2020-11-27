@@ -55,11 +55,9 @@ export function encodeOrder(order: Order): string {
 
 export function decodeOrder(bytes: string): Order {
   return {
-    userId: BigNumber.from(parseInt(bytes.substring(2, 18), 16).toString()),
-    sellAmount: BigNumber.from(
-      parseInt(bytes.substring(19, 42), 16).toString(),
-    ),
-    buyAmount: BigNumber.from(parseInt(bytes.substring(43, 66), 16).toString()),
+    userId: BigNumber.from("0x" + bytes.substring(2, 18)),
+    sellAmount: BigNumber.from("0x" + bytes.substring(19, 42)),
+    buyAmount: BigNumber.from("0x" + bytes.substring(43, 66)),
   };
 }
 

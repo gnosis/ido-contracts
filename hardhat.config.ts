@@ -61,4 +61,7 @@ export default {
   namedAccounts: {
     deployer: 0,
   },
+  mocha: {
+    timeout: 2000000,
+  },
 };
