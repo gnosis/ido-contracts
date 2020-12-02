@@ -60,10 +60,12 @@ contract EasyAuction {
         ERC20 indexed _sellToken,
         ERC20 indexed _buyToken
     );
-    event AuctionCleared(uint256 auctionId,
-    uint96 priceNumerator, 
-    uint96 priceDenominator,
-    uint256 rewardFactor);
+    event AuctionCleared(
+        uint256 auctionId,
+        uint96 priceNumerator,
+        uint96 priceDenominator,
+        uint256 rewardFactor
+    );
     event UserRegistration(address user, uint64 userId);
 
     struct AuctionData {
@@ -289,7 +291,12 @@ contract EasyAuction {
                 10
             );
 
-        emit AuctionCleared(auctionId, priceNumerator, priceDenominator, rewardFactor);
+        emit AuctionCleared(
+            auctionId,
+            priceNumerator,
+            priceDenominator,
+            rewardFactor
+        );
         claimAuctioneerFunds(auctionId, rewardFactor);
     }
 

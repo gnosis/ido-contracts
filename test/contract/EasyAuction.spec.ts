@@ -301,6 +301,36 @@ describe("EasyAuction", async () => {
         sellOrders[0].sellAmount, // times prices (=1)
       );
     });
+    it("verifies the price in case of no participation of the auction", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+      await easyAuction.initiateAuction(
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      const auctionId = BigNumber.from(1);
+
+      await closeAuction(easyAuction, auctionId);
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      const auctionData = toAuctionDataResult(
+        await easyAuction.auctionData(auctionId),
+      );
+      expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
+    });
     it("verifies the price in case of no sellOrders", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),

@@ -1,14 +1,14 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { salt, contractNames } from "../ts/deploy";
+import { contractNames } from "../ts/deploy";
 
 const deployEasyContract: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
 ) {
-  const { deployments, getNamedAccounts, network } = hre;
+  const { deployments, getNamedAccounts } = hre;
   const { deployer } = await getNamedAccounts();
-  const { deploy, log } = deployments;
+  const { deploy } = deployments;
 
   const { easyAuction } = contractNames;
 

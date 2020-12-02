@@ -1,4 +1,3 @@
-import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { ethers, waffle } from "hardhat";
 
