@@ -1,22 +1,19 @@
 # EasyAuction
 
-EasyAuction is a very simple DeFi building lego brick to run auctions for fair initial offerings and token buy back programs.
+EasyAuction is a DeFi building lego brick for price discovery. The main use cases are auctions for fair initial offerings and token buy back programs.
 The EasyAuction platform is very simple and allows anyone to permissionlessly schedule batch auction without any charge of fees.
-
-## Background
-
-This project is non-profit project. The author has not deployed the code to mainnet, but it will likely be done by an unknown anonyms entity. The author does not give any guarantees about the project or is liable in any way.
 
 ## Use cases
 
 ### Initial token offering with a fair price-discovery
 
-With this auction mechanism, projects, companies, DAOs and the like can offer their future stakeholders a fair participation within their ecosystem by acquiring tokens. One of the promises of DeFi is democratization and communitization of big corporate infrastructures to build open platforms for the public good. By running a batch auction, these projects facilitate a game theoretically fair way to distribute stakes to future participants. They have to chance demonstrate their interest in fair participation and setting a precedence for future processes by choosing this fair auction principles over private multi-stage sales.
-Auction based mechanisms are also seen picking up in the traditional finance world. Google was one of the first big tech companies using very similar auction mechanism with a unique clearing price to IPO. Nowadays, companies like Slack and Spotify are advocating similar approaches as well via Direct Listings: Selling their stocks in the pre-open auction on the first day of trading.
+This batch auction mechanism allows communities, projects, and DAOs to offer their future stakeholders fair participation within their ecosystem by acquiring utility and governance tokens. One of the promises of DeFi is the democratization and communitization of big corporate infrastructures to build open platforms for the public good. By running a batch auction, these projects facilitate one of the fairest distribution of stakes. Projects should demonstrate their interest in fair participation by setting a precedence for future processes by choosing this fair auction principle over private multi-stage sales.
+Auction based initial offerings are also picking up in the traditional finance world. Google was one of the first big tech companies using a similar auction mechanism with a unique clearing price to IPO. Nowadays, companies like Slack and Spotify are advocating similar approaches as well via Direct Listings: Selling their stocks in the pre-open auction on the first day of trading.
+Overall this market for initial token offerings is expected to grow significantly over time together with the ecosystem. Even on gnosis protocol version 1, a platform not intended for this use case, was able to facilitate IDOs with a total of more than 20 million funding.
 
 ### Token buy back programs
 
-Many decentralized governance projects have to buy back their tokens or auctioning off their tokens to clear deficits within their protocol. This EasyAuction platform allows them to schedule individual auctions to facilitate these kind of operations.
+Many decentralized projects have to buy back their tokens or auction off their tokens to clear deficits within their protocol. This EasyAuction platform allows them to schedule individual auctions to facilitate these kinds of operations.
 
 ### Initial credit offering
 
@@ -31,18 +28,18 @@ In this auction type a pre-defined amount of tokens is auctioned off. Anyone can
 
 ### Specific implementation batch auction
 
-EasyAuction allows anyone to start a new auction of any ERC20 token (sellToken) against another ERC20 token (buyToken). The entity initiating the auction, the auctioneer, has to define the amount of token to be sold, the minimal price for the auction, and the end-time of the auction. Once the auctioneer initiates the auction with a ethereum transaction transfering the sellTokens and setting the parameters. From this moment on, anyone can participate as a buyer and submit bids. Each buyer places buy-orders with a specified limit price into the system. The buy amount of an order must be at least 1/5000th of the auctioned sell amount. Once an order is placed, orders can no longer be canceled and the tokens for the buying process are locked.
+EasyAuction allows anyone to start a new auction of any ERC20 token (sellToken) against another ERC20 token (buyToken). The entity initiating the auction, the auctioneer, has to define the amount of token to be sold, the minimal price for the auction, and the end-time of the auction. Once the auctioneer initiates the auction with a ethereum transaction transferring the sellTokens and setting the parameters. From this moment on, anyone can participate as a buyer and submit bids. Each buyer places buy-orders with a specified limit price into the system. The buy amount of an order must be at least 1/5000th of the auctioned sell amount. Once an order is placed, orders can no longer be canceled and the tokens for the buying process are locked.
 Once the auction ends, the final clearing price will be determined via an onchain calculation. The minimal buy amount per order is set in such a way that no more than 5000 orders need to be read onchain for the price calculation. This limit ensure that the onchain price can be calculated within one ethereum transaction. The transaction sender gets the transaction costs off-set by
 
-Once the price of an auction has been caluclated onchain, everyone can claim their part of the auction. The auctioneer can withdraw the bought funds, the buyers being matched in the auction can withdraw their bought tokens. The buyers bidding with a too low price which were not matched in the auction can withdraw their bidding funds back.
+Once the price of an auction has been calculated onchain, everyone can claim their part of the auction. The auctioneer can withdraw the bought funds, the buyers being matched in the auction can withdraw their bought tokens. The buyers bidding with a too low price which were not matched in the auction can withdraw their bidding funds back.
 
 ## Comparison to Dutch auctions
 
 The proposed batch auction system has a number of advantages over dutch auction.
 
-- The biggest advantage is certainly that buyers don't have to wait for a certain time to submit orders, but that they can submit orders at any time. This makes the system much more convinient for users.
+- The biggest advantage is certainly that buyers don't have to wait for a certain time to submit orders, but that they can submit orders at any time. This makes the system much more convenient for users.
 - Dutch auctions have a very high activity right before the auction is closing. If pieces of the infrastructure are not working reliable during this time period, then prices can fall further than expected, causing a loss for the auctioneer. Also, high gas prices during this short time period can be a hindering factor for buyers to quickly join the auction.
-- Dutch auctions calculate their price based the blocktime. This pricing is hard to predict for all participants, as the mining is a stochastical process Additionally, the unpredictablity for the mining time of the next block
+- Dutch auctions calculate their price based the blocktime. This pricing is hard to predict for all participants, as the mining is a stochastical process Additionally, the unpredictability for the mining time of the next block
 - Dutch auctions are causing a gas price bidding war to close the auction. In contrast in batch auction, different buyers will bid against other bidder in the mem-pool. Especially, once (EIP-1559)[https://eips.ethereum.org/EIPS/eip-1559] is implemented and the mining of a transaction is guaranteed for the next block, then bidders have to compete on bidding limit-prices instead of the gas-prices to get included into the auction.
 
 ## Instructions
@@ -61,16 +58,5 @@ yarn build
 Running tests:
 
 ```
-ganache-cli  -l 8e8 -i 5777 -p 8545 -d
 yarn test
 ```
-
-Deploy:
-
-```sh
-NETWORK='rinkeby'
-GAS_PRICE_WEI='1000000000'
-yarn deploy --network $NETWORK --gasprice $GAS_PRICE_WEI
-```
-
-### Frontend
