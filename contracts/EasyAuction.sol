@@ -125,7 +125,6 @@ contract EasyAuction {
         uint256 sumOfSellAmounts = 0;
         uint64 userId = getUserId(msg.sender);
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
-            sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
             require(
                 _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
                     sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
@@ -147,6 +146,7 @@ contract EasyAuction {
                     _prevSellOrders[i]
                 );
             if (success) {
+                sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
                 emit NewSellOrder(
                     auctionId,
                     userId,
@@ -250,7 +250,7 @@ contract EasyAuction {
             if (sumBuyAmount < sellAmount) {
                 // case 2: initialAuction order is partically filled
                 // We require that the price was the initialOrderLimit price's inverse
-                // as this ensure that the for loop iterated through all orders
+                // as this ensures that the for-loop iterated through all orders
                 // and all orders are considered
                 require(
                     priceNumerator.mul(buyAmount) ==
