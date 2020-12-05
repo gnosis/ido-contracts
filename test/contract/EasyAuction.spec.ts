@@ -301,7 +301,7 @@ describe("EasyAuction", async () => {
         sellOrders[0].sellAmount, // times prices (=1)
       );
     });
-    it("prevents submission of malicous prices worser than initialAuction order price", async () => {
+    it("prevents submission of malicious prices worser than initialAuction order price", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("5"),
         buyAmount: ethers.utils.parseEther("1"),
@@ -529,11 +529,11 @@ describe("EasyAuction", async () => {
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
-    it("verifies the price in case of no participation of the auction", async () => {
+    it.only("verifies the price in case of no participation of the auction", async () => {
       const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(0),
+        sellAmount: BigNumber.from(1000),
+        buyAmount: BigNumber.from(1000),
+        userId: BigNumber.from(1),
       };
 
       const {

@@ -2,6 +2,10 @@ import { BigNumber } from "ethers";
 import hre from "hardhat";
 
 import { calculateClearingPrice, encodeOrder } from "../priceCalculation";
+const defaultDeployOptions = {
+  gasLimit: 4000000,
+  gasPrice: 9000000000,
+};
 
 // better approach would be to do via it tasks
 async function main() {
