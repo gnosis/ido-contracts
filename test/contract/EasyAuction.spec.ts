@@ -15,7 +15,7 @@ import {
 import { sendTxAndGetReturnValue, closeAuction } from "./utilities";
 
 describe("EasyAuction", async () => {
-  const [user_1, user_2] = waffle.provider.getWallets();
+  const [user_1, user_2, user_3] = waffle.provider.getWallets();
   let easyAuction: Contract;
   beforeEach(async () => {
     const EasyAuction = await ethers.getContractFactory("EasyAuction");
@@ -301,6 +301,234 @@ describe("EasyAuction", async () => {
         sellOrders[0].sellAmount, // times prices (=1)
       );
     });
+    it("prevents submission of malicous prices worser than initialAuction order price", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("5"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.1"),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.1"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+      await easyAuction.initiateAuction(
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      const auctionId = BigNumber.from(1);
+      await placeOrders(easyAuction, sellOrders, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+
+      const price = {
+        userId: BigNumber.from(0),
+        sellAmount: initialAuctionOrder.buyAmount,
+        buyAmount: sellOrders[0].sellAmount.mul(2),
+      };
+      await expect(
+        easyAuction.verifyPrice(auctionId, encodeOrder(price)),
+      ).to.be.revertedWith("supplied price must be inverse initialOrderLimit");
+    });
+    it("verifies the price in case of clearingOrder == initialAuctionOrder", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("5"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.1"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+      await easyAuction.initiateAuction(
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      const auctionId = BigNumber.from(1);
+      await placeOrders(easyAuction, sellOrders, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      const auctionData = toAuctionDataResult(
+        await easyAuction.auctionData(auctionId),
+      );
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
+      );
+    });
+    it("verifies the price in case of clearingOrder == initialAuctionOrder with 3 orders", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("2"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.1"),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.1"),
+          userId: BigNumber.from(1),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.1"),
+          userId: BigNumber.from(2),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [
+        user_1,
+        user_2,
+        user_3,
+      ]);
+
+      await easyAuction.initiateAuction(
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      const auctionId = BigNumber.from(1);
+      await placeOrders(easyAuction, sellOrders, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      const auctionData = toAuctionDataResult(
+        await easyAuction.auctionData(auctionId),
+      );
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        sellOrders[0].sellAmount
+          .mul(3)
+          .mul(price.buyAmount)
+          .div(price.sellAmount),
+      );
+    });
+    it("verifies the price in case of clearingOrder != placed order", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("500"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+      await easyAuction.initiateAuction(
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      const auctionId = BigNumber.from(1);
+      await placeOrders(easyAuction, sellOrders, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      const auctionData = toAuctionDataResult(
+        await easyAuction.auctionData(auctionId),
+      );
+      expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
+    });
+    it("verifies the price in case of clearingOrder != placed order with 3x participation", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("500"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(2),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(1),
+        },
+      ];
+
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [
+        user_1,
+        user_2,
+        user_3,
+      ]);
+
+      await easyAuction.initiateAuction(
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+      );
+      const auctionId = BigNumber.from(1);
+      await placeOrders(easyAuction, sellOrders, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      const auctionData = toAuctionDataResult(
+        await easyAuction.auctionData(auctionId),
+      );
+      expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
+    });
     it("verifies the price in case of no participation of the auction", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
@@ -330,34 +558,6 @@ describe("EasyAuction", async () => {
         await easyAuction.auctionData(auctionId),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
-    });
-    it("verifies the price in case of no sellOrders", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(0),
-      };
-      const {
-        sellToken,
-        buyToken,
-      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
-
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
-        easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
-        sellToken.address,
-        buyToken.address,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-      );
-      await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
-      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
-      expect(auctionData.volumeClearingPriceOrder).to.equal("0");
     });
     it("verifies the price in case without a partially filled order", async () => {
       const initialAuctionOrder = {

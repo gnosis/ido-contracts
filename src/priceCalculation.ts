@@ -56,8 +56,8 @@ export function encodeOrder(order: Order): string {
 export function decodeOrder(bytes: string): Order {
   return {
     userId: BigNumber.from("0x" + bytes.substring(2, 18)),
-    sellAmount: BigNumber.from("0x" + bytes.substring(19, 42)),
-    buyAmount: BigNumber.from("0x" + bytes.substring(43, 66)),
+    sellAmount: BigNumber.from("0x" + bytes.substring(43, 66)),
+    buyAmount: BigNumber.from("0x" + bytes.substring(19, 42)),
   };
 }
 
@@ -96,13 +96,51 @@ export function hasLowerClearingPrice(order1: Order, order2: Order): number {
 export async function calculateClearingPrice(
   easyAuction: Contract,
   auctionId: BigNumber,
+  debug = true,
 ): Promise<Order> {
+  const log = debug ? (...a: any) => console.log(...a) : () => {};
   const initialOrder = await getInitialOrder(easyAuction, auctionId);
   const sellOrders = await getAllSellOrders(easyAuction, auctionId);
   sellOrders.sort(function (a: Order, b: Order) {
     return hasLowerClearingPrice(a, b);
   });
-  return findClearingPrice(sellOrders, initialOrder);
+
+  printOrders(sellOrders, false, debug);
+  printOrders([initialOrder], true, debug);
+  const clearingPriceOrder = findClearingPrice(sellOrders, initialOrder);
+  log("clearing price order:");
+  printOrders([clearingPriceOrder], false, debug);
+  return clearingPriceOrder;
+}
+
+function printOrders(orders: Order[], isInitialOrder: boolean, debug = false) {
+  const log = debug ? (...a: any) => console.log(...a) : () => {};
+
+  if (isInitialOrder) {
+    log("Initial order");
+    orders.map((order) => {
+      log(
+        "selling ",
+        order.sellAmount.toString(),
+        " for ",
+        order.buyAmount.toString(),
+        " at price of",
+        order.sellAmount.div(order.buyAmount).toString(),
+      );
+    });
+  } else {
+    log("Participation orders");
+    orders.map((order) => {
+      log(
+        "selling ",
+        order.sellAmount.toString(),
+        " for ",
+        order.buyAmount.toString(),
+        " at price of",
+        order.buyAmount.div(order.sellAmount).toString(),
+      );
+    });
+  }
 }
 
 export function findClearingPrice(
@@ -147,11 +185,19 @@ export function findClearingPrice(
     }
   }
   // otherwise, clearing price is initialAuctionOrder
-  return {
-    userId: BigNumber.from(0),
-    buyAmount: initialAuctionOrder.sellAmount,
-    sellAmount: initialAuctionOrder.buyAmount,
-  };
+  if (totalSellVolume.gt(initialAuctionOrder.buyAmount)) {
+    return {
+      userId: initialAuctionOrder.userId,
+      buyAmount: initialAuctionOrder.sellAmount,
+      sellAmount: totalSellVolume,
+    };
+  } else {
+    return {
+      userId: initialAuctionOrder.userId,
+      buyAmount: initialAuctionOrder.sellAmount,
+      sellAmount: initialAuctionOrder.buyAmount,
+    };
+  }
 }
 
 export async function getAllSellOrders(

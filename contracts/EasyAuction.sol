@@ -278,6 +278,11 @@ contract EasyAuction {
                     sumBuyAmount == sellAmount,
                     "price is not clearing price"
                 );
+                require(
+                    priceNumerator.mul(buyAmount) <=
+                        sellAmount.mul(priceDenominator),
+                    "clearing price is better than initialAuctionOrder"
+                );
             }
         }
 
