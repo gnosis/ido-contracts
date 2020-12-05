@@ -529,7 +529,7 @@ describe("EasyAuction", async () => {
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
-    it.only("verifies the price in case of no participation of the auction", async () => {
+    it("verifies the price in case of no participation of the auction", async () => {
       const initialAuctionOrder = {
         sellAmount: BigNumber.from(1000),
         buyAmount: BigNumber.from(1000),

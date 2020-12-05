@@ -1,3 +1,4 @@
+import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-deploy";
 import dotenv from "dotenv";
@@ -14,7 +15,7 @@ const argv = yargs
 
 // Load environment variables.
 dotenv.config();
-const { INFURA_KEY, MNEMONIC, PK } = process.env;
+const { INFURA_KEY, MNEMONIC, MY_ETHERSCAN_API_KEY, PK } = process.env;
 
 const DEFAULT_MNEMONIC =
   "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
@@ -63,5 +64,8 @@ export default {
   },
   mocha: {
     timeout: 2000000,
+  },
+  etherscan: {
+    apiKey: MY_ETHERSCAN_API_KEY,
   },
 };
