@@ -74,3 +74,12 @@ Verify on etherscan:
 ```
 npx hardhat verify --network $NETWORK DEPLOYED_CONTRACT_ADDRESS
 ```
+
+### Running scripts
+
+Initiating a new auction:
+
+```
+
+yarn hardhat run  src/scripts/initiate_new_auction_hardcoded.ts --network $NETWORK
+```

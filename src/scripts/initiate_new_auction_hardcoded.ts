@@ -4,12 +4,12 @@ import hre from "hardhat";
 // better approach to do via it tasks
 
 async function main() {
-  const sellAmount = 1000;
-  const duration = 1000;
-  const buyAmount = 1000;
+  const sellAmount = BigNumber.from(1000);
+  const duration = 60 * 60 * 6;
+  const buyAmount = BigNumber.from(1000);
   const EasyAuction = await hre.ethers.getContractAt(
     "EasyAuction",
-    "0x1d7962fdfe4a4e4aa08ec3b92925389cdb709068",
+    "0x1D7962FDFE4a4e4Aa08ec3B92925389cdb709068",
   );
   const easyAuction = await EasyAuction.deployed();
 
@@ -20,7 +20,7 @@ async function main() {
     "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
   );
   if (
-    BigNumber.from(sellAmount).gt(
+    sellAmount.gt(
       await sellToken.callStatic.allowance(
         "0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f",
         easyAuction.address,

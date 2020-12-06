@@ -446,4 +446,12 @@ contract EasyAuction {
         }
         return auctionData[auctionId].auctionEndDate.sub(block.timestamp);
     }
+
+    function containsOrder(uint256 auctionId, bytes32 order)
+        public
+        view
+        returns (bool)
+    {
+        return sellOrders[auctionId].contains(order);
+    }
 }
