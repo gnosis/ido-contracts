@@ -96,7 +96,7 @@ export function hasLowerClearingPrice(order1: Order, order2: Order): number {
 export async function calculateClearingPrice(
   easyAuction: Contract,
   auctionId: BigNumber,
-  debug = true,
+  debug = false,
 ): Promise<Order> {
   const log = debug ? (...a: any) => console.log(...a) : () => {};
   const initialOrder = await getInitialOrder(easyAuction, auctionId);

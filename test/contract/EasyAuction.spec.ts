@@ -1271,4 +1271,108 @@ describe("EasyAuction", async () => {
         ).to.be.revertedWith("order is no longer claimable");
     });
   });
+  it("checks that orders from different users can not be claimed at once", async () => {
+    const initialAuctionOrder = {
+      sellAmount: ethers.utils.parseEther("1"),
+      buyAmount: ethers.utils.parseEther("1"),
+      userId: BigNumber.from(0),
+    };
+    const sellOrders = [
+      {
+        sellAmount: ethers.utils.parseEther("1").div(2).add(1),
+        buyAmount: ethers.utils.parseEther("1").div(2),
+        userId: BigNumber.from(0),
+      },
+      {
+        sellAmount: ethers.utils.parseEther("1").mul(2).div(3).add(1),
+        buyAmount: ethers.utils.parseEther("1").mul(2).div(3),
+        userId: BigNumber.from(1),
+      },
+    ];
+    const {
+      sellToken,
+      buyToken,
+    } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+    const auctionId: BigNumber = await sendTxAndGetReturnValue(
+      easyAuction,
+      "initiateAuction(address,address,uint256,uint96,uint96)",
+      sellToken.address,
+      buyToken.address,
+      60 * 60,
+      initialAuctionOrder.sellAmount,
+      initialAuctionOrder.buyAmount,
+    );
+    await placeOrders(easyAuction, sellOrders, auctionId);
+
+    await closeAuction(easyAuction, auctionId);
+    const price = await calculateClearingPrice(easyAuction, auctionId);
+    await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+
+    await expect(
+      easyAuction.claimFromParticipantOrder(
+        auctionId,
+        [encodeOrder(sellOrders[0]), encodeOrder(sellOrders[1])],
+        [queueStartElement, queueStartElement],
+      ),
+    ).to.be.revertedWith("only allowed to claim for same user");
+  });
+  it("checks the claimed amounts are summed up correctly for two orders", async () => {
+    const initialAuctionOrder = {
+      sellAmount: ethers.utils.parseEther("1"),
+      buyAmount: ethers.utils.parseEther("1"),
+      userId: BigNumber.from(0),
+    };
+    const sellOrders = [
+      {
+        sellAmount: ethers.utils.parseEther("1").div(2).add(1),
+        buyAmount: ethers.utils.parseEther("1").div(2),
+        userId: BigNumber.from(0),
+      },
+      {
+        sellAmount: ethers.utils.parseEther("1").mul(2).div(3).add(1),
+        buyAmount: ethers.utils.parseEther("1").mul(2).div(3),
+        userId: BigNumber.from(0),
+      },
+    ];
+    const {
+      sellToken,
+      buyToken,
+    } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+    const auctionId: BigNumber = await sendTxAndGetReturnValue(
+      easyAuction,
+      "initiateAuction(address,address,uint256,uint96,uint96)",
+      sellToken.address,
+      buyToken.address,
+      60 * 60,
+      initialAuctionOrder.sellAmount,
+      initialAuctionOrder.buyAmount,
+    );
+    await placeOrders(easyAuction, sellOrders, auctionId);
+
+    await closeAuction(easyAuction, auctionId);
+    const price = await calculateClearingPrice(easyAuction, auctionId);
+    await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+
+    const receivedAmounts = toReceivedFunds(
+      await easyAuction.callStatic.claimFromParticipantOrder(
+        auctionId,
+        [encodeOrder(sellOrders[0]), encodeOrder(sellOrders[1])],
+        [queueStartElement, queueStartElement],
+      ),
+    );
+    expect(receivedAmounts.buyTokenAmount).to.equal(
+      sellOrders[0].sellAmount
+        .add(sellOrders[1].sellAmount)
+        .sub(
+          initialAuctionOrder.sellAmount
+            .mul(price.sellAmount)
+            .div(price.buyAmount),
+        ),
+    );
+    expect(receivedAmounts.sellTokenAmount).to.equal(
+      initialAuctionOrder.sellAmount.sub(BigNumber.from(1)), //<-- tiny rounding error
+    );
+  });
 });

@@ -49,6 +49,12 @@ contract EasyAuction {
         uint96 buyAmount,
         uint96 sellAmount
     );
+    event ClaimedFromOrder(
+        uint256 indexed auctionId,
+        uint64 indexed userId,
+        uint96 buyAmount,
+        uint96 sellAmount
+    );
     event CancellationSellOrders(
         uint256 indexed auctionId,
         uint64 indexed userId,
@@ -312,36 +318,44 @@ contract EasyAuction {
     )
         public
         atStageFinished(auctionId)
-        returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
+        returns (uint256 sumSellTokenAmount, uint256 sumBuyTokenAmount)
     {
         AuctionData memory auction = auctionData[auctionId];
         (, uint96 priceNumerator, uint96 priceDenominator) =
             auction.clearingPriceOrder.decodeOrder();
+        (uint64 userId, , ) = orders[0].decodeOrder();
         for (uint256 i = 0; i < orders.length; i++) {
             require(
                 sellOrders[auctionId].remove(orders[i], previousOrders[i]),
                 "order is no longer claimable"
             );
-            (uint64 userId, , uint96 sellAmount) = orders[i].decodeOrder();
+            (uint64 userIdOrder, uint96 buyAmount, uint96 sellAmount) =
+                orders[i].decodeOrder();
+            require(
+                userIdOrder == userId,
+                "only allowed to claim for same user"
+            );
             if (orders[i] == auction.clearingPriceOrder) {
-                sellTokenAmount = auction
-                    .volumeClearingPriceOrder
-                    .mul(priceNumerator)
-                    .div(priceDenominator);
-                buyTokenAmount = sellAmount.sub(
-                    auction.volumeClearingPriceOrder
+                sumSellTokenAmount = sumSellTokenAmount.add(
+                    auction.volumeClearingPriceOrder.mul(priceNumerator).div(
+                        priceDenominator
+                    )
+                );
+                sumBuyTokenAmount = sumBuyTokenAmount.add(
+                    sellAmount.sub(auction.volumeClearingPriceOrder)
                 );
             } else {
                 if (orders[i].smallerThan(auction.clearingPriceOrder)) {
-                    sellTokenAmount = sellAmount.mul(priceNumerator).div(
-                        priceDenominator
+                    sumSellTokenAmount = sumSellTokenAmount.add(
+                        sellAmount.mul(priceNumerator).div(priceDenominator)
                     );
                 } else {
-                    buyTokenAmount = sellAmount;
+                    sumBuyTokenAmount = sumBuyTokenAmount.add(sellAmount);
                 }
             }
-            sendOutTokens(auctionId, sellTokenAmount, buyTokenAmount, userId);
+            emit ClaimedFromOrder(auctionId, userId, buyAmount, sellAmount);
         }
+        sendOutTokens(auctionId, sumSellTokenAmount, sumBuyTokenAmount, userId);
     }
 
     function claimAuctioneerFunds(uint256 auctionId, uint256 rewardFactor)
