@@ -17,10 +17,8 @@ const deployEasyContract: DeployFunction = async function (
     gasLimit: 8000000,
     args: [],
     log: true,
-    deterministicDeployment: true,
+    deterministicDeployment: false,
   });
-
-  // await logResult(deployResult, easyAuction, network.name, log);
 };
 
 export default deployEasyContract;

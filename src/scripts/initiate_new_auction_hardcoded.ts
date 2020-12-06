@@ -1,15 +1,14 @@
-import { BigNumber } from "ethers";
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 
 // better approach to do via it tasks
 
 async function main() {
-  const sellAmount = BigNumber.from(1000);
-  const duration = 60 * 60 * 6;
-  const buyAmount = BigNumber.from(1000);
+  const sellAmount = ethers.utils.parseEther("1");
+  const duration = 3600;
+  const buyAmount = ethers.utils.parseEther("1");
   const EasyAuction = await hre.ethers.getContractAt(
     "EasyAuction",
-    "0x1D7962FDFE4a4e4Aa08ec3B92925389cdb709068",
+    "0xa75de195d7f6f48d773654058fB5A9492B23f842",
   );
   const easyAuction = await EasyAuction.deployed();
 

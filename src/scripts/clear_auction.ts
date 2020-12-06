@@ -8,7 +8,7 @@ async function main() {
   const auctionId = BigNumber.from(2);
   const EasyAuction = await hre.ethers.getContractAt(
     "EasyAuction",
-    "0x1d7962fdfe4a4e4aa08ec3b92925389cdb709068",
+    "0xa75de195d7f6f48d773654058fB5A9492B23f842",
   );
   const easyAuction = await EasyAuction.deployed();
 
