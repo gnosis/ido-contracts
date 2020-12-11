@@ -69,8 +69,7 @@ contract EasyAuction {
     event AuctionCleared(
         uint256 auctionId,
         uint96 priceNumerator,
-        uint96 priceDenominator,
-        uint256 rewardFactor
+        uint96 priceDenominator
     );
     event UserRegistration(address user, uint64 userId);
 
@@ -292,23 +291,8 @@ contract EasyAuction {
             }
         }
 
-        uint256 submissionDelay =
-            block.timestamp.sub(auctionData[auctionId].auctionEndDate);
-        uint256 rewardFactor =
-            Math.min(
-                uint256(100000000).div(
-                    submissionDelay.mul(submissionDelay).add(1)
-                ),
-                10
-            );
-
-        emit AuctionCleared(
-            auctionId,
-            priceNumerator,
-            priceDenominator,
-            rewardFactor
-        );
-        claimAuctioneerFunds(auctionId, rewardFactor);
+        emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
+        claimAuctioneerFunds(auctionId);
     }
 
     function claimFromParticipantOrder(
@@ -358,7 +342,7 @@ contract EasyAuction {
         sendOutTokens(auctionId, sumSellTokenAmount, sumBuyTokenAmount, userId);
     }
 
-    function claimAuctioneerFunds(uint256 auctionId, uint256 rewardFactor)
+    function claimAuctioneerFunds(uint256 auctionId)
         internal
         returns (uint256 sellTokenAmount, uint256 buyTokenAmount)
     {
@@ -381,18 +365,7 @@ contract EasyAuction {
                 priceNumerator
             );
         }
-        sendOutTokens(
-            auctionId,
-            sellTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
-            buyTokenAmount.mul(rewardFactor.sub(1)).div(rewardFactor),
-            auctioneerId
-        );
-        sendOutTokens(
-            auctionId,
-            sellTokenAmount.div(rewardFactor),
-            buyTokenAmount.div(rewardFactor),
-            getUserId(msg.sender)
-        );
+        sendOutTokens(auctionId, sellTokenAmount, buyTokenAmount, auctioneerId);
     }
 
     function sendOutTokens(
