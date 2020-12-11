@@ -5,7 +5,7 @@ import { calculateClearingPrice, encodeOrder } from "../priceCalculation";
 
 // better approach would be to do via it tasks
 async function main() {
-  const auctionId = BigNumber.from(2);
+  const auctionId = BigNumber.from(9);
   const EasyAuction = await hre.ethers.getContractAt(
     "EasyAuction",
     "0xa75de195d7f6f48d773654058fB5A9492B23f842",
