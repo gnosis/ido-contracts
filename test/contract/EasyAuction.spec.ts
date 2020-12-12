@@ -23,6 +23,25 @@ describe("EasyAuction", async () => {
     easyAuction = await EasyAuction.deploy();
   });
   describe("initiate Auction", async () => {
+    it("throws if minParticipationSellAmount is zero", async () => {
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+
+      await expect(
+        easyAuction.initiateAuction(
+          sellToken.address,
+          buyToken.address,
+          60 * 60,
+          ethers.utils.parseEther("1"),
+          ethers.utils.parseEther("1"),
+          0,
+        ),
+      ).to.be.revertedWith(
+        "minParticipationSellAmount is not allowed to be zero",
+      );
+    });
     it("initiateAuction stores the parameters correctly", async () => {
       const {
         sellToken,
@@ -31,12 +50,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         ethers.utils.parseEther("1"),
         ethers.utils.parseEther("1"),
+        1,
       );
 
       const auctionData = toAuctionDataResult(
@@ -110,12 +130,13 @@ describe("EasyAuction", async () => {
       } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         ethers.utils.parseEther("1"),
         ethers.utils.parseEther("1"),
+        1,
       );
       await closeAuction(easyAuction, auctionId);
       await expect(
@@ -134,12 +155,13 @@ describe("EasyAuction", async () => {
       } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         ethers.utils.parseEther("1"),
         ethers.utils.parseEther("1"),
+        1,
       );
       await expect(
         easyAuction.placeSellOrders(
@@ -165,12 +187,13 @@ describe("EasyAuction", async () => {
       } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         ethers.utils.parseEther("1"),
         ethers.utils.parseEther("1"),
+        1,
       );
 
       const balanceBeforeOrderPlacement = await buyToken.balanceOf(
@@ -215,12 +238,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        ethers.utils.parseEther("1").div(100),
       );
       await expect(
         easyAuction.placeSellOrders(
@@ -238,12 +262,13 @@ describe("EasyAuction", async () => {
       } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         ethers.utils.parseEther("1"),
         ethers.utils.parseEther("1"),
+        1,
       );
       const sellAmount = ethers.utils.parseEther("1").add(1);
       const buyAmount = ethers.utils.parseEther("1");
@@ -291,12 +316,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -336,12 +362,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -393,12 +420,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -442,6 +470,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId);
@@ -486,6 +515,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId);
@@ -525,6 +555,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId);
@@ -578,6 +609,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId);
@@ -620,6 +652,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId);
@@ -672,6 +705,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId);
@@ -703,6 +737,7 @@ describe("EasyAuction", async () => {
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       const auctionId = BigNumber.from(1);
 
@@ -740,12 +775,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -773,12 +809,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -825,12 +862,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -874,12 +912,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -931,12 +970,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -990,12 +1030,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1038,12 +1079,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
       await closeAuction(easyAuction, auctionId);
@@ -1082,12 +1124,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1134,12 +1177,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1191,12 +1235,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1232,12 +1277,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1275,12 +1321,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1329,12 +1376,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1379,12 +1427,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1441,12 +1490,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1491,12 +1541,13 @@ describe("EasyAuction", async () => {
 
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint96,uint96)",
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
         sellToken.address,
         buyToken.address,
         60 * 60,
         initialAuctionOrder.sellAmount,
         initialAuctionOrder.buyAmount,
+        1,
       );
       await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1543,12 +1594,13 @@ describe("EasyAuction", async () => {
 
     const auctionId: BigNumber = await sendTxAndGetReturnValue(
       easyAuction,
-      "initiateAuction(address,address,uint256,uint96,uint96)",
+      "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
       sellToken.address,
       buyToken.address,
       60 * 60,
       initialAuctionOrder.sellAmount,
       initialAuctionOrder.buyAmount,
+      1,
     );
     await placeOrders(easyAuction, sellOrders, auctionId);
 
@@ -1589,12 +1641,13 @@ describe("EasyAuction", async () => {
 
     const auctionId: BigNumber = await sendTxAndGetReturnValue(
       easyAuction,
-      "initiateAuction(address,address,uint256,uint96,uint96)",
+      "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
       sellToken.address,
       buyToken.address,
       60 * 60,
       initialAuctionOrder.sellAmount,
       initialAuctionOrder.buyAmount,
+      1,
     );
     await placeOrders(easyAuction, sellOrders, auctionId);
 

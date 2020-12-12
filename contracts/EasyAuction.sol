@@ -82,6 +82,7 @@ contract EasyAuction {
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
+        uint256 minParticipationSellAmount;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) public sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -94,12 +95,17 @@ contract EasyAuction {
         ERC20 _buyToken,
         uint256 duration,
         uint96 _sellAmount,
-        uint96 _minBuyAmount
+        uint96 _minBuyAmount,
+        uint256 minParticipationSellAmount
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
         require(
             _sellToken.transferFrom(msg.sender, address(this), _sellAmount),
             "transfer was not successful"
+        );
+        require(
+            minParticipationSellAmount > 0,
+            "minParticipationSellAmount is not allowed to be zero"
         );
         auctionCounter++;
         auctionData[auctionCounter] = AuctionData(
@@ -114,7 +120,8 @@ contract EasyAuction {
             0,
             bytes32(0),
             bytes32(0),
-            0
+            0,
+            minParticipationSellAmount
         );
         emit NewAuction(auctionCounter, _sellToken, _buyToken);
         return auctionCounter;
@@ -139,10 +146,11 @@ contract EasyAuction {
                     sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
                 "limit price not better than mimimal offer"
             );
-            // small orders can not be allowed to quarantee price calculation
+            // orders size should have a minimum size, in order
+            // to limit price calculation gas consumption
             require(
                 _minBuyAmounts[i] >
-                    sellAmountOfInitialAuctionOrder / MAX_BATCH_SIZE,
+                    auctionData[auctionId].minParticipationSellAmount,
                 "order too small"
             );
             bool success =
