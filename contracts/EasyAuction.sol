@@ -78,6 +78,8 @@ contract EasyAuction {
         ERC20 buyToken;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
+        uint256 interimSellAmountSum;
+        bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
     }
@@ -109,6 +111,8 @@ contract EasyAuction {
                 _minBuyAmount,
                 _sellAmount
             ),
+            0,
+            bytes32(0),
             bytes32(0),
             0
         );
@@ -208,6 +212,41 @@ contract EasyAuction {
         );
     }
 
+    function precalculateSellAmountSum(
+        uint256 auctionId,
+        uint256 iterationSteps
+    ) public atStageSolutionSubmission(auctionId) {
+        (, , uint96 sellAmount) =
+            auctionData[auctionId].initialAuctionOrder.decodeOrder();
+
+        // Calculate the bought volume of auctioneer's sell volume
+        uint256 sumSellAmount = auctionData[auctionId].interimSellAmountSum;
+        bytes32 iterOrder = auctionData[auctionId].interimOrder;
+        if (iterOrder == bytes32(0)) {
+            iterOrder = IterableOrderedOrderSet.QUEUE_START;
+        }
+
+        for (uint256 i = 0; i < iterationSteps; i++) {
+            iterOrder = sellOrders[auctionId].next(iterOrder);
+            (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
+            sumSellAmount = sumSellAmount.add(sellAmountOfIter);
+        }
+
+        // it is checked that not too many iteration steps were taken:
+        // require that the sum of SellAmounts times the price of the last order
+        // is not more than intially sold amount
+        (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
+            iterOrder.decodeOrder();
+        require(
+            sumSellAmount.mul(buyAmountOfIter) <
+                sellAmount.mul(sellAmountOfIter),
+            "too many orders summed up"
+        );
+
+        auctionData[auctionId].interimSellAmountSum = sumSellAmount;
+        auctionData[auctionId].interimOrder = iterOrder;
+    }
+
     function verifyPrice(uint256 auctionId, bytes32 price)
         public
         atStageSolutionSubmission(auctionId)
@@ -220,11 +259,13 @@ contract EasyAuction {
         require(priceNumerator > 0, "price must be postive");
 
         // Calculate the bought volume of auctioneer's sell volume
-        uint256 sumSellAmount = 0;
-        bytes32 iterOrder = IterableOrderedOrderSet.QUEUE_START;
+        uint256 sumSellAmount = auctionData[auctionId].interimSellAmountSum;
+        bytes32 iterOrder = auctionData[auctionId].interimOrder;
+        if (iterOrder == bytes32(0)) {
+            iterOrder = IterableOrderedOrderSet.QUEUE_START;
+        }
         if (sellOrders[auctionId].size > 0) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
-
             while (iterOrder != price && iterOrder.smallerThan(price)) {
                 (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
                 sumSellAmount = sumSellAmount.add(sellAmountOfIter);

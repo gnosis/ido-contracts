@@ -15,9 +15,10 @@ export interface OrderResult {
   buyToken: string;
   auctionEndDate: BigNumber;
   initialAuctionOrder: string;
+  interimSellAmountSum: BigNumber;
+  interimOrder: string;
   clearingPriceOrder: string;
   volumeClearingPriceOrder: BigNumber;
-  rewardFactor: BigNumber;
 }
 
 export interface Order {
@@ -32,16 +33,26 @@ export const queueLastElement =
   "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 
 export function toAuctionDataResult(
-  result: [string, string, BigNumber, string, string, BigNumber, BigNumber],
+  result: [
+    string,
+    string,
+    BigNumber,
+    string,
+    BigNumber,
+    string,
+    string,
+    BigNumber,
+  ],
 ): OrderResult {
   return {
     sellToken: result[0],
     buyToken: result[1],
     auctionEndDate: result[2],
     initialAuctionOrder: result[3],
-    clearingPriceOrder: result[4],
-    volumeClearingPriceOrder: result[5],
-    rewardFactor: result[6],
+    interimSellAmountSum: result[4],
+    interimOrder: result[5],
+    clearingPriceOrder: result[6],
+    volumeClearingPriceOrder: result[7],
   };
 }
 export function encodeOrder(order: Order): string {
