@@ -16,9 +16,7 @@ contract EasyAuction {
     using IterableOrderedOrderSet for bytes32;
     using IdToAddressBiMap for IdToAddressBiMap.Data;
 
-    uint256 internal constant MAX_BATCH_SIZE = 5000;
-
-    modifier atStageOrderplacement(uint256 auctionId) {
+    modifier atStageOrderPlacement(uint256 auctionId) {
         require(
             block.timestamp < auctionData[auctionId].auctionEndDate,
             "no longer in order placement phase"
@@ -49,40 +47,40 @@ contract EasyAuction {
         uint96 buyAmount,
         uint96 sellAmount
     );
+    event CancellationSellOrder(
+        uint256 indexed auctionId,
+        uint64 indexed userId,
+        uint96 sellAmount,
+        uint96 buyAmount
+    );
     event ClaimedFromOrder(
         uint256 indexed auctionId,
         uint64 indexed userId,
         uint96 buyAmount,
         uint96 sellAmount
     );
-    event CancellationSellOrders(
-        uint256 indexed auctionId,
-        uint64 indexed userId,
-        uint96 sellAmount,
-        uint96 buyAmount
-    );
     event NewAuction(
-        uint256 auctionId,
+        uint256 indexed auctionId,
         ERC20 indexed _sellToken,
         ERC20 indexed _buyToken
     );
     event AuctionCleared(
-        uint256 auctionId,
+        uint256 indexed auctionId,
         uint96 priceNumerator,
         uint96 priceDenominator
     );
-    event UserRegistration(address user, uint64 userId);
+    event UserRegistration(address indexed user, uint64 userId);
 
     struct AuctionData {
         ERC20 sellToken;
         ERC20 buyToken;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
+        uint256 minimumParticipationSellAmount;
         uint256 interimSellAmountSum;
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
-        uint256 minParticipationSellAmount;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) public sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -96,7 +94,7 @@ contract EasyAuction {
         uint256 duration,
         uint96 _sellAmount,
         uint96 _minBuyAmount,
-        uint256 minParticipationSellAmount
+        uint256 minimumParticipationSellAmount
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
         require(
@@ -104,8 +102,8 @@ contract EasyAuction {
             "transfer was not successful"
         );
         require(
-            minParticipationSellAmount > 0,
-            "minParticipationSellAmount is not allowed to be zero"
+            minimumParticipationSellAmount > 0,
+            "minimumParticipationSellAmount is not allowed to be zero"
         );
         auctionCounter++;
         auctionData[auctionCounter] = AuctionData(
@@ -117,11 +115,11 @@ contract EasyAuction {
                 _minBuyAmount,
                 _sellAmount
             ),
+            minimumParticipationSellAmount,
             0,
             bytes32(0),
             bytes32(0),
-            0,
-            minParticipationSellAmount
+            0
         );
         emit NewAuction(auctionCounter, _sellToken, _buyToken);
         return auctionCounter;
@@ -132,7 +130,7 @@ contract EasyAuction {
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders
-    ) public atStageOrderplacement(auctionId) {
+    ) public atStageOrderPlacement(auctionId) {
         (
             ,
             uint96 buyAmountOfInitialAuctionOrder,
@@ -150,7 +148,7 @@ contract EasyAuction {
             // to limit price calculation gas consumption
             require(
                 _minBuyAmounts[i] >
-                    auctionData[auctionId].minParticipationSellAmount,
+                    auctionData[auctionId].minimumParticipationSellAmount,
                 "order too small"
             );
             bool success =
@@ -186,7 +184,7 @@ contract EasyAuction {
         uint256 auctionId,
         bytes32[] memory _sellOrders,
         bytes32[] memory _prevSellOrders
-    ) public atStageOrderplacement(auctionId) {
+    ) public atStageOrderPlacement(auctionId) {
         uint64 userId = getUserId(msg.sender);
         uint256 claimableAmount = 0;
         for (uint256 i = 0; i < _sellOrders.length; i++) {
@@ -203,7 +201,7 @@ contract EasyAuction {
                 sellOrders[auctionId].remove(_sellOrders[i], _prevSellOrders[i])
             ) {
                 claimableAmount = claimableAmount.add(sellAmountOfIter);
-                emit CancellationSellOrders(
+                emit CancellationSellOrder(
                     auctionId,
                     userId,
                     buyAmountOfIter,

@@ -23,7 +23,7 @@ describe("EasyAuction", async () => {
     easyAuction = await EasyAuction.deploy();
   });
   describe("initiate Auction", async () => {
-    it("throws if minParticipationSellAmount is zero", async () => {
+    it("throws if minimumParticipationSellAmount is zero", async () => {
       const {
         sellToken,
         buyToken,
@@ -39,7 +39,7 @@ describe("EasyAuction", async () => {
           0,
         ),
       ).to.be.revertedWith(
-        "minParticipationSellAmount is not allowed to be zero",
+        "minimumParticipationSellAmount is not allowed to be zero",
       );
     });
     it("initiateAuction stores the parameters correctly", async () => {

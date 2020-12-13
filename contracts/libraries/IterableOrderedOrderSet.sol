@@ -6,13 +6,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 library IterableOrderedOrderSet {
     using SafeMath for uint96;
     using IterableOrderedOrderSet for bytes32;
-    uint96 private constant MIN_RATE = uint96(0);
-    uint96 private constant MAX_RATE = uint96(-1);
 
-    // getValue(QUEUE_START) returns 0
+    // represents smallest possible value for an order under comparison of fn smallerThan()
     bytes32 internal constant QUEUE_START =
         0x0000000000000000000000000000000000000000000000000000000000000001;
-    // getValue(QUEUE_END) returns MaxValue in uint64
+    // represents highest possible value for an order under comparison of fn smallerThan()
     bytes32 internal constant QUEUE_END =
         0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001;
 
@@ -30,7 +28,7 @@ library IterableOrderedOrderSet {
     function insert(
         Data storage self,
         bytes32 elementToInsert,
-        bytes32 elmentBeforeNewOne
+        bytes32 elementBeforeNewOne
     ) internal returns (bool) {
         (, , uint96 denominator) = decodeOrder(elementToInsert);
         require(denominator != uint96(0), "Inserting zero is not supported");
@@ -44,29 +42,39 @@ library IterableOrderedOrderSet {
             self.nextMap[elementToInsert] = QUEUE_END;
         } else {
             require(
-                elmentBeforeNewOne == QUEUE_START ||
-                    contains(self, elmentBeforeNewOne),
-                "elmentBeforeNewOne must be valid order"
+                elementBeforeNewOne == QUEUE_START ||
+                    contains(self, elementBeforeNewOne),
+                "elementBeforeNewOne must be valid order"
             );
-            bytes32 elmentBeforeNewOneNext = elmentBeforeNewOne;
+            bytes32 elementBeforeNewOneIteration = elementBeforeNewOne;
             while (!foundposition) {
-                if (elmentBeforeNewOneNext.smallerThan(elementToInsert)) {
+                if (elementBeforeNewOneIteration.smallerThan(elementToInsert)) {
                     if (
-                        !self.nextMap[elmentBeforeNewOneNext].smallerThan(
+                        !self.nextMap[elementBeforeNewOneIteration].smallerThan(
                             elementToInsert
                         )
                     ) {
-                        bytes32 tmp = self.nextMap[elmentBeforeNewOneNext];
-                        self.nextMap[elmentBeforeNewOneNext] = elementToInsert;
+                        // Since we have:
+                        // elementBeforeNewOneIteration<elementToInsert)<self.nextMap[elementBeforeNewOneIteration]
+                        // the right place was found and the element gets inserted
+                        bytes32 tmp =
+                            self.nextMap[elementBeforeNewOneIteration];
+                        self.nextMap[
+                            elementBeforeNewOneIteration
+                        ] = elementToInsert;
                         self.nextMap[elementToInsert] = tmp;
                         foundposition = true;
                     } else {
-                        elmentBeforeNewOneNext = self.nextMap[
-                            elmentBeforeNewOneNext
+                        // Getting next order after the current elementBeforeNewOne.
+                        // This can naturally occur, if new orders were inserted
+                        // between time of on-chain execution and order sending
+                        elementBeforeNewOneIteration = self.nextMap[
+                            elementBeforeNewOneIteration
                         ];
                     }
                 } else {
-                    return false; // elmentBeforeNewOne was incorrect
+                    // elementBeforeNewOne was biggerThan elementToInsert
+                    return false;
                 }
             }
         }
@@ -82,14 +90,18 @@ library IterableOrderedOrderSet {
         if (!contains(self, elementToRemove)) {
             return false;
         }
-        bytes32 elementBeforeRemovalNext = elementBeforeRemoval;
-        while (self.nextMap[elementBeforeRemovalNext] != elementToRemove) {
-            if (elementBeforeRemovalNext == QUEUE_END) {
+        bytes32 elementBeforeRemovalIteration = elementBeforeRemoval;
+        while (self.nextMap[elementBeforeRemovalIteration] != elementToRemove) {
+            if (elementBeforeRemovalIteration == QUEUE_END) {
                 return false;
             }
-            elementBeforeRemovalNext = self.nextMap[elementBeforeRemovalNext];
+            elementBeforeRemovalIteration = self.nextMap[
+                elementBeforeRemovalIteration
+            ];
         }
-        self.nextMap[elementBeforeRemovalNext] = self.nextMap[elementToRemove];
+        self.nextMap[elementBeforeRemovalIteration] = self.nextMap[
+            elementToRemove
+        ];
         self.nextMap[elementToRemove] = bytes32(0);
         self.size--;
         return true;
@@ -106,6 +118,9 @@ library IterableOrderedOrderSet {
         return self.nextMap[value] != bytes32(0);
     }
 
+    // @dev orders are ordered by
+    // 1. their price - buyAmount/sellAmount and
+    // 2. their userId,
     function smallerThan(bytes32 orderLeft, bytes32 orderRight)
         internal
         pure

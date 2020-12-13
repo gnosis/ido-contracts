@@ -15,6 +15,7 @@ export interface OrderResult {
   buyToken: string;
   auctionEndDate: BigNumber;
   initialAuctionOrder: string;
+  minimumParticipationSellAmount: BigNumber;
   interimSellAmountSum: BigNumber;
   interimOrder: string;
   clearingPriceOrder: string;
@@ -39,6 +40,7 @@ export function toAuctionDataResult(
     BigNumber,
     string,
     BigNumber,
+    BigNumber,
     string,
     string,
     BigNumber,
@@ -49,10 +51,11 @@ export function toAuctionDataResult(
     buyToken: result[1],
     auctionEndDate: result[2],
     initialAuctionOrder: result[3],
-    interimSellAmountSum: result[4],
-    interimOrder: result[5],
-    clearingPriceOrder: result[6],
-    volumeClearingPriceOrder: result[7],
+    minimumParticipationSellAmount: result[4],
+    interimSellAmountSum: result[5],
+    interimOrder: result[6],
+    clearingPriceOrder: result[7],
+    volumeClearingPriceOrder: result[8],
   };
 }
 export function encodeOrder(order: Order): string {
@@ -232,7 +235,7 @@ export async function getAllSellOrders(
     return order;
   });
 
-  const filterOrderCancellations = easyAuction.filters.CancellationSellOrders;
+  const filterOrderCancellations = easyAuction.filters.CancellationSellOrder;
   const logsForCancellations = await easyAuction.queryFilter(
     filterOrderCancellations(),
     0,
