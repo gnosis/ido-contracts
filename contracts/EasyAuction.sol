@@ -202,7 +202,7 @@ contract EasyAuction {
             if (
                 sellOrders[auctionId].remove(_sellOrders[i], _prevSellOrders[i])
             ) {
-                claimableAmount = claimableAmount.add(buyAmountOfIter);
+                claimableAmount = claimableAmount.add(sellAmountOfIter);
                 emit CancellationSellOrders(
                     auctionId,
                     userId,

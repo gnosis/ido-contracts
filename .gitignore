@@ -2,3 +2,5 @@ node_modules
 build
 client/src/contracts/*
 env/*
+coverage/*
+coverage.json
