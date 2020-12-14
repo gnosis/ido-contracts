@@ -76,7 +76,7 @@ contract EasyAuction {
         ERC20 buyToken;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
-        uint256 minimumParticipationSellAmount;
+        uint256 minimumParticipationBuyAmount;
         uint256 interimSellAmountSum;
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
@@ -94,7 +94,7 @@ contract EasyAuction {
         uint256 duration,
         uint96 _sellAmount,
         uint96 _minBuyAmount,
-        uint256 minimumParticipationSellAmount
+        uint256 minimumParticipationBuyAmount
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
         require(
@@ -102,8 +102,8 @@ contract EasyAuction {
             "transfer was not successful"
         );
         require(
-            minimumParticipationSellAmount > 0,
-            "minimumParticipationSellAmount is not allowed to be zero"
+            minimumParticipationBuyAmount > 0,
+            "minimumParticipationBuyAmount is not allowed to be zero"
         );
         auctionCounter++;
         auctionData[auctionCounter] = AuctionData(
@@ -115,7 +115,7 @@ contract EasyAuction {
                 _minBuyAmount,
                 _sellAmount
             ),
-            minimumParticipationSellAmount,
+            minimumParticipationBuyAmount,
             0,
             bytes32(0),
             bytes32(0),
@@ -148,7 +148,7 @@ contract EasyAuction {
             // to limit price calculation gas consumption
             require(
                 _minBuyAmounts[i] >
-                    auctionData[auctionId].minimumParticipationSellAmount,
+                    auctionData[auctionId].minimumParticipationBuyAmount,
                 "order too small"
             );
             bool success =
@@ -224,8 +224,6 @@ contract EasyAuction {
     ) public atStageSolutionSubmission(auctionId) {
         (, , uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
-
-        // Calculate the bought volume of auctioneer's sell volume
         uint256 sumSellAmount = auctionData[auctionId].interimSellAmountSum;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
         if (iterOrder == bytes32(0)) {
@@ -253,6 +251,11 @@ contract EasyAuction {
         auctionData[auctionId].interimOrder = iterOrder;
     }
 
+    // @dev function verifiying the auction price
+    // @parameter price: This should either be a price encoded as an order
+    // with userId = 0, priceNumerator = buyAmount, priceDenominator = sellAmount
+    // or it should reference to the particular order settled only partially within
+    // this auction.
     function verifyPrice(uint256 auctionId, bytes32 price)
         public
         atStageSolutionSubmission(auctionId)
@@ -261,10 +264,7 @@ contract EasyAuction {
             price.decodeOrder();
         (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
-
         require(priceNumerator > 0, "price must be postive");
-
-        // Calculate the bought volume of auctioneer's sell volume
         uint256 sumSellAmount = auctionData[auctionId].interimSellAmountSum;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
         if (iterOrder == bytes32(0)) {
@@ -282,8 +282,8 @@ contract EasyAuction {
             sumSellAmount.mul(priceNumerator).div(priceDenominator);
         if (price == iterOrder) {
             // case 1: one sellOrder is partically filled
-            // The partially filled order is the correct one, if:
-            // 1) The sum of buyAmounts is not bigger than the intitial order sell amount
+            // The partially filled order is the iterOrder, if:
+            // 1) The sumBuyAmounts is not bigger than the intitial order's sell amount
             // i.e, sellAmount >= sumBuyAmount
             // 2) The volume of the particial order is not bigger than its sell volume
             // i.e. auctionData[auctionId].volumeClearingPriceOrder <= sellAmountOfIter,
