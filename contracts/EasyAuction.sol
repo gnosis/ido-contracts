@@ -485,20 +485,24 @@ contract EasyAuction is Ownable {
         uint64 userId
     ) internal {
         address userAddress = registeredUsers.getAddressAt(userId);
-        require(
-            auctionData[auctionId].sellToken.transfer(
-                userAddress,
-                sellTokenAmount
-            ),
-            "Claim transfer for sellToken failed"
-        );
-        require(
-            auctionData[auctionId].buyToken.transfer(
-                userAddress,
-                buyTokenAmount
-            ),
-            "Claim transfer for buyToken failed"
-        );
+        if (sellTokenAmount > 0) {
+            require(
+                auctionData[auctionId].sellToken.transfer(
+                    userAddress,
+                    sellTokenAmount
+                ),
+                "Claim transfer for sellToken failed"
+            );
+        }
+        if (buyTokenAmount > 0) {
+            require(
+                auctionData[auctionId].buyToken.transfer(
+                    userAddress,
+                    buyTokenAmount
+                ),
+                "Claim transfer for buyToken failed"
+            );
+        }
     }
 
     function registerUser(address user) public returns (uint64 userId) {

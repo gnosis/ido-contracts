@@ -1295,9 +1295,11 @@ describe("EasyAuction", async () => {
         encodeOrder(price),
       );
       // auctioneer reward check:
-      await expect(callPromise)
-        .to.emit(sellToken, "Transfer")
-        .withArgs(easyAuction.address, user_1.address, 0);
+      await expect(() => callPromise).to.changeTokenBalances(
+        sellToken,
+        [user_1],
+        [0],
+      );
       await expect(callPromise)
         .to.emit(buyToken, "Transfer")
         .withArgs(easyAuction.address, user_1.address, price.sellAmount);
