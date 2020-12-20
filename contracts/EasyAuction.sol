@@ -12,7 +12,7 @@ contract EasyAuction is Ownable {
     using SafeMath for uint64;
     using SafeMath for uint96;
     using SafeMath for uint256;
-    using SafeCast for uint256; // Todo actually use safecast
+    using SafeCast for uint256;
     using IterableOrderedOrderSet for IterableOrderedOrderSet.Data;
     using IterableOrderedOrderSet for bytes32;
     using IdToAddressBiMap for IdToAddressBiMap.Data;
@@ -319,9 +319,13 @@ contract EasyAuction is Ownable {
             // i.e. auctionData[auctionId].volumeClearingPriceOrder <= sellAmountOfIter,
             (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
             uint256 clearingOrderBuyAmount = sellAmount.sub(sumBuyAmount);
-            auctionData[auctionId].volumeClearingPriceOrder = uint96(
+            // Attention: This conversion can prevent closing auctions, if rounding down
+            // to uint96 does fail. Should not happen, unless token has more than 18 digits
+            // or prices are huge.
+            auctionData[auctionId].volumeClearingPriceOrder = (
                 clearingOrderBuyAmount.mul(priceDenominator).div(priceNumerator)
-            );
+            )
+                .toUint64();
             require(
                 auctionData[auctionId].volumeClearingPriceOrder <=
                     sellAmountOfIter,
@@ -339,9 +343,8 @@ contract EasyAuction is Ownable {
                         sellAmount.mul(priceDenominator),
                     "supplied price must be inverse initialOrderLimit"
                 );
-                auctionData[auctionId].volumeClearingPriceOrder = uint96(
-                    sumBuyAmount
-                );
+                auctionData[auctionId].volumeClearingPriceOrder = sumBuyAmount
+                    .toUint64();
                 auctionData[auctionId]
                     .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
                     auctioneerId,
