@@ -10,6 +10,7 @@ import {
   createTokensAndMintAndApprove,
   placeOrders,
   calculateClearingPrice,
+  getAllSellOrders,
 } from "../../src/priceCalculation";
 
 import { sendTxAndGetReturnValue, closeAuction } from "./utilities";
@@ -1927,6 +1928,224 @@ describe("EasyAuction", async () => {
       expect(
         await easyAuction.callStatic.getSecondsRemainingInBatch(auctionId),
       ).to.be.equal("0");
+    });
+  });
+  describe("claimsFee", async () => {
+    it("claims fees fully for a non-partially filled initialAuctionOrder", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      let sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
+          buyAmount: ethers.utils.parseEther("1").div(2),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1").mul(2).div(3).add(1),
+          buyAmount: ethers.utils.parseEther("1").mul(2).div(3),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [
+        user_1,
+        user_2,
+        user_3,
+      ]);
+
+      const feeReceiver = user_3;
+      const feeNumerator = 10;
+      await easyAuction
+        .connect(user_1)
+        .setFeeParameters(feeNumerator, feeReceiver.address);
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId);
+      // resets the userId, as they are only given during function call.
+      sellOrders = await getAllSellOrders(easyAuction, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await expect(() =>
+        easyAuction.verifyPrice(auctionId, encodeOrder(price)),
+      ).to.changeTokenBalances(
+        sellToken,
+        [feeReceiver],
+        [initialAuctionOrder.sellAmount.mul(feeNumerator).div("1000")],
+      );
+
+      // contract still holds sufficient funds to pay the participants fully
+      await easyAuction.callStatic.claimFromParticipantOrder(
+        auctionId,
+        sellOrders.map((order) => encodeOrder(order)),
+        Array(sellOrders.length).fill(queueStartElement),
+      );
+    });
+    it("claims also fee amount of zero, even when it is changed later", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      let sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
+          buyAmount: ethers.utils.parseEther("1").div(2),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1").mul(2).div(3).add(1),
+          buyAmount: ethers.utils.parseEther("1").mul(2).div(3),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [
+        user_1,
+        user_2,
+        user_3,
+      ]);
+
+      const feeReceiver = user_3;
+      const feeNumerator = 0;
+      await easyAuction
+        .connect(user_1)
+        .setFeeParameters(feeNumerator, feeReceiver.address);
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId);
+      // resets the userId, as they are only given during function call.
+      sellOrders = await getAllSellOrders(easyAuction, auctionId);
+      await easyAuction
+        .connect(user_1)
+        .setFeeParameters(10, feeReceiver.address);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await expect(() =>
+        easyAuction.verifyPrice(auctionId, encodeOrder(price)),
+      ).to.changeTokenBalances(sellToken, [feeReceiver], [BigNumber.from(0)]);
+
+      // contract still holds sufficient funds to pay the participants fully
+      await easyAuction.callStatic.claimFromParticipantOrder(
+        auctionId,
+        sellOrders.map((order) => encodeOrder(order)),
+        Array(sellOrders.length).fill(queueStartElement),
+      );
+    });
+    it("claims fees fully for a partially filled initialAuctionOrder", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      let sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1").div(2),
+          buyAmount: ethers.utils.parseEther("1").div(2).sub(1),
+          userId: BigNumber.from(2),
+        },
+      ];
+      const {
+        sellToken,
+        buyToken,
+      } = await createTokensAndMintAndApprove(easyAuction, [
+        user_1,
+        user_2,
+        user_3,
+      ]);
+
+      const feeReceiver = user_3;
+      const feeNumerator = 10;
+      await easyAuction
+        .connect(user_1)
+        .setFeeParameters(feeNumerator, feeReceiver.address);
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
+        sellToken.address,
+        buyToken.address,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId);
+      // resets the userId, as they are only given during function call.
+      sellOrders = await getAllSellOrders(easyAuction, auctionId);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await expect(() =>
+        easyAuction.verifyPrice(auctionId, encodeOrder(price)),
+      ).to.changeTokenBalances(
+        sellToken,
+        [user_1, feeReceiver],
+        [
+          // since only halve of the tokens were sold, he is getting halve of the tokens plus halve of the fee back
+          initialAuctionOrder.sellAmount
+            .div(2)
+            .add(
+              initialAuctionOrder.sellAmount
+                .mul(feeNumerator)
+                .div("1000")
+                .div(2),
+            ),
+          initialAuctionOrder.sellAmount.mul(feeNumerator).div("1000").div(2),
+        ],
+      );
+      // contract still holds sufficient funds to pay the participants fully
+      await easyAuction.callStatic.claimFromParticipantOrder(
+        auctionId,
+        sellOrders.map((order) => encodeOrder(order)),
+        Array(sellOrders.length).fill(queueStartElement),
+      );
+    });
+  });
+  describe("setFeeParameters", async () => {
+    it("can only be called by owner", async () => {
+      const feeReceiver = user_3;
+      const feeNumerator = 10;
+      await expect(
+        easyAuction
+          .connect(user_2)
+          .setFeeParameters(feeNumerator, feeReceiver.address),
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    it("does not allow fees higher than 1.5%", async () => {
+      const feeReceiver = user_3;
+      const feeNumerator = 16;
+      await expect(
+        easyAuction
+          .connect(user_1)
+          .setFeeParameters(feeNumerator, feeReceiver.address),
+      ).to.be.revertedWith("Fee is not allowed to be set higher than 1.5%");
     });
   });
 });

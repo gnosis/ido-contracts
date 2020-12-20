@@ -20,6 +20,7 @@ export interface OrderResult {
   interimOrder: string;
   clearingPriceOrder: string;
   volumeClearingPriceOrder: BigNumber;
+  feeNumerator: BigNumber;
 }
 
 export interface Order {
@@ -44,6 +45,7 @@ export function toAuctionDataResult(
     string,
     string,
     BigNumber,
+    BigNumber,
   ],
 ): OrderResult {
   return {
@@ -56,6 +58,7 @@ export function toAuctionDataResult(
     interimOrder: result[6],
     clearingPriceOrder: result[7],
     volumeClearingPriceOrder: result[8],
+    feeNumerator: result[9],
   };
 }
 export function encodeOrder(order: Order): string {

@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "@openzeppelin/contracts/utils/SafeCast.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract EasyAuction {
+contract EasyAuction is Ownable {
     using SafeMath for uint64;
     using SafeMath for uint96;
     using SafeMath for uint256;
@@ -81,12 +82,32 @@ contract EasyAuction {
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
+        uint256 feeNumerator;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) public sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
     uint256 public auctionCounter;
+
+    constructor() public Ownable() {}
+
+    uint256 public feeNumerator = 0;
+    uint256 public constant FEE_DENOMINATOR = 1000;
+    uint64 public feeReceiverUserId = 0;
+
+    function setFeeParameters(
+        uint256 newFeeNumerator,
+        address newfeeReceiverAddress
+    ) public onlyOwner() {
+        require(
+            newFeeNumerator <= 15,
+            "Fee is not allowed to be set higher than 1.5%"
+        );
+        // caution: for currently running auctions, the feeReceiverUserId is changing as well.
+        feeReceiverUserId = getUserId(newfeeReceiverAddress);
+        feeNumerator = newFeeNumerator;
+    }
 
     function initiateAuction(
         ERC20 _sellToken,
@@ -97,8 +118,16 @@ contract EasyAuction {
         uint256 minimumParticipationBuyAmount
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
+
+        // withdraws sellAmount + fees
         require(
-            _sellToken.transferFrom(msg.sender, address(this), _sellAmount),
+            _sellToken.transferFrom(
+                msg.sender,
+                address(this),
+                _sellAmount.mul(FEE_DENOMINATOR.add(feeNumerator)).div(
+                    FEE_DENOMINATOR
+                )
+            ),
             "transfer was not successful"
         );
         require(
@@ -119,7 +148,8 @@ contract EasyAuction {
             0,
             bytes32(0),
             bytes32(0),
-            0
+            0,
+            feeNumerator
         );
         emit NewAuction(auctionCounter, _sellToken, _buyToken);
         return auctionCounter;
@@ -130,14 +160,14 @@ contract EasyAuction {
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders
-    ) public atStageOrderPlacement(auctionId) {
+    ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
         (
             ,
             uint96 buyAmountOfInitialAuctionOrder,
             uint96 sellAmountOfInitialAuctionOrder
         ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
         uint256 sumOfSellAmounts = 0;
-        uint64 userId = getUserId(msg.sender);
+        userId = getUserId(msg.sender);
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
             require(
                 _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
@@ -339,6 +369,9 @@ contract EasyAuction {
         }
 
         emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
+        if (auctionData[auctionId].feeNumerator > 0) {
+            claimFees(auctionId);
+        }
         claimAuctioneerFunds(auctionId);
     }
 
@@ -413,6 +446,36 @@ contract EasyAuction {
             );
         }
         sendOutTokens(auctionId, sellTokenAmount, buyTokenAmount, auctioneerId);
+    }
+
+    function claimFees(uint256 auctionId) internal {
+        (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
+            auctionData[auctionId].initialAuctionOrder.decodeOrder();
+        (, uint96 priceNumerator, uint96 priceDenominator) =
+            auctionData[auctionId].clearingPriceOrder.decodeOrder();
+        uint256 feeAmount =
+            sellAmount.mul(auctionData[auctionId].feeNumerator).div(
+                FEE_DENOMINATOR
+            );
+        if (priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)) {
+            // In this case we have a partial match of the initialSellOrder
+            uint256 sellTokenAmount =
+                sellAmount.sub(auctionData[auctionId].volumeClearingPriceOrder);
+            sendOutTokens(
+                auctionId,
+                feeAmount.mul(sellTokenAmount).div(sellAmount),
+                0,
+                feeReceiverUserId
+            );
+            sendOutTokens(
+                auctionId,
+                feeAmount.mul(sellAmount.sub(sellTokenAmount)).div(sellAmount),
+                0,
+                auctioneerId
+            );
+        } else {
+            sendOutTokens(auctionId, feeAmount, 0, feeReceiverUserId);
+        }
     }
 
     function sendOutTokens(
