@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-newer
 pragma solidity >=0.6.8;
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./libraries/IterableOrderedOrderSet.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -9,6 +10,7 @@ import "@openzeppelin/contracts/utils/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EasyAuction is Ownable {
+    using SafeERC20 for IERC20;
     using SafeMath for uint64;
     using SafeMath for uint96;
     using SafeMath for uint256;
@@ -62,8 +64,8 @@ contract EasyAuction is Ownable {
     );
     event NewAuction(
         uint256 indexed auctionId,
-        ERC20 indexed _sellToken,
-        ERC20 indexed _buyToken
+        IERC20 indexed _sellToken,
+        IERC20 indexed _buyToken
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -73,8 +75,8 @@ contract EasyAuction is Ownable {
     event UserRegistration(address indexed user, uint64 userId);
 
     struct AuctionData {
-        ERC20 sellToken;
-        ERC20 buyToken;
+        IERC20 sellToken;
+        IERC20 buyToken;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
         uint256 minimumParticipationBuyAmount;
@@ -110,8 +112,8 @@ contract EasyAuction is Ownable {
     }
 
     function initiateAuction(
-        ERC20 _sellToken,
-        ERC20 _buyToken,
+        IERC20 _sellToken,
+        IERC20 _buyToken,
         uint256 duration,
         uint96 _sellAmount,
         uint96 _minBuyAmount,
@@ -120,15 +122,12 @@ contract EasyAuction is Ownable {
         uint64 userId = getUserId(msg.sender);
 
         // withdraws sellAmount + fees
-        require(
-            _sellToken.transferFrom(
-                msg.sender,
-                address(this),
-                _sellAmount.mul(FEE_DENOMINATOR.add(feeNumerator)).div(
-                    FEE_DENOMINATOR
-                )
-            ),
-            "transfer was not successful"
+        _sellToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _sellAmount.mul(FEE_DENOMINATOR.add(feeNumerator)).div(
+                FEE_DENOMINATOR
+            )
         );
         require(
             minimumParticipationBuyAmount > 0,
@@ -200,13 +199,10 @@ contract EasyAuction is Ownable {
                 );
             }
         }
-        require(
-            auctionData[auctionId].buyToken.transferFrom(
-                msg.sender,
-                address(this),
-                sumOfSellAmounts
-            ),
-            "transfer was not successful"
+        auctionData[auctionId].buyToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            sumOfSellAmounts
         );
     }
 
@@ -239,12 +235,9 @@ contract EasyAuction is Ownable {
                 );
             }
         }
-        require(
-            auctionData[auctionId].buyToken.transfer(
-                msg.sender,
-                claimableAmount
-            ),
-            "transfer was not successful"
+        auctionData[auctionId].buyToken.safeTransfer(
+            msg.sender,
+            claimableAmount
         );
     }
 
@@ -489,21 +482,15 @@ contract EasyAuction is Ownable {
     ) internal {
         address userAddress = registeredUsers.getAddressAt(userId);
         if (sellTokenAmount > 0) {
-            require(
-                auctionData[auctionId].sellToken.transfer(
-                    userAddress,
-                    sellTokenAmount
-                ),
-                "Claim transfer for sellToken failed"
+            auctionData[auctionId].sellToken.safeTransfer(
+                userAddress,
+                sellTokenAmount
             );
         }
         if (buyTokenAmount > 0) {
-            require(
-                auctionData[auctionId].buyToken.transfer(
-                    userAddress,
-                    buyTokenAmount
-                ),
-                "Claim transfer for buyToken failed"
+            auctionData[auctionId].buyToken.safeTransfer(
+                userAddress,
+                buyTokenAmount
             );
         }
     }
