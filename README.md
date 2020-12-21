@@ -77,9 +77,9 @@ npx hardhat verify --network $NETWORK DEPLOYED_CONTRACT_ADDRESS
 
 ### Running scripts
 
-Initiating a new auction:
+Initiating a new auction like its done in this exemplary rinkeby deployment
 
 ```
-
-yarn hardhat run  src/scripts/initiate_new_auction_hardcoded.ts --network $NETWORK
+NETWORK='rinkeby'
+yarn hardhat initiateAuction --sell-token "0xc778417e063141139fce010982780140aa0cd5ab" --buy-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network $NETWORK
 ```
