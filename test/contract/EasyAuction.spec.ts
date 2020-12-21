@@ -49,6 +49,8 @@ describe("EasyAuction", async () => {
         buyToken,
       } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
 
+      const timestampForMining = 1608610000;
+      ethers.provider.send("evm_setNextBlockTimestamp", [timestampForMining]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
         "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
@@ -59,7 +61,6 @@ describe("EasyAuction", async () => {
         ethers.utils.parseEther("1"),
         1,
       );
-
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId),
       );
@@ -72,7 +73,7 @@ describe("EasyAuction", async () => {
           buyAmount: ethers.utils.parseEther("1"),
         }),
       );
-      //Todo assert.equal(auctionData.auctionEndDate);
+      expect(auctionData.auctionEndDate).to.be.equal(timestampForMining + 3600);
       await expect(auctionData.clearingPriceOrder).to.equal(
         encodeOrder({
           userId: BigNumber.from(0),
