@@ -1,5 +1,5 @@
 import { Contract, BigNumber } from "ethers";
-import { ethers, waffle } from "hardhat";
+import hre, { ethers, waffle } from "hardhat";
 
 import {
   encodeOrder,
@@ -20,10 +20,11 @@ describe("EasyAuction", async () => {
   });
 
   it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of verifyPrice", async () => {
-    const {
-      sellToken,
-      buyToken,
-    } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2]);
+    const { sellToken, buyToken } = await createTokensAndMintAndApprove(
+      easyAuction,
+      [user_1, user_2],
+      hre,
+    );
     const nrTests = 12; // increase here for better gas estimations, nrTests-2 must be a divisor of 10**18
     const auctionId: BigNumber = await sendTxAndGetReturnValue(
       easyAuction,
@@ -51,7 +52,7 @@ describe("EasyAuction", async () => {
           userId: BigNumber.from(0),
         },
       ];
-      await placeOrders(easyAuction, sellOrder, auctionId);
+      await placeOrders(easyAuction, sellOrder, auctionId, hre);
     }
     await closeAuction(easyAuction, auctionId);
     const price = await calculateClearingPrice(easyAuction, auctionId);

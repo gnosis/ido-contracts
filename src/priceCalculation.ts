@@ -1,5 +1,5 @@
 import { Contract, BigNumber, Wallet } from "ethers";
-import { ethers, waffle } from "hardhat";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 export interface Price {
   priceNumerator: BigNumber;
   priceDenominator: BigNumber;
@@ -264,8 +264,9 @@ export async function getAllSellOrders(
 export async function createTokensAndMintAndApprove(
   easyAuction: Contract,
   users: Wallet[],
+  hre: HardhatRuntimeEnvironment,
 ): Promise<{ sellToken: Contract; buyToken: Contract }> {
-  const ERC20 = await ethers.getContractFactory("ERC20Mintable");
+  const ERC20 = await hre.ethers.getContractFactory("ERC20Mintable");
   const buyToken = await ERC20.deploy("BT", "BT");
   const sellToken = await ERC20.deploy("BT", "BT");
 
@@ -294,10 +295,11 @@ export async function placeOrders(
   easyAuction: Contract,
   sellOrders: Order[],
   auctionId: BigNumber,
+  hre: HardhatRuntimeEnvironment,
 ): Promise<void> {
   for (const sellOrder of sellOrders) {
     await easyAuction
-      .connect(waffle.provider.getWallets()[sellOrder.userId.toNumber()])
+      .connect(hre.waffle.provider.getWallets()[sellOrder.userId.toNumber()])
       .placeSellOrders(
         auctionId,
         [sellOrder.buyAmount],

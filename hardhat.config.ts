@@ -6,6 +6,9 @@ import dotenv from "dotenv";
 import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
+import { clearAuction } from "./src/tasks/clear_auction";
+import { initiateAuction } from "./src/tasks/initiate_new_auction";
+
 const argv = yargs
   .option("network", {
     type: "string",
@@ -35,6 +38,9 @@ if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
     `Could not find Infura key in env, unable to connect to network ${argv.network}`,
   );
 }
+
+initiateAuction();
+clearAuction();
 
 export default {
   paths: {
