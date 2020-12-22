@@ -52,7 +52,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const timestampForMining = 1608610000;
+      const timestampForMining = 2000000000;
       ethers.provider.send("evm_setNextBlockTimestamp", [timestampForMining]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
