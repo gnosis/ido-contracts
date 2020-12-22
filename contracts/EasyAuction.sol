@@ -6,7 +6,7 @@ import "./libraries/IterableOrderedOrderSet.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
-import "@openzeppelin/contracts/utils/SafeCast.sol";
+import "./libraries/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EasyAuction is Ownable {
@@ -318,7 +318,7 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].volumeClearingPriceOrder = (
                 clearingOrderBuyAmount.mul(priceDenominator).div(priceNumerator)
             )
-                .toUint64();
+                .toUint96();
             require(
                 auctionData[auctionId].volumeClearingPriceOrder <=
                     sellAmountOfIter,
@@ -337,7 +337,7 @@ contract EasyAuction is Ownable {
                     "supplied price must be inverse initialOrderLimit"
                 );
                 auctionData[auctionId].volumeClearingPriceOrder = sumBuyAmount
-                    .toUint64();
+                    .toUint96();
                 auctionData[auctionId]
                     .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
                     auctioneerId,
