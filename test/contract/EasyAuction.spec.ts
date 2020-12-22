@@ -45,14 +45,14 @@ describe("EasyAuction", async () => {
         "minimumParticipationBuyAmount is not allowed to be zero",
       );
     });
-    it("initiateAuction stores the parameters correctly", async () => {
+    it.only("initiateAuction stores the parameters correctly", async () => {
       const { sellToken, buyToken } = await createTokensAndMintAndApprove(
         easyAuction,
         [user_1, user_2],
         hre,
       );
 
-      const timestampForMining = 1608610000;
+      const timestampForMining = 2000000000;
       ethers.provider.send("evm_setNextBlockTimestamp", [timestampForMining]);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
