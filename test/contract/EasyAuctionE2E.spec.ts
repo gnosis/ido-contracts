@@ -20,17 +20,16 @@ describe("EasyAuction", async () => {
   });
 
   it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of verifyPrice", async () => {
-    const { auctionedToken, bidderToken } = await createTokensAndMintAndApprove(
-      easyAuction,
-      [user_1, user_2],
-      hre,
-    );
+    const {
+      auctioningToken,
+      biddingToken,
+    } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
     const nrTests = 12; // increase here for better gas estimations, nrTests-2 must be a divisor of 10**18
     const auctionId: BigNumber = await sendTxAndGetReturnValue(
       easyAuction,
       "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
-      auctionedToken.address,
-      bidderToken.address,
+      auctioningToken.address,
+      biddingToken.address,
       60 * 60,
       ethers.utils.parseEther("1000"),
       ethers.utils.parseEther("1000"),

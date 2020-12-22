@@ -6,13 +6,13 @@ export interface Price {
 }
 
 export interface ReceivedFunds {
-  auctionedTokenAmount: BigNumber;
-  bidderTokenAmount: BigNumber;
+  auctioningTokenAmount: BigNumber;
+  biddingTokenAmount: BigNumber;
 }
 
 export interface OrderResult {
-  auctionedToken: string;
-  bidderToken: string;
+  auctioningToken: string;
+  biddingToken: string;
   auctionEndDate: BigNumber;
   initialAuctionOrder: string;
   minimumBiddingAmount: BigNumber;
@@ -49,8 +49,8 @@ export function toAuctionDataResult(
   ],
 ): OrderResult {
   return {
-    auctionedToken: result[0],
-    bidderToken: result[1],
+    auctioningToken: result[0],
+    biddingToken: result[1],
     auctionEndDate: result[2],
     initialAuctionOrder: result[3],
     minimumBiddingAmount: result[4],
@@ -80,8 +80,8 @@ export function decodeOrder(bytes: string): Order {
 
 export function toReceivedFunds(result: [BigNumber, BigNumber]): ReceivedFunds {
   return {
-    auctionedTokenAmount: result[0],
-    bidderTokenAmount: result[1],
+    auctioningTokenAmount: result[0],
+    biddingTokenAmount: result[1],
   };
 }
 
@@ -265,23 +265,23 @@ export async function createTokensAndMintAndApprove(
   easyAuction: Contract,
   users: Wallet[],
   hre: HardhatRuntimeEnvironment,
-): Promise<{ auctionedToken: Contract; bidderToken: Contract }> {
+): Promise<{ auctioningToken: Contract; biddingToken: Contract }> {
   const ERC20 = await hre.ethers.getContractFactory("ERC20Mintable");
-  const bidderToken = await ERC20.deploy("BT", "BT");
-  const auctionedToken = await ERC20.deploy("BT", "BT");
+  const biddingToken = await ERC20.deploy("BT", "BT");
+  const auctioningToken = await ERC20.deploy("BT", "BT");
 
   for (const user of users) {
-    await bidderToken.mint(user.address, BigNumber.from(10).pow(30));
-    await bidderToken
+    await biddingToken.mint(user.address, BigNumber.from(10).pow(30));
+    await biddingToken
       .connect(user)
       .approve(easyAuction.address, BigNumber.from(10).pow(30));
 
-    await auctionedToken.mint(user.address, BigNumber.from(10).pow(30));
-    await auctionedToken
+    await auctioningToken.mint(user.address, BigNumber.from(10).pow(30));
+    await auctioningToken
       .connect(user)
       .approve(easyAuction.address, BigNumber.from(10).pow(30));
   }
-  return { auctionedToken: auctionedToken, bidderToken: bidderToken };
+  return { auctioningToken: auctioningToken, biddingToken: biddingToken };
 }
 
 export function toPrice(result: [BigNumber, BigNumber]): Price {

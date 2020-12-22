@@ -64,8 +64,8 @@ contract EasyAuction is Ownable {
     );
     event NewAuction(
         uint256 indexed auctionId,
-        IERC20 indexed _auctionedToken,
-        IERC20 indexed _bidderToken
+        IERC20 indexed _auctioningToken,
+        IERC20 indexed _biddingToken
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -75,8 +75,8 @@ contract EasyAuction is Ownable {
     event UserRegistration(address indexed user, uint64 userId);
 
     struct AuctionData {
-        IERC20 auctionedToken;
-        IERC20 bidderToken;
+        IERC20 auctioningToken;
+        IERC20 biddingToken;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
         uint256 minimumBiddingAmount;
@@ -112,8 +112,8 @@ contract EasyAuction is Ownable {
     }
 
     function initiateAuction(
-        IERC20 _auctionedToken,
-        IERC20 _bidderToken,
+        IERC20 _auctioningToken,
+        IERC20 _biddingToken,
         uint256 duration,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
@@ -122,7 +122,7 @@ contract EasyAuction is Ownable {
         uint64 userId = getUserId(msg.sender);
 
         // withdraws sellAmount + fees
-        _auctionedToken.safeTransferFrom(
+        _auctioningToken.safeTransferFrom(
             msg.sender,
             address(this),
             _auctionedSellAmount.mul(FEE_DENOMINATOR.add(feeNumerator)).div(
@@ -135,8 +135,8 @@ contract EasyAuction is Ownable {
         );
         auctionCounter++;
         auctionData[auctionCounter] = AuctionData(
-            _auctionedToken,
-            _bidderToken,
+            _auctioningToken,
+            _biddingToken,
             block.timestamp + duration,
             IterableOrderedOrderSet.encodeOrder(
                 userId,
@@ -150,7 +150,7 @@ contract EasyAuction is Ownable {
             0,
             feeNumerator
         );
-        emit NewAuction(auctionCounter, _auctionedToken, _bidderToken);
+        emit NewAuction(auctionCounter, _auctioningToken, _biddingToken);
         return auctionCounter;
     }
 
@@ -198,7 +198,7 @@ contract EasyAuction is Ownable {
                 );
             }
         }
-        auctionData[auctionId].bidderToken.safeTransferFrom(
+        auctionData[auctionId].biddingToken.safeTransferFrom(
             msg.sender,
             address(this),
             sumOfSellAmounts
@@ -234,7 +234,7 @@ contract EasyAuction is Ownable {
                 );
             }
         }
-        auctionData[auctionId].bidderToken.safeTransfer(
+        auctionData[auctionId].biddingToken.safeTransfer(
             msg.sender,
             claimableAmount
         );
@@ -381,7 +381,10 @@ contract EasyAuction is Ownable {
     )
         public
         atStageFinished(auctionId)
-        returns (uint256 sumAuctionedTokenAmount, uint256 sumBidderTokenAmount)
+        returns (
+            uint256 sumAuctioningTokenAmount,
+            uint256 sumBiddingTokenAmount
+        )
     {
         AuctionData memory auction = auctionData[auctionId];
         (, uint96 priceNumerator, uint96 priceDenominator) =
@@ -399,36 +402,38 @@ contract EasyAuction is Ownable {
                 "only allowed to claim for same user"
             );
             if (orders[i] == auction.clearingPriceOrder) {
-                sumAuctionedTokenAmount = sumAuctionedTokenAmount.add(
+                sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
                     auction.volumeClearingPriceOrder.mul(priceNumerator).div(
                         priceDenominator
                     )
                 );
-                sumBidderTokenAmount = sumBidderTokenAmount.add(
+                sumBiddingTokenAmount = sumBiddingTokenAmount.add(
                     sellAmount.sub(auction.volumeClearingPriceOrder)
                 );
             } else {
                 if (orders[i].smallerThan(auction.clearingPriceOrder)) {
-                    sumAuctionedTokenAmount = sumAuctionedTokenAmount.add(
+                    sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
                         sellAmount.mul(priceNumerator).div(priceDenominator)
                     );
                 } else {
-                    sumBidderTokenAmount = sumBidderTokenAmount.add(sellAmount);
+                    sumBiddingTokenAmount = sumBiddingTokenAmount.add(
+                        sellAmount
+                    );
                 }
             }
             emit ClaimedFromOrder(auctionId, userId, buyAmount, sellAmount);
         }
         sendOutTokens(
             auctionId,
-            sumAuctionedTokenAmount,
-            sumBidderTokenAmount,
+            sumAuctioningTokenAmount,
+            sumBiddingTokenAmount,
             userId
         );
     }
 
     function claimAuctioneerFunds(uint256 auctionId)
         internal
-        returns (uint256 auctionedTokenAmount, uint256 bidderTokenAmount)
+        returns (uint256 auctioningTokenAmount, uint256 biddingTokenAmount)
     {
         (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
@@ -437,22 +442,22 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].clearingPriceOrder.decodeOrder();
         if (priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)) {
             // In this case we have a partial match of the initialSellOrder
-            auctionedTokenAmount = sellAmount.sub(
+            auctioningTokenAmount = sellAmount.sub(
                 auctionData[auctionId].volumeClearingPriceOrder
             );
-            bidderTokenAmount = auctionData[auctionId]
+            biddingTokenAmount = auctionData[auctionId]
                 .volumeClearingPriceOrder
                 .mul(priceDenominator)
                 .div(priceNumerator);
         } else {
-            bidderTokenAmount = sellAmount.mul(priceDenominator).div(
+            biddingTokenAmount = sellAmount.mul(priceDenominator).div(
                 priceNumerator
             );
         }
         sendOutTokens(
             auctionId,
-            auctionedTokenAmount,
-            bidderTokenAmount,
+            auctioningTokenAmount,
+            biddingTokenAmount,
             auctioneerId
         );
     }
@@ -468,17 +473,17 @@ contract EasyAuction is Ownable {
             );
         if (priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)) {
             // In this case we have a partial match of the initialSellOrder
-            uint256 auctionedTokenAmount =
+            uint256 auctioningTokenAmount =
                 sellAmount.sub(auctionData[auctionId].volumeClearingPriceOrder);
             sendOutTokens(
                 auctionId,
-                feeAmount.mul(auctionedTokenAmount).div(sellAmount),
+                feeAmount.mul(auctioningTokenAmount).div(sellAmount),
                 0,
                 feeReceiverUserId
             );
             sendOutTokens(
                 auctionId,
-                feeAmount.mul(sellAmount.sub(auctionedTokenAmount)).div(
+                feeAmount.mul(sellAmount.sub(auctioningTokenAmount)).div(
                     sellAmount
                 ),
                 0,
@@ -491,21 +496,21 @@ contract EasyAuction is Ownable {
 
     function sendOutTokens(
         uint256 auctionId,
-        uint256 auctionedTokenAmount,
-        uint256 bidderTokenAmount,
+        uint256 auctioningTokenAmount,
+        uint256 biddingTokenAmount,
         uint64 userId
     ) internal {
         address userAddress = registeredUsers.getAddressAt(userId);
-        if (auctionedTokenAmount > 0) {
-            auctionData[auctionId].auctionedToken.safeTransfer(
+        if (auctioningTokenAmount > 0) {
+            auctionData[auctionId].auctioningToken.safeTransfer(
                 userAddress,
-                auctionedTokenAmount
+                auctioningTokenAmount
             );
         }
-        if (bidderTokenAmount > 0) {
-            auctionData[auctionId].bidderToken.safeTransfer(
+        if (biddingTokenAmount > 0) {
+            auctionData[auctionId].biddingToken.safeTransfer(
                 userAddress,
-                bidderTokenAmount
+                biddingTokenAmount
             );
         }
     }
