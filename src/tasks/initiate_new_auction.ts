@@ -8,17 +8,20 @@ import { getEasyAuctionContract } from "./utils";
 const initiateAuction: () => void = () => {
   task("initiateAuction", "Starts a new auction")
     .addParam(
-      "sellToken",
+      "auctioningToken",
       "The ERC20's address of the token that should be sold",
     )
     .addParam(
-      "buyToken",
+      "biddingToken",
       "The ERC20's address of the token that should be bought",
     )
-    .addParam("sellAmount", "The amount of sellTokens to be sold in atoms")
+    .addParam(
+      "sellAmount",
+      "The amount of auctioningTokens to be sold in atoms",
+    )
     .addParam(
       "minBuyAmount",
-      "The amount of buyToken to be bought at least for selling sellAmount in atoms",
+      "The amount of biddingToken to be bought at least for selling sellAmount in atoms",
     )
     .addOptionalParam(
       "duration",
@@ -37,36 +40,36 @@ const initiateAuction: () => void = () => {
       console.log("Using the account:", caller.address);
 
       const easyAuction = await getEasyAuctionContract(hardhatRuntime);
-      const buyToken = await hardhatRuntime.ethers.getContractAt(
+      const biddingToken = await hardhatRuntime.ethers.getContractAt(
         "ERC20",
-        taskArgs.buyToken,
+        taskArgs.biddingToken,
       );
-      const sellToken = await hardhatRuntime.ethers.getContractAt(
+      const auctioningToken = await hardhatRuntime.ethers.getContractAt(
         "ERC20",
-        taskArgs.sellToken,
+        taskArgs.auctioningToken,
       );
       const sellAmountsInAtoms = ethers.utils.parseUnits(
         taskArgs.sellAmount,
-        await sellToken.callStatic.decimals(),
+        await auctioningToken.callStatic.decimals(),
       );
       const minBuyAmountInAtoms = ethers.utils.parseUnits(
         taskArgs.minBuyAmount,
-        await buyToken.callStatic.decimals(),
+        await biddingToken.callStatic.decimals(),
       );
       const minParticipantsBuyAmount = ethers.utils.parseUnits(
         taskArgs.minBuyAmountPerOrder,
-        await buyToken.callStatic.decimals(),
+        await biddingToken.callStatic.decimals(),
       );
 
       console.log("Using EasyAuction deployed to:", easyAuction.address);
 
-      const allowance = await sellToken.callStatic.allowance(
+      const allowance = await auctioningToken.callStatic.allowance(
         caller.address,
         easyAuction.address,
       );
       if (sellAmountsInAtoms.gt(allowance)) {
         console.log("Approving tokens:");
-        const tx = await sellToken
+        const tx = await auctioningToken
           .connect(caller)
           .approve(easyAuction.address, sellAmountsInAtoms);
         await tx.wait();
@@ -77,8 +80,8 @@ const initiateAuction: () => void = () => {
       const tx = await easyAuction
         .connect(caller)
         .initiateAuction(
-          sellToken.address,
-          buyToken.address,
+          auctioningToken.address,
+          biddingToken.address,
           taskArgs.duration,
           sellAmountsInAtoms,
           minBuyAmountInAtoms,

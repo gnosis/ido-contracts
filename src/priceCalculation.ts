@@ -6,17 +6,17 @@ export interface Price {
 }
 
 export interface ReceivedFunds {
-  sellTokenAmount: BigNumber;
-  buyTokenAmount: BigNumber;
+  auctioningTokenAmount: BigNumber;
+  biddingTokenAmount: BigNumber;
 }
 
 export interface OrderResult {
-  sellToken: string;
-  buyToken: string;
+  auctioningToken: string;
+  biddingToken: string;
   auctionEndDate: BigNumber;
   initialAuctionOrder: string;
-  minimumParticipationBuyAmount: BigNumber;
-  interimSellAmountSum: BigNumber;
+  minimumBiddingAmount: BigNumber;
+  interimSumBidAmount: BigNumber;
   interimOrder: string;
   clearingPriceOrder: string;
   volumeClearingPriceOrder: BigNumber;
@@ -49,12 +49,12 @@ export function toAuctionDataResult(
   ],
 ): OrderResult {
   return {
-    sellToken: result[0],
-    buyToken: result[1],
+    auctioningToken: result[0],
+    biddingToken: result[1],
     auctionEndDate: result[2],
     initialAuctionOrder: result[3],
-    minimumParticipationBuyAmount: result[4],
-    interimSellAmountSum: result[5],
+    minimumBiddingAmount: result[4],
+    interimSumBidAmount: result[5],
     interimOrder: result[6],
     clearingPriceOrder: result[7],
     volumeClearingPriceOrder: result[8],
@@ -80,8 +80,8 @@ export function decodeOrder(bytes: string): Order {
 
 export function toReceivedFunds(result: [BigNumber, BigNumber]): ReceivedFunds {
   return {
-    sellTokenAmount: result[0],
-    buyTokenAmount: result[1],
+    auctioningTokenAmount: result[0],
+    biddingTokenAmount: result[1],
   };
 }
 
@@ -265,23 +265,23 @@ export async function createTokensAndMintAndApprove(
   easyAuction: Contract,
   users: Wallet[],
   hre: HardhatRuntimeEnvironment,
-): Promise<{ sellToken: Contract; buyToken: Contract }> {
+): Promise<{ auctioningToken: Contract; biddingToken: Contract }> {
   const ERC20 = await hre.ethers.getContractFactory("ERC20Mintable");
-  const buyToken = await ERC20.deploy("BT", "BT");
-  const sellToken = await ERC20.deploy("BT", "BT");
+  const biddingToken = await ERC20.deploy("BT", "BT");
+  const auctioningToken = await ERC20.deploy("BT", "BT");
 
   for (const user of users) {
-    await buyToken.mint(user.address, BigNumber.from(10).pow(30));
-    await buyToken
+    await biddingToken.mint(user.address, BigNumber.from(10).pow(30));
+    await biddingToken
       .connect(user)
       .approve(easyAuction.address, BigNumber.from(10).pow(30));
 
-    await sellToken.mint(user.address, BigNumber.from(10).pow(30));
-    await sellToken
+    await auctioningToken.mint(user.address, BigNumber.from(10).pow(30));
+    await auctioningToken
       .connect(user)
       .approve(easyAuction.address, BigNumber.from(10).pow(30));
   }
-  return { sellToken: sellToken, buyToken: buyToken };
+  return { auctioningToken: auctioningToken, biddingToken: biddingToken };
 }
 
 export function toPrice(result: [BigNumber, BigNumber]): Price {
