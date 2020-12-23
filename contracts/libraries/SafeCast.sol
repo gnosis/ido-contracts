@@ -15,7 +15,7 @@ library SafeCast {
     }
 
     function toUint64(uint256 value) internal pure returns (uint64) {
-        require(value < 2**63, "SafeCast: value doesn't fit in 64 bits");
+        require(value < 2**64, "SafeCast: value doesn't fit in 64 bits");
         return uint64(value);
     }
 }
