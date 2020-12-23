@@ -10,7 +10,7 @@ pragma solidity >=0.6.0 <0.8.0;
  */
 library SafeCast {
     function toUint96(uint256 value) internal pure returns (uint96) {
-        require(value < 2**95, "SafeCast: value doesn't fit in 96 bits");
+        require(value < 2**96, "SafeCast: value doesn't fit in 96 bits");
         return uint96(value);
     }
 
