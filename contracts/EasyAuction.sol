@@ -80,7 +80,7 @@ contract EasyAuction is Ownable {
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
         uint256 minimumBiddingAmount;
-        uint256 interimSumBiddedAmount;
+        uint256 interimSumBidAmount;
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
@@ -246,7 +246,7 @@ contract EasyAuction is Ownable {
     ) public atStageSolutionSubmission(auctionId) {
         (, , uint96 auctioneerSellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
-        uint256 sumBiddedAmount = auctionData[auctionId].interimSumBiddedAmount;
+        uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
         if (iterOrder == bytes32(0)) {
             iterOrder = IterableOrderedOrderSet.QUEUE_START;
@@ -255,7 +255,7 @@ contract EasyAuction is Ownable {
         for (uint256 i = 0; i < iterationSteps; i++) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
             (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
-            sumBiddedAmount = sumBiddedAmount.add(sellAmountOfIter);
+            sumBidAmount = sumBidAmount.add(sellAmountOfIter);
         }
 
         // it is checked that not too many iteration steps were taken:
@@ -264,12 +264,12 @@ contract EasyAuction is Ownable {
         (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
             iterOrder.decodeOrder();
         require(
-            sumBiddedAmount.mul(buyAmountOfIter) <
+            sumBidAmount.mul(buyAmountOfIter) <
                 auctioneerSellAmount.mul(sellAmountOfIter),
             "too many orders summed up"
         );
 
-        auctionData[auctionId].interimSumBiddedAmount = sumBiddedAmount;
+        auctionData[auctionId].interimSumBidAmount = sumBidAmount;
         auctionData[auctionId].interimOrder = iterOrder;
     }
 
@@ -290,7 +290,7 @@ contract EasyAuction is Ownable {
             uint96 auctioneerSellAmount
         ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
         require(priceNumerator > 0, "price must be postive");
-        uint256 sumBiddedAmount = auctionData[auctionId].interimSumBiddedAmount;
+        uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
         if (iterOrder == bytes32(0)) {
             iterOrder = IterableOrderedOrderSet.QUEUE_START;
@@ -299,12 +299,12 @@ contract EasyAuction is Ownable {
             iterOrder = sellOrders[auctionId].next(iterOrder);
             while (iterOrder != price && iterOrder.smallerThan(price)) {
                 (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
-                sumBiddedAmount = sumBiddedAmount.add(sellAmountOfIter);
+                sumBidAmount = sumBidAmount.add(sellAmountOfIter);
                 iterOrder = sellOrders[auctionId].next(iterOrder);
             }
         }
         uint256 sumBuyAmount =
-            sumBiddedAmount.mul(priceNumerator).div(priceDenominator);
+            sumBidAmount.mul(priceNumerator).div(priceDenominator);
         if (price == iterOrder) {
             // case 1: one sellOrder is partically filled
             // The partially filled order is the iterOrder, if:

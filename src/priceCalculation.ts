@@ -16,7 +16,7 @@ export interface OrderResult {
   auctionEndDate: BigNumber;
   initialAuctionOrder: string;
   minimumBiddingAmount: BigNumber;
-  interimSellAmountSum: BigNumber;
+  interimSumBidAmount: BigNumber;
   interimOrder: string;
   clearingPriceOrder: string;
   volumeClearingPriceOrder: BigNumber;
@@ -54,7 +54,7 @@ export function toAuctionDataResult(
     auctionEndDate: result[2],
     initialAuctionOrder: result[3],
     minimumBiddingAmount: result[4],
-    interimSellAmountSum: result[5],
+    interimSumBidAmount: result[5],
     interimOrder: result[6],
     clearingPriceOrder: result[7],
     volumeClearingPriceOrder: result[8],

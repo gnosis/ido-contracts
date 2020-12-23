@@ -367,7 +367,7 @@ describe("EasyAuction", async () => {
         easyAuction.precalculateSellAmountSum(auctionId, 3),
       ).to.be.revertedWith("too many orders summed up");
     });
-    it("verifies that interimSellAmountSum and iterOrder is set correctly", async () => {
+    it("verifies that interimSumBidAmount and iterOrder is set correctly", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("1"),
@@ -418,13 +418,13 @@ describe("EasyAuction", async () => {
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId),
       );
-      expect(auctionData.interimSellAmountSum).to.equal(
+      expect(auctionData.interimSumBidAmount).to.equal(
         sellOrders[0].sellAmount,
       );
 
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
     });
-    it("verifies that interimSellAmountSum and iterOrder takes correct starting values by applying twice", async () => {
+    it("verifies that interimSumBidAmount and iterOrder takes correct starting values by applying twice", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("1"),
@@ -481,7 +481,7 @@ describe("EasyAuction", async () => {
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId),
       );
-      expect(auctionData.interimSellAmountSum).to.equal(
+      expect(auctionData.interimSumBidAmount).to.equal(
         sellOrders[0].sellAmount.add(sellOrders[0].sellAmount),
       );
 
@@ -1072,7 +1072,7 @@ describe("EasyAuction", async () => {
       const auctionData = toAuctionDataResult(
         await easyAuction.auctionData(auctionId),
       );
-      expect(auctionData.interimSellAmountSum).to.equal(
+      expect(auctionData.interimSumBidAmount).to.equal(
         sellOrders[0].sellAmount,
       );
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
