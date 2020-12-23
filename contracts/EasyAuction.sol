@@ -173,10 +173,10 @@ contract EasyAuction is Ownable {
                     sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
                 "limit price not better than mimimal offer"
             );
-            // orders size should have a minimum size, in order
-            // to limit price calculation gas consumption
+            // orders should have a minimum bid size in order to limit the gas
+            // required to compute the final price of the auction.
             require(
-                _minBuyAmounts[i] > auctionData[auctionId].minimumBiddingAmount,
+                _sellAmounts[i] > auctionData[auctionId].minimumBiddingAmount,
                 "order too small"
             );
             bool success =
