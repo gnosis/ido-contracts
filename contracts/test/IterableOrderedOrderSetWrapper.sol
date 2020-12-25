@@ -15,12 +15,28 @@ contract IterableOrderedOrderSetWrapper {
         return data.insert(value, at);
     }
 
+    function insertWithHighSuccessRate(
+        bytes32 value,
+        bytes32 at,
+        bytes32 at2
+    ) public returns (bool) {
+        return data.insertWithHighSuccessRate(value, at, at2);
+    }
+
     function remove(bytes32 value) public returns (bool) {
         return data.remove(value, IterableOrderedOrderSet.QUEUE_START);
     }
 
     function removeAt(bytes32 value, bytes32 at) public returns (bool) {
         return data.remove(value, at);
+    }
+
+    function removeWithHighSuccessRate(
+        bytes32 value,
+        bytes32 at,
+        bytes32 at2
+    ) public returns (bool) {
+        return data.removeWithHighSuccessRate(value, at, at2);
     }
 
     function contains(bytes32 value) public view returns (bool) {

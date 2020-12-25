@@ -305,6 +305,7 @@ export async function placeOrders(
         [sellOrder.buyAmount],
         [sellOrder.sellAmount],
         [queueStartElement],
+        [queueStartElement],
       );
   }
 }

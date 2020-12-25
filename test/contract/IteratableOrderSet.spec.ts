@@ -122,6 +122,51 @@ describe("IterableOrderedOrderSet", function () {
     );
   });
 
+  it("should not allow to insert element with non-containing element-Before-New-One", async () => {
+    await set.insert(BYTES32_THREE);
+
+    expect(await set.callStatic.insertAt(BYTES32_TWO, BYTES32_ONE)).to.equal(
+      false,
+    );
+  });
+
+  it("should not allow to insert element with element not in front of other element", async () => {
+    expect(await set.callStatic.insertAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
+      false,
+    );
+  });
+
+  it("should allow to insert element with insertWithHighSuccessRate", async () => {
+    await set.insert(BYTES32_ONE);
+
+    expect(
+      await set.callStatic.insertWithHighSuccessRate(
+        BYTES32_TWO,
+        BYTES32_THREE,
+        BYTES32_ONE,
+      ),
+    ).to.equal(true);
+    await set.insertWithHighSuccessRate(
+      BYTES32_TWO,
+      BYTES32_THREE,
+      BYTES32_ONE,
+    );
+    expect(
+      await set.callStatic.insertWithHighSuccessRate(
+        BYTES32_TWO,
+        BYTES32_THREE,
+        BYTES32_ONE,
+      ),
+    ).to.equal(false);
+    expect(
+      await set.callStatic.insertWithHighSuccessRate(
+        BYTES32_TWO,
+        BYTES32_THREE,
+        BYTES32_THREE,
+      ),
+    ).to.equal(false);
+  });
+
   it("should insert element according to rate", async () => {
     await set.insert(BYTES32_THREE);
     await set.insert(BYTES32_ONE);
@@ -197,6 +242,27 @@ describe("IterableOrderedOrderSet", function () {
     expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
       false,
     );
+  });
+
+  it("should allow to remove element behind certain element with removeWithHighSuccessRate", async () => {
+    await set.insert(BYTES32_ONE);
+    await set.insert(BYTES32_TWO);
+    await set.insert(BYTES32_THREE);
+
+    expect(
+      await set.callStatic.removeWithHighSuccessRate(
+        BYTES32_TWO,
+        BYTES32_THREE,
+        BYTES32_ONE,
+      ),
+    ).to.equal(true);
+    expect(
+      await set.callStatic.removeWithHighSuccessRate(
+        BYTES32_TWO,
+        BYTES32_THREE,
+        BYTES32_THREE,
+      ),
+    ).to.equal(false);
   });
 
   it("cannot contain queue start element or queue end element", async () => {

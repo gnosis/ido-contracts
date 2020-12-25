@@ -158,35 +158,43 @@ contract EasyAuction is Ownable {
         uint256 auctionId,
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders
+        bytes32[] memory _prevSellOrders,
+        bytes32[] memory _fallbackPrevSellOrders
     ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
-        (
-            ,
-            uint96 buyAmountOfInitialAuctionOrder,
-            uint96 sellAmountOfInitialAuctionOrder
-        ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
+        {
+            // Run verifications of all orders
+            (
+                ,
+                uint96 buyAmountOfInitialAuctionOrder,
+                uint96 sellAmountOfInitialAuctionOrder
+            ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
+            for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
+                require(
+                    _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
+                        sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
+                    "limit price not better than mimimal offer"
+                );
+                // orders should have a minimum bid size in order to limit the gas
+                // required to compute the final price of the auction.
+                require(
+                    _sellAmounts[i] >
+                        auctionData[auctionId].minimumBiddingAmount,
+                    "order too small"
+                );
+            }
+        }
         uint256 sumOfSellAmounts = 0;
         userId = getUserId(msg.sender);
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
-            require(
-                _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
-                    sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
-                "limit price not better than mimimal offer"
-            );
-            // orders should have a minimum bid size in order to limit the gas
-            // required to compute the final price of the auction.
-            require(
-                _sellAmounts[i] > auctionData[auctionId].minimumBiddingAmount,
-                "order too small"
-            );
             bool success =
-                sellOrders[auctionId].insert(
+                sellOrders[auctionId].insertWithHighSuccessRate(
                     IterableOrderedOrderSet.encodeOrder(
                         userId,
                         _minBuyAmounts[i],
                         _sellAmounts[i]
                     ),
-                    _prevSellOrders[i]
+                    _prevSellOrders[i],
+                    _fallbackPrevSellOrders[i]
                 );
             if (success) {
                 sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
@@ -208,23 +216,28 @@ contract EasyAuction is Ownable {
     function cancelSellOrders(
         uint256 auctionId,
         bytes32[] memory _sellOrders,
-        bytes32[] memory _prevSellOrders
+        bytes32[] memory _prevSellOrders,
+        bytes32[] memory _fallbackPrevSellOrders
     ) public atStageOrderPlacement(auctionId) {
         uint64 userId = getUserId(msg.sender);
         uint256 claimableAmount = 0;
         for (uint256 i = 0; i < _sellOrders.length; i++) {
-            (
-                uint64 userIdOfIter,
-                uint96 buyAmountOfIter,
-                uint96 sellAmountOfIter
-            ) = _sellOrders[i].decodeOrder();
-            require(
-                userIdOfIter == userId,
-                "Only the user can cancel his orders"
-            );
-            if (
-                sellOrders[auctionId].remove(_sellOrders[i], _prevSellOrders[i])
-            ) {
+            bool success =
+                sellOrders[auctionId].removeWithHighSuccessRate(
+                    _sellOrders[i],
+                    _prevSellOrders[i],
+                    _fallbackPrevSellOrders[i]
+                );
+            if (success) {
+                (
+                    uint64 userIdOfIter,
+                    uint96 buyAmountOfIter,
+                    uint96 sellAmountOfIter
+                ) = _sellOrders[i].decodeOrder();
+                require(
+                    userIdOfIter == userId,
+                    "Only the user can cancel his orders"
+                );
                 claimableAmount = claimableAmount.add(sellAmountOfIter);
                 emit CancellationSellOrder(
                     auctionId,

@@ -25,6 +25,18 @@ library IterableOrderedOrderSet {
         uint96 sellAmount;
     }
 
+    function insertWithHighSuccessRate(
+        Data storage self,
+        bytes32 elementToInsert,
+        bytes32 elementBeforeNewOne,
+        bytes32 secondElementBeforeNewOne
+    ) internal returns (bool success) {
+        success = insert(self, elementToInsert, elementBeforeNewOne);
+        if (!success) {
+            success = insert(self, elementToInsert, secondElementBeforeNewOne);
+        }
+    }
+
     function insert(
         Data storage self,
         bytes32 elementToInsert,
@@ -33,7 +45,11 @@ library IterableOrderedOrderSet {
         (, , uint96 denominator) = decodeOrder(elementToInsert);
         require(denominator != uint96(0), "Inserting zero is not supported");
 
-        if (contains(self, elementToInsert)) {
+        if (
+            contains(self, elementToInsert) ||
+            (elementBeforeNewOne != QUEUE_START &&
+                !contains(self, elementBeforeNewOne))
+        ) {
             return false;
         }
         bool foundposition = false;
@@ -41,11 +57,6 @@ library IterableOrderedOrderSet {
             self.nextMap[QUEUE_START] = elementToInsert;
             self.nextMap[elementToInsert] = QUEUE_END;
         } else {
-            require(
-                elementBeforeNewOne == QUEUE_START ||
-                    contains(self, elementBeforeNewOne),
-                "elementBeforeNewOne must be valid order"
-            );
             bytes32 elementBeforeNewOneIteration = elementBeforeNewOne;
             while (!foundposition) {
                 if (elementBeforeNewOneIteration.smallerThan(elementToInsert)) {
@@ -82,12 +93,28 @@ library IterableOrderedOrderSet {
         return true;
     }
 
+    function removeWithHighSuccessRate(
+        Data storage self,
+        bytes32 elementToRemove,
+        bytes32 elementBeforeRemoval,
+        bytes32 secondElementBeforeRemoval
+    ) internal returns (bool success) {
+        success = remove(self, elementToRemove, elementBeforeRemoval);
+        if (!success) {
+            success = remove(self, elementToRemove, secondElementBeforeRemoval);
+        }
+    }
+
     function remove(
         Data storage self,
         bytes32 elementToRemove,
         bytes32 elementBeforeRemoval
     ) internal returns (bool) {
-        if (!contains(self, elementToRemove)) {
+        if (
+            !contains(self, elementToRemove) ||
+            (elementBeforeRemoval != QUEUE_START &&
+                !contains(self, elementBeforeRemoval))
+        ) {
             return false;
         }
         bytes32 elementBeforeRemovalIteration = elementBeforeRemoval;
