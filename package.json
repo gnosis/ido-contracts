@@ -1,11 +1,11 @@
 {
   "name": "ido-contracts",
-  "version": "0.0.1.alpha.1",
+  "version": "0.0.1-alpha.1",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "hardhat compile && test",
+    "build": "hardhat compile",
     "test": "hardhat test",
     "deploy": "hardhat deploy",
     "lint": "yarn lint:sol && yarn lint:ts",
