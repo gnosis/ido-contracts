@@ -76,7 +76,7 @@ const initiateAuction: () => void = () => {
         console.log("Done");
       }
 
-      console.log("Auction gets initiated:");
+      console.log("Starting Auction:");
       const tx = await easyAuction
         .connect(caller)
         .initiateAuction(
@@ -100,4 +100,4 @@ const initiateAuction: () => void = () => {
 export { initiateAuction };
 
 // Rinkeby tests task selling WETH for DAI:
-// yarn hardhat initiateAuction --sell-token "0xc778417e063141139fce010982780140aa0cd5ab" --buy-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network rinkeby
+// yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780140aa0cd5ab" --bidding-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network rinkeby
