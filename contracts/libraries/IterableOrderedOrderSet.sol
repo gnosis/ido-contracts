@@ -44,11 +44,16 @@ library IterableOrderedOrderSet {
     ) internal returns (bool) {
         (, , uint96 denominator) = decodeOrder(elementToInsert);
         require(denominator != uint96(0), "Inserting zero is not supported");
-
+        require(
+            !(elementToInsert == QUEUE_START || elementToInsert == QUEUE_END),
+            "Inserting element is not valid"
+        );
+        if (contains(self, elementToInsert)) {
+            return false;
+        }
         if (
-            contains(self, elementToInsert) ||
-            (elementBeforeNewOne != QUEUE_START &&
-                !contains(self, elementBeforeNewOne))
+            !(elementBeforeNewOne == QUEUE_START ||
+                contains(self, elementBeforeNewOne))
         ) {
             return false;
         }

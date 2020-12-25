@@ -136,6 +136,16 @@ describe("IterableOrderedOrderSet", function () {
     );
   });
 
+  it("should not allow to insert queue start element", async () => {
+    await expect(
+      set.callStatic.insertAt(queueStartElement, queueStartElement),
+    ).to.be.revertedWith("Inserting element is not valid");
+  });
+  it("should not allow to insert queue end element", async () => {
+    await expect(
+      set.callStatic.insertAt(queueLastElement, queueStartElement),
+    ).to.be.revertedWith("Inserting element is not valid");
+  });
   it("should allow to insert element with insertWithHighSuccessRate", async () => {
     await set.insert(BYTES32_ONE);
 
