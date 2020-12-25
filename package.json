@@ -1,20 +1,18 @@
 {
-  "name": "auction-house",
-  "version": "0.1.0",
-  "types": "build/common/src/index.d.ts",
-  "ts:main": "src/index.ts",
-  "jsnext:main": "build/esm/src/index.js",
+  "name": "ido-contracts",
+  "version": "0.0.1.alpha.1",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "hardhat compile",
+    "build": "hardhat compile && test",
     "test": "hardhat test",
     "deploy": "hardhat deploy",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "solhint 'contracts/**/*.sol'",
     "lint:ts": "eslint --max-warnings 0 .",
-    "fmt:sol": "prettier 'contracts/**/*.sol' -w"
+    "fmt:sol": "prettier 'contracts/**/*.sol' -w",
+    "prepack": "yarn build"
   },
   "repository": {
     "type": "git"
