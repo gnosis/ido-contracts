@@ -27,9 +27,10 @@ describe("EasyAuction", async () => {
     const nrTests = 12; // increase here for better gas estimations, nrTests-2 must be a divisor of 10**18
     const auctionId: BigNumber = await sendTxAndGetReturnValue(
       easyAuction,
-      "initiateAuction(address,address,uint256,uint96,uint96,uint256)",
+      "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256)",
       auctioningToken.address,
       biddingToken.address,
+      60 * 60,
       60 * 60,
       ethers.utils.parseEther("1000"),
       ethers.utils.parseEther("1000"),

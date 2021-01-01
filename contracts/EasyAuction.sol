@@ -27,6 +27,16 @@ contract EasyAuction is Ownable {
         _;
     }
 
+    modifier atStageOrderPlacementAndCancelation(uint256 auctionId) {
+        require(
+            block.timestamp < auctionData[auctionId].auctionEndDate &&
+                block.timestamp <
+                auctionData[auctionId].orderCancellationEndDate,
+            "no longer in order placement and cancelation phase"
+        );
+        _;
+    }
+
     modifier atStageSolutionSubmission(uint256 auctionId) {
         require(
             block.timestamp > auctionData[auctionId].auctionEndDate &&
@@ -77,6 +87,7 @@ contract EasyAuction is Ownable {
     struct AuctionData {
         IERC20 auctioningToken;
         IERC20 biddingToken;
+        uint256 orderCancellationEndDate;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
         uint256 minimumBiddingAmount;
@@ -114,6 +125,7 @@ contract EasyAuction is Ownable {
     function initiateAuction(
         IERC20 _auctioningToken,
         IERC20 _biddingToken,
+        uint256 orderCancelationPeriodDuration,
         uint256 duration,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
@@ -138,6 +150,7 @@ contract EasyAuction is Ownable {
             _auctioningToken,
             _biddingToken,
             block.timestamp + duration,
+            block.timestamp + orderCancelationPeriodDuration,
             IterableOrderedOrderSet.encodeOrder(
                 userId,
                 _minBuyAmount,
@@ -218,7 +231,7 @@ contract EasyAuction is Ownable {
         bytes32[] memory _sellOrders,
         bytes32[] memory _prevSellOrders,
         bytes32[] memory _fallbackPrevSellOrders
-    ) public atStageOrderPlacement(auctionId) {
+    ) public atStageOrderPlacementAndCancelation(auctionId) {
         uint64 userId = getUserId(msg.sender);
         uint256 claimableAmount = 0;
         for (uint256 i = 0; i < _sellOrders.length; i++) {

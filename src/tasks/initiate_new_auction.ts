@@ -24,9 +24,15 @@ const initiateAuction: () => void = () => {
       "The amount of biddingToken to be bought at least for selling sellAmount in atoms",
     )
     .addOptionalParam(
+      "orderCancellationPeriod",
+      "Describes how long the auction should allow to cancel orders in seconds",
+      "360000",
+      types.string,
+    )
+    .addOptionalParam(
       "duration",
       "Describes how long the auction should last in seconds",
-      "3600",
+      "360000",
       types.string,
     )
     .addOptionalParam(
@@ -82,6 +88,7 @@ const initiateAuction: () => void = () => {
         .initiateAuction(
           auctioningToken.address,
           biddingToken.address,
+          taskArgs.orderCancellationPeriod,
           taskArgs.duration,
           sellAmountsInAtoms,
           minBuyAmountInAtoms,

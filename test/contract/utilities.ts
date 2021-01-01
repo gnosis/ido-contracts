@@ -11,7 +11,7 @@ export async function closeAuction(
   await increaseTime(time_remaining + 1);
 }
 
-export async function increaseTime(duration: BigNumber): Promise<void> {
+export async function increaseTime(duration: number): Promise<void> {
   ethers.provider.send("evm_increaseTime", [duration]);
   ethers.provider.send("evm_mine", []);
 }
