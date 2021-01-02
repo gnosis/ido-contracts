@@ -72,6 +72,7 @@ contract EasyAuction is Ownable {
         uint96 buyAmount,
         uint96 sellAmount
     );
+    event NewUser(uint64 indexed userId, address indexed userAddress);
     event NewAuction(
         uint256 indexed auctionId,
         IERC20 indexed _auctioningToken,
@@ -553,9 +554,10 @@ contract EasyAuction is Ownable {
 
     function getUserId(address user) public returns (uint64 userId) {
         if (registeredUsers.hasAddress(user)) {
-            return registeredUsers.getId(user);
+            userId = registeredUsers.getId(user);
         } else {
-            return registerUser(user);
+            userId = registerUser(user);
+            emit NewUser(userId, user);
         }
     }
 
