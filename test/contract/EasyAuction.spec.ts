@@ -4,7 +4,6 @@ import hre, { ethers, waffle } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
 
 import {
-  toAuctionDataResult,
   toReceivedFunds,
   encodeOrder,
   queueStartElement,
@@ -74,9 +73,7 @@ describe("EasyAuction", async () => {
         ethers.utils.parseEther("1"),
         1,
       );
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.auctioningToken).to.equal(auctioningToken.address);
       expect(auctionData.biddingToken).to.equal(biddingToken.address);
       expect(auctionData.initialAuctionOrder).to.equal(
@@ -513,9 +510,7 @@ describe("EasyAuction", async () => {
       await closeAuction(easyAuction, auctionId);
 
       await easyAuction.precalculateSellAmountSum(auctionId, 1);
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.interimSumBidAmount).to.equal(
         sellOrders[0].sellAmount,
       );
@@ -577,9 +572,7 @@ describe("EasyAuction", async () => {
 
       await easyAuction.precalculateSellAmountSum(auctionId, 1);
       await easyAuction.precalculateSellAmountSum(auctionId, 1);
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.interimSumBidAmount).to.equal(
         sellOrders[0].sellAmount.add(sellOrders[0].sellAmount),
       );
@@ -627,9 +620,7 @@ describe("EasyAuction", async () => {
 
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[0].sellAmount, // times prices (=1)
       );
@@ -722,9 +713,7 @@ describe("EasyAuction", async () => {
 
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
       );
@@ -777,9 +766,7 @@ describe("EasyAuction", async () => {
 
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[0].sellAmount
           .mul(3)
@@ -825,9 +812,7 @@ describe("EasyAuction", async () => {
 
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
     it("verifies the price in case of clearingOrder != placed order with 3x participation", async () => {
@@ -879,9 +864,7 @@ describe("EasyAuction", async () => {
 
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
     it("verifies the price in case of no participation of the auction", async () => {
@@ -915,9 +898,7 @@ describe("EasyAuction", async () => {
 
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
     it("verifies the price in case without a partially filled order", async () => {
@@ -1002,9 +983,7 @@ describe("EasyAuction", async () => {
       await closeAuction(easyAuction, auctionId);
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         initialAuctionOrder.sellAmount
           .mul(price.sellAmount)
@@ -1061,9 +1040,7 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
       expect(price).to.eql(sellOrders[1]);
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
     it("verifies the price in case of 2 of 3 sellOrders eating initialAuctionOrder completely - with precalculateSellAmountSum step", async () => {
@@ -1119,9 +1096,7 @@ describe("EasyAuction", async () => {
 
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
       expect(price).to.eql(sellOrders[1]);
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
     it("verifies the price in case of 2 of 4 sellOrders eating initialAuctionOrder completely - with precalculateSellAmountSum step and one more step within verifyPrice", async () => {
@@ -1180,18 +1155,14 @@ describe("EasyAuction", async () => {
       // this is the additional step
       await easyAuction.precalculateSellAmountSum(auctionId, 1);
 
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.interimSumBidAmount).to.equal(
         sellOrders[0].sellAmount,
       );
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
       expect(price).to.eql(sellOrders[2]);
-      const auctionData2 = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData2 = await easyAuction.auctionData(auctionId);
       expect(auctionData2.volumeClearingPriceOrder).to.equal(0);
     });
     it("verifies the price in case of clearing order is decided by userId", async () => {
@@ -1244,9 +1215,7 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
       expect(price).to.eql(sellOrders[1]);
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
     it("verifies that partially fillable orders can not be set arbitrary", async () => {
@@ -1470,9 +1439,7 @@ describe("EasyAuction", async () => {
 
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
       expect(price).to.eql(initialAuctionOrder);
-      const auctionData = toAuctionDataResult(
-        await easyAuction.auctionData(auctionId),
-      );
+      const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
   });

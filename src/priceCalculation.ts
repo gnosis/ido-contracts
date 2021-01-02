@@ -35,35 +35,6 @@ export const queueStartElement =
 export const queueLastElement =
   "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 
-export function toAuctionDataResult(
-  result: [
-    string,
-    string,
-    BigNumber,
-    BigNumber,
-    string,
-    BigNumber,
-    BigNumber,
-    string,
-    string,
-    BigNumber,
-    BigNumber,
-  ],
-): OrderResult {
-  return {
-    auctioningToken: result[0],
-    biddingToken: result[1],
-    orderCancellationEndDate: result[2],
-    auctionEndDate: result[3],
-    initialAuctionOrder: result[4],
-    minimumBiddingAmount: result[5],
-    interimSumBidAmount: result[6],
-    interimOrder: result[7],
-    clearingPriceOrder: result[8],
-    volumeClearingPriceOrder: result[9],
-    feeNumerator: result[10],
-  };
-}
 export function encodeOrder(order: Order): string {
   return (
     "0x" +
@@ -93,7 +64,7 @@ export async function getInitialOrder(
   auctionId: BigNumber,
 ): Promise<Order> {
   const auctionDataStruct = await easyAuction.auctionData(auctionId);
-  return decodeOrder(auctionDataStruct[4]);
+  return decodeOrder(auctionDataStruct.initialAuctionOrder);
 }
 
 export function hasLowerClearingPrice(order1: Order, order2: Order): number {
