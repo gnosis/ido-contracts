@@ -150,8 +150,8 @@ contract EasyAuction is Ownable {
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,
-            block.timestamp + duration,
             block.timestamp + orderCancelationPeriodDuration,
+            block.timestamp + duration,
             IterableOrderedOrderSet.encodeOrder(
                 userId,
                 _minBuyAmount,
