@@ -1595,6 +1595,7 @@ describe("EasyAuction", async () => {
           auctionId,
           sellOrders.map((order) => encodeOrder(order)),
           Array(sellOrders.length).fill(queueStartElement),
+          Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("Auction not yet finished");
       await closeAuction(easyAuction, auctionId);
@@ -1602,6 +1603,7 @@ describe("EasyAuction", async () => {
         easyAuction.claimFromParticipantOrder(
           auctionId,
           sellOrders.map((order) => encodeOrder(order)),
+          Array(sellOrders.length).fill(queueStartElement),
           Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("Auction not yet finished");
@@ -1654,6 +1656,7 @@ describe("EasyAuction", async () => {
         await easyAuction.callStatic.claimFromParticipantOrder(
           auctionId,
           [encodeOrder(sellOrders[1])],
+          [queueStartElement],
           [queueStartElement],
         ),
       );
@@ -1730,6 +1733,7 @@ describe("EasyAuction", async () => {
           auctionId,
           [encodeOrder(sellOrders[2])],
           [queueStartElement],
+          [queueStartElement],
         ),
       );
       expect(receivedAmounts.biddingTokenAmount).to.equal(
@@ -1786,6 +1790,7 @@ describe("EasyAuction", async () => {
           auctionId,
           [encodeOrder(sellOrders[0])],
           [queueStartElement],
+          [queueStartElement],
         ),
       );
       expect(receivedAmounts.biddingTokenAmount).to.equal("0");
@@ -1841,11 +1846,13 @@ describe("EasyAuction", async () => {
         auctionId,
         [encodeOrder(sellOrders[0])],
         [queueStartElement],
+        [queueStartElement],
       ),
         await expect(
           easyAuction.claimFromParticipantOrder(
             auctionId,
             [encodeOrder(sellOrders[0])],
+            [queueStartElement],
             [queueStartElement],
           ),
         ).to.be.revertedWith("order is no longer claimable");
@@ -1896,6 +1903,7 @@ describe("EasyAuction", async () => {
         auctionId,
         [encodeOrder(sellOrders[0]), encodeOrder(sellOrders[1])],
         [queueStartElement, queueStartElement],
+        [queueStartElement, queueStartElement],
       ),
     ).to.be.revertedWith("only allowed to claim for same user");
   });
@@ -1944,6 +1952,7 @@ describe("EasyAuction", async () => {
       await easyAuction.callStatic.claimFromParticipantOrder(
         auctionId,
         [encodeOrder(sellOrders[0]), encodeOrder(sellOrders[1])],
+        [queueStartElement, queueStartElement],
         [queueStartElement, queueStartElement],
       ),
     );
@@ -2363,6 +2372,7 @@ describe("EasyAuction", async () => {
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
         Array(sellOrders.length).fill(queueStartElement),
+        Array(sellOrders.length).fill(queueStartElement),
       );
     });
     it("claims also fee amount of zero, even when it is changed later", async () => {
@@ -2430,6 +2440,7 @@ describe("EasyAuction", async () => {
       await easyAuction.callStatic.claimFromParticipantOrder(
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
+        Array(sellOrders.length).fill(queueStartElement),
         Array(sellOrders.length).fill(queueStartElement),
       );
     });
@@ -2500,6 +2511,7 @@ describe("EasyAuction", async () => {
       await easyAuction.callStatic.claimFromParticipantOrder(
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
+        Array(sellOrders.length).fill(queueStartElement),
         Array(sellOrders.length).fill(queueStartElement),
       );
     });

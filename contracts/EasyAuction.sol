@@ -404,7 +404,8 @@ contract EasyAuction is Ownable {
     function claimFromParticipantOrder(
         uint256 auctionId,
         bytes32[] memory orders,
-        bytes32[] memory previousOrders
+        bytes32[] memory previousOrders,
+        bytes32[] memory fallbackPrevOrders
     )
         public
         atStageFinished(auctionId)
@@ -413,15 +414,21 @@ contract EasyAuction is Ownable {
             uint256 sumBiddingTokenAmount
         )
     {
+        for (uint256 i = 0; i < orders.length; i++) {
+            require(
+                sellOrders[auctionId].removeWithHighSuccessRate(
+                    orders[i],
+                    previousOrders[i],
+                    fallbackPrevOrders[i]
+                ),
+                "order is no longer claimable"
+            );
+        }
         AuctionData memory auction = auctionData[auctionId];
         (, uint96 priceNumerator, uint96 priceDenominator) =
             auction.clearingPriceOrder.decodeOrder();
         (uint64 userId, , ) = orders[0].decodeOrder();
         for (uint256 i = 0; i < orders.length; i++) {
-            require(
-                sellOrders[auctionId].remove(orders[i], previousOrders[i]),
-                "order is no longer claimable"
-            );
             (uint64 userIdOrder, uint96 buyAmount, uint96 sellAmount) =
                 orders[i].decodeOrder();
             require(
