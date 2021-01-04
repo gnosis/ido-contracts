@@ -57,42 +57,26 @@ library IterableOrderedOrderSet {
         ) {
             return false;
         }
-        bool foundposition = false;
         if (self.size == 0) {
             self.nextMap[QUEUE_START] = elementToInsert;
             self.nextMap[elementToInsert] = QUEUE_END;
         } else {
-            bytes32 elementBeforeNewOneIteration = elementBeforeNewOne;
-            while (!foundposition) {
-                if (elementBeforeNewOneIteration.smallerThan(elementToInsert)) {
-                    if (
-                        !self.nextMap[elementBeforeNewOneIteration].smallerThan(
-                            elementToInsert
-                        )
-                    ) {
-                        // Since we have:
-                        // elementBeforeNewOneIteration<elementToInsert)<self.nextMap[elementBeforeNewOneIteration]
-                        // the right place was found and the element gets inserted
-                        bytes32 tmp =
-                            self.nextMap[elementBeforeNewOneIteration];
-                        self.nextMap[
-                            elementBeforeNewOneIteration
-                        ] = elementToInsert;
-                        self.nextMap[elementToInsert] = tmp;
-                        foundposition = true;
-                    } else {
-                        // Getting next order after the current elementBeforeNewOne.
-                        // This can naturally occur, if new orders were inserted
-                        // between time of on-chain execution and order sending
-                        elementBeforeNewOneIteration = self.nextMap[
-                            elementBeforeNewOneIteration
-                        ];
-                    }
-                } else {
-                    // elementBeforeNewOne was biggerThan elementToInsert
-                    return false;
-                }
+            if (!elementBeforeNewOne.smallerThan(elementToInsert)) {
+                return false;
             }
+
+            bytes32 previous;
+            bytes32 current = elementBeforeNewOne;
+            // elementBeforeNewOne can be any element smaller than the element
+            // to insert. We want to keep the elements sorted after inserting
+            // elementToInsert.
+            do {
+                previous = current;
+                current = self.nextMap[current];
+            } while (current.smallerThan(elementToInsert));
+            // Note: previous < elementToInsert < current
+            self.nextMap[previous] = elementToInsert;
+            self.nextMap[elementToInsert] = current;
         }
         self.size++;
         return true;
