@@ -579,6 +579,50 @@ describe("EasyAuction", async () => {
 
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[1]));
     });
+    it("succeeds with valid user orders whose price is far apart", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("2"),
+        buyAmount: ethers.utils.parseEther("2"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("10"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("2"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      await expect(easyAuction.precalculateSellAmountSum(auctionId, 2)).not.to
+        .be.reverted;
+    });
   });
   describe("verifyPrice", async () => {
     it("verifies the price in case of clearing order == initialAuctionOrder", async () => {
