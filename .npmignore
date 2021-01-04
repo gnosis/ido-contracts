@@ -1,0 +1,7 @@
+node_modules
+client/src/contracts/*
+env/*
+coverage/*
+coverage.json
+test/*
+assets/*
