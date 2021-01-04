@@ -202,9 +202,11 @@ library IterableOrderedOrderSet {
             uint96 sellAmount
         )
     {
-        userId = uint64(uint256(_orderData) / 2**192);
-        buyAmount = uint96((uint256(_orderData) % 2**192) / 2**96);
-        sellAmount = uint96((uint256(_orderData) % 2**96));
+        // Note: converting to uint discards the binary digits that do not fit
+        // the type.
+        userId = uint64(uint256(_orderData) >> 192);
+        buyAmount = uint96(uint256(_orderData) >> 96);
+        sellAmount = uint96(uint256(_orderData));
     }
 
     function encodeOrder(
@@ -214,10 +216,8 @@ library IterableOrderedOrderSet {
     ) internal pure returns (bytes32) {
         return
             bytes32(
-                uint256(userId) *
-                    2**192 +
-                    uint256(buyAmount) *
-                    2**96 +
+                (uint256(userId) << 192) +
+                    (uint256(buyAmount) << 96) +
                     uint256(sellAmount)
             );
     }
