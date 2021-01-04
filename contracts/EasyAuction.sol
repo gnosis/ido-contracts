@@ -63,8 +63,8 @@ contract EasyAuction is Ownable {
     event CancellationSellOrder(
         uint256 indexed auctionId,
         uint64 indexed userId,
-        uint96 sellAmount,
-        uint96 buyAmount
+        uint96 buyAmount,
+        uint96 sellAmount
     );
     event ClaimedFromOrder(
         uint256 indexed auctionId,
