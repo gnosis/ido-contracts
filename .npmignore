@@ -1,5 +1,6 @@
 node_modules
-build
 env/*
 coverage/*
 coverage.json
+test/*
+assets/*
