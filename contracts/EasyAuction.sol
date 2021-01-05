@@ -576,7 +576,9 @@ contract EasyAuction is Ownable {
         view
         returns (bool)
     {
-        return auctionData[auctionId].initialAuctionOrder != bytes32(0);
+        return
+            auctionData[auctionId].initialAuctionOrder != bytes32(0) ||
+            auctionData[auctionId].clearingPriceOrder != bytes32(0);
     }
 
     function getSecondsRemainingInBatch(uint256 auctionId)
