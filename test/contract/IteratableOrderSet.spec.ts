@@ -222,57 +222,22 @@ describe("IterableOrderedOrderSet", function () {
     expect(second).to.equal(BYTES32_THREE);
   });
 
-  it("returns the correct size of queue", async () => {
-    await set.insert(BYTES32_THREE);
-    expect(await set.callStatic.size()).to.equal(1);
+  it("should allow to remove element twice", async () => {
     await set.insert(BYTES32_ONE);
-    expect(await set.callStatic.size()).to.equal(2);
-
     await set.insert(BYTES32_TWO);
-    expect(await set.callStatic.size()).to.equal(3);
+    await set.insert(BYTES32_THREE);
 
+    expect(await set.callStatic.remove(BYTES32_TWO)).to.equal(true);
     await set.remove(BYTES32_TWO);
-    expect(await set.callStatic.size()).to.equal(2);
+    expect(await set.callStatic.remove(BYTES32_TWO)).to.equal(false);
+  });
 
-    await set.remove(BYTES32_THREE);
-    expect(await set.callStatic.size()).to.equal(1);
-
+  it("should recognize empty sets", async () => {
+    expect(await set.callStatic.isEmpty()).to.equal(true);
+    await set.insert(BYTES32_ONE);
+    expect(await set.callStatic.isEmpty()).to.equal(false);
     await set.remove(BYTES32_ONE);
-    expect(await set.callStatic.size()).to.equal(0);
-  });
-
-  it("should allow to remove element behind certain element", async () => {
-    await set.insert(BYTES32_ONE);
-    await set.insert(BYTES32_TWO);
-    await set.insert(BYTES32_THREE);
-
-    expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_ONE)).to.equal(
-      true,
-    );
-    expect(await set.callStatic.removeAt(BYTES32_TWO, BYTES32_THREE)).to.equal(
-      false,
-    );
-  });
-
-  it("should allow to remove element behind certain element with removeWithHighSuccessRate", async () => {
-    await set.insert(BYTES32_ONE);
-    await set.insert(BYTES32_TWO);
-    await set.insert(BYTES32_THREE);
-
-    expect(
-      await set.callStatic.removeWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_ONE,
-      ),
-    ).to.equal(true);
-    expect(
-      await set.callStatic.removeWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_THREE,
-      ),
-    ).to.equal(false);
+    expect(await set.callStatic.isEmpty()).to.equal(true);
   });
 
   it("cannot contain queue start element or queue end element", async () => {

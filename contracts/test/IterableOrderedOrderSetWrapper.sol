@@ -5,7 +5,7 @@ import "../libraries/IterableOrderedOrderSet.sol";
 contract IterableOrderedOrderSetWrapper {
     using IterableOrderedOrderSet for IterableOrderedOrderSet.Data;
 
-    IterableOrderedOrderSet.Data public data;
+    IterableOrderedOrderSet.Data internal data;
 
     function insert(bytes32 value) public returns (bool) {
         return data.insert(value, IterableOrderedOrderSet.QUEUE_START);
@@ -24,19 +24,7 @@ contract IterableOrderedOrderSetWrapper {
     }
 
     function remove(bytes32 value) public returns (bool) {
-        return data.remove(value, IterableOrderedOrderSet.QUEUE_START);
-    }
-
-    function removeAt(bytes32 value, bytes32 at) public returns (bool) {
-        return data.remove(value, at);
-    }
-
-    function removeWithHighSuccessRate(
-        bytes32 value,
-        bytes32 at,
-        bytes32 at2
-    ) public returns (bool) {
-        return data.removeWithHighSuccessRate(value, at, at2);
+        return data.remove(value);
     }
 
     function contains(bytes32 value) public view returns (bool) {
@@ -44,11 +32,7 @@ contract IterableOrderedOrderSetWrapper {
     }
 
     function isEmpty() public view returns (bool) {
-        return data.size == 0;
-    }
-
-    function size() public view returns (uint256) {
-        return data.size;
+        return data.isEmpty();
     }
 
     function first() public view returns (bytes32) {

@@ -98,7 +98,7 @@ contract EasyAuction is Ownable {
         uint96 volumeClearingPriceOrder;
         uint256 feeNumerator;
     }
-    mapping(uint256 => IterableOrderedOrderSet.Data) public sellOrders;
+    mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
@@ -227,21 +227,14 @@ contract EasyAuction is Ownable {
         );
     }
 
-    function cancelSellOrders(
-        uint256 auctionId,
-        bytes32[] memory _sellOrders,
-        bytes32[] memory _prevSellOrders,
-        bytes32[] memory _fallbackPrevSellOrders
-    ) public atStageOrderPlacementAndCancelation(auctionId) {
+    function cancelSellOrders(uint256 auctionId, bytes32[] memory _sellOrders)
+        public
+        atStageOrderPlacementAndCancelation(auctionId)
+    {
         uint64 userId = getUserId(msg.sender);
         uint256 claimableAmount = 0;
         for (uint256 i = 0; i < _sellOrders.length; i++) {
-            bool success =
-                sellOrders[auctionId].removeWithHighSuccessRate(
-                    _sellOrders[i],
-                    _prevSellOrders[i],
-                    _fallbackPrevSellOrders[i]
-                );
+            bool success = sellOrders[auctionId].remove(_sellOrders[i]);
             if (success) {
                 (
                     uint64 userIdOfIter,
@@ -322,7 +315,7 @@ contract EasyAuction is Ownable {
         if (iterOrder == bytes32(0)) {
             iterOrder = IterableOrderedOrderSet.QUEUE_START;
         }
-        if (sellOrders[auctionId].size > 0) {
+        if (!sellOrders[auctionId].isEmpty()) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
             while (iterOrder != price && iterOrder.smallerThan(price)) {
                 (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
@@ -403,9 +396,7 @@ contract EasyAuction is Ownable {
 
     function claimFromParticipantOrder(
         uint256 auctionId,
-        bytes32[] memory orders,
-        bytes32[] memory previousOrders,
-        bytes32[] memory fallbackPrevOrders
+        bytes32[] memory orders
     )
         public
         atStageFinished(auctionId)
@@ -416,11 +407,7 @@ contract EasyAuction is Ownable {
     {
         for (uint256 i = 0; i < orders.length; i++) {
             require(
-                sellOrders[auctionId].removeWithHighSuccessRate(
-                    orders[i],
-                    previousOrders[i],
-                    fallbackPrevOrders[i]
-                ),
+                sellOrders[auctionId].remove(orders[i]),
                 "order is no longer claimable"
             );
         }

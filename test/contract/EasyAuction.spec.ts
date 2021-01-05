@@ -1594,8 +1594,6 @@ describe("EasyAuction", async () => {
         easyAuction.claimFromParticipantOrder(
           auctionId,
           sellOrders.map((order) => encodeOrder(order)),
-          Array(sellOrders.length).fill(queueStartElement),
-          Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("Auction not yet finished");
       await closeAuction(easyAuction, auctionId);
@@ -1603,8 +1601,6 @@ describe("EasyAuction", async () => {
         easyAuction.claimFromParticipantOrder(
           auctionId,
           sellOrders.map((order) => encodeOrder(order)),
-          Array(sellOrders.length).fill(queueStartElement),
-          Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("Auction not yet finished");
     });
@@ -1653,12 +1649,9 @@ describe("EasyAuction", async () => {
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
       const receivedAmounts = toReceivedFunds(
-        await easyAuction.callStatic.claimFromParticipantOrder(
-          auctionId,
-          [encodeOrder(sellOrders[1])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        await easyAuction.callStatic.claimFromParticipantOrder(auctionId, [
+          encodeOrder(sellOrders[1]),
+        ]),
       );
       const settledBuyAmount = sellOrders[1].sellAmount
         .mul(price.buyAmount)
@@ -1729,12 +1722,9 @@ describe("EasyAuction", async () => {
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
       const receivedAmounts = toReceivedFunds(
-        await easyAuction.callStatic.claimFromParticipantOrder(
-          auctionId,
-          [encodeOrder(sellOrders[2])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        await easyAuction.callStatic.claimFromParticipantOrder(auctionId, [
+          encodeOrder(sellOrders[2]),
+        ]),
       );
       expect(receivedAmounts.biddingTokenAmount).to.equal(
         sellOrders[2].sellAmount,
@@ -1786,12 +1776,9 @@ describe("EasyAuction", async () => {
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
       const receivedAmounts = toReceivedFunds(
-        await easyAuction.callStatic.claimFromParticipantOrder(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        await easyAuction.callStatic.claimFromParticipantOrder(auctionId, [
+          encodeOrder(sellOrders[0]),
+        ]),
       );
       expect(receivedAmounts.biddingTokenAmount).to.equal("0");
       expect(receivedAmounts.auctioningTokenAmount).to.equal(
@@ -1842,19 +1829,13 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
-      await easyAuction.claimFromParticipantOrder(
-        auctionId,
-        [encodeOrder(sellOrders[0])],
-        [queueStartElement],
-        [queueStartElement],
-      ),
+      await easyAuction.claimFromParticipantOrder(auctionId, [
+        encodeOrder(sellOrders[0]),
+      ]),
         await expect(
-          easyAuction.claimFromParticipantOrder(
-            auctionId,
-            [encodeOrder(sellOrders[0])],
-            [queueStartElement],
-            [queueStartElement],
-          ),
+          easyAuction.claimFromParticipantOrder(auctionId, [
+            encodeOrder(sellOrders[0]),
+          ]),
         ).to.be.revertedWith("order is no longer claimable");
     });
   });
@@ -1899,12 +1880,10 @@ describe("EasyAuction", async () => {
     await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
     await expect(
-      easyAuction.claimFromParticipantOrder(
-        auctionId,
-        [encodeOrder(sellOrders[0]), encodeOrder(sellOrders[1])],
-        [queueStartElement, queueStartElement],
-        [queueStartElement, queueStartElement],
-      ),
+      easyAuction.claimFromParticipantOrder(auctionId, [
+        encodeOrder(sellOrders[0]),
+        encodeOrder(sellOrders[1]),
+      ]),
     ).to.be.revertedWith("only allowed to claim for same user");
   });
   it("checks the claimed amounts are summed up correctly for two orders", async () => {
@@ -1949,12 +1928,10 @@ describe("EasyAuction", async () => {
     await easyAuction.verifyPrice(auctionId, encodeOrder(price));
 
     const receivedAmounts = toReceivedFunds(
-      await easyAuction.callStatic.claimFromParticipantOrder(
-        auctionId,
-        [encodeOrder(sellOrders[0]), encodeOrder(sellOrders[1])],
-        [queueStartElement, queueStartElement],
-        [queueStartElement, queueStartElement],
-      ),
+      await easyAuction.callStatic.claimFromParticipantOrder(auctionId, [
+        encodeOrder(sellOrders[0]),
+        encodeOrder(sellOrders[1]),
+      ]),
     );
     expect(receivedAmounts.biddingTokenAmount).to.equal(
       sellOrders[0].sellAmount
@@ -2006,12 +1983,7 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await expect(
-        easyAuction.cancelSellOrders(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
       )
         .to.emit(biddingToken, "Transfer")
         .withArgs(
@@ -2057,23 +2029,13 @@ describe("EasyAuction", async () => {
 
       await increaseTime(3601);
       await expect(
-        easyAuction.cancelSellOrders(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
       ).to.be.revertedWith(
         "revert no longer in order placement and cancelation phase",
       );
       await closeAuction(easyAuction, auctionId);
       await expect(
-        easyAuction.cancelSellOrders(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
       ).to.be.revertedWith(
         "revert no longer in order placement and cancelation phase",
       );
@@ -2116,12 +2078,7 @@ describe("EasyAuction", async () => {
       const arbitraryElement =
         "0x0000000000000000000001000000000000000000000000000000000000000005";
       await expect(
-        easyAuction.cancelSellOrders(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [arbitraryElement],
-          [queueStartElement],
-        ),
+        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
       )
         .to.emit(biddingToken, "Transfer")
         .withArgs(
@@ -2166,20 +2123,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       // removes the order
-      easyAuction.cancelSellOrders(
-        auctionId,
-        [encodeOrder(sellOrders[0])],
-        [queueStartElement],
-        [queueStartElement],
-      );
+      easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]);
       // claims 0 sellAmount tokens
       await expect(
-        easyAuction.cancelSellOrders(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
       )
         .to.emit(biddingToken, "Transfer")
         .withArgs(easyAuction.address, user_1.address, 0);
@@ -2220,12 +2167,7 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await expect(
-        easyAuction.cancelSellOrders(
-          auctionId,
-          [encodeOrder(sellOrders[0])],
-          [queueStartElement],
-          [queueStartElement],
-        ),
+        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
       ).to.be.revertedWith("Only the user can cancel his orders");
     });
   });
@@ -2371,8 +2313,6 @@ describe("EasyAuction", async () => {
       await easyAuction.callStatic.claimFromParticipantOrder(
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
-        Array(sellOrders.length).fill(queueStartElement),
-        Array(sellOrders.length).fill(queueStartElement),
       );
     });
     it("claims also fee amount of zero, even when it is changed later", async () => {
@@ -2440,8 +2380,6 @@ describe("EasyAuction", async () => {
       await easyAuction.callStatic.claimFromParticipantOrder(
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
-        Array(sellOrders.length).fill(queueStartElement),
-        Array(sellOrders.length).fill(queueStartElement),
       );
     });
     it("claims fees fully for a partially filled initialAuctionOrder", async () => {
@@ -2511,8 +2449,6 @@ describe("EasyAuction", async () => {
       await easyAuction.callStatic.claimFromParticipantOrder(
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
-        Array(sellOrders.length).fill(queueStartElement),
-        Array(sellOrders.length).fill(queueStartElement),
       );
     });
   });

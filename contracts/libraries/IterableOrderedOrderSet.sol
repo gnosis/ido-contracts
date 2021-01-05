@@ -16,13 +16,19 @@ library IterableOrderedOrderSet {
 
     struct Data {
         mapping(bytes32 => bytes32) nextMap;
-        uint256 size;
+        mapping(bytes32 => bytes32) prevMap;
     }
 
     struct Order {
         uint64 owner;
         uint96 buyAmount;
         uint96 sellAmount;
+    }
+
+    function isEmpty(Data storage self) internal view returns (bool) {
+        return
+            self.nextMap[QUEUE_START] == bytes32(0) ||
+            self.nextMap[QUEUE_START] == QUEUE_END;
     }
 
     function insertWithHighSuccessRate(
@@ -57,9 +63,11 @@ library IterableOrderedOrderSet {
         ) {
             return false;
         }
-        if (self.size == 0) {
+        if (isEmpty(self)) {
             self.nextMap[QUEUE_START] = elementToInsert;
+            self.prevMap[elementToInsert] = QUEUE_START;
             self.nextMap[elementToInsert] = QUEUE_END;
+            self.prevMap[QUEUE_END] = QUEUE_START;
         } else {
             if (!elementBeforeNewOne.smallerThan(elementToInsert)) {
                 return false;
@@ -76,50 +84,26 @@ library IterableOrderedOrderSet {
             } while (current.smallerThan(elementToInsert));
             // Note: previous < elementToInsert < current
             self.nextMap[previous] = elementToInsert;
+            self.prevMap[current] = elementToInsert;
+            self.prevMap[elementToInsert] = previous;
             self.nextMap[elementToInsert] = current;
         }
-        self.size++;
         return true;
     }
 
-    function removeWithHighSuccessRate(
-        Data storage self,
-        bytes32 elementToRemove,
-        bytes32 elementBeforeRemoval,
-        bytes32 secondElementBeforeRemoval
-    ) internal returns (bool success) {
-        success = remove(self, elementToRemove, elementBeforeRemoval);
-        if (!success) {
-            success = remove(self, elementToRemove, secondElementBeforeRemoval);
-        }
-    }
-
-    function remove(
-        Data storage self,
-        bytes32 elementToRemove,
-        bytes32 elementBeforeRemoval
-    ) internal returns (bool) {
-        if (
-            !contains(self, elementToRemove) ||
-            (elementBeforeRemoval != QUEUE_START &&
-                !contains(self, elementBeforeRemoval))
-        ) {
+    function remove(Data storage self, bytes32 elementToRemove)
+        internal
+        returns (bool)
+    {
+        if (!contains(self, elementToRemove)) {
             return false;
         }
-        bytes32 elementBeforeRemovalIteration = elementBeforeRemoval;
-        while (self.nextMap[elementBeforeRemovalIteration] != elementToRemove) {
-            if (elementBeforeRemovalIteration == QUEUE_END) {
-                return false;
-            }
-            elementBeforeRemovalIteration = self.nextMap[
-                elementBeforeRemovalIteration
-            ];
-        }
-        self.nextMap[elementBeforeRemovalIteration] = self.nextMap[
-            elementToRemove
-        ];
+        bytes32 previousElement = self.prevMap[elementToRemove];
+        bytes32 nextElement = self.nextMap[elementToRemove];
+        self.nextMap[previousElement] = nextElement;
+        self.prevMap[nextElement] = previousElement;
+        self.prevMap[elementToRemove] = bytes32(0);
         self.nextMap[elementToRemove] = bytes32(0);
-        self.size--;
         return true;
     }
 
@@ -173,7 +157,7 @@ library IterableOrderedOrderSet {
     }
 
     function first(Data storage self) internal view returns (bytes32) {
-        require(self.size > 0, "Trying to get first from empty set");
+        require(!isEmpty(self), "Trying to get first from empty set");
         return self.nextMap[QUEUE_START];
     }
 
