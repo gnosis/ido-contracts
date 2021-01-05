@@ -2040,53 +2040,6 @@ describe("EasyAuction", async () => {
         "revert no longer in order placement and cancelation phase",
       );
     });
-    it("cancels an order via fallbackPrevSellOrder", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(0),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(0),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        easyAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
-        easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256)",
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-      );
-      await placeOrders(easyAuction, sellOrders, auctionId, hre);
-
-      const arbitraryElement =
-        "0x0000000000000000000001000000000000000000000000000000000000000005";
-      await expect(
-        easyAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]),
-      )
-        .to.emit(biddingToken, "Transfer")
-        .withArgs(
-          easyAuction.address,
-          user_1.address,
-          sellOrders[0].sellAmount,
-        );
-    });
     it("can't cancel orders twice", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
