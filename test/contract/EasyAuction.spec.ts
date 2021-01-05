@@ -579,7 +579,7 @@ describe("EasyAuction", async () => {
 
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[1]));
     });
-    it("succeeds with valid user orders whose price is far apart", async () => {
+    it.only("succeeds with valid user orders whose price is far apart", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("2"),
         buyAmount: ethers.utils.parseEther("2"),
@@ -591,12 +591,15 @@ describe("EasyAuction", async () => {
           buyAmount: ethers.utils.parseEther("1"),
           userId: BigNumber.from(0),
         },
-        {
-          sellAmount: ethers.utils.parseEther("2"),
-          buyAmount: ethers.utils.parseEther("1"),
-          userId: BigNumber.from(1),
-        },
       ];
+      const amount = 100;
+      for (let i = 0; i < amount; i++) {
+        sellOrders.push({
+          sellAmount: ethers.utils.parseEther("2").div(amount).sub(i),
+          buyAmount: ethers.utils.parseEther("1").div(amount),
+          userId: BigNumber.from(1),
+        });
+      }
       const {
         auctioningToken,
         biddingToken,
@@ -620,8 +623,12 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      await expect(easyAuction.precalculateSellAmountSum(auctionId, 2)).not.to
-        .be.reverted;
+      // next instruction should not revert
+      await easyAuction.precalculateSellAmountSum(auctionId, 2);
+      // The next line is commented out in favor of the line before because it
+      // does not show the reason for reverting in the console output.
+      //await expect(easyAuction.precalculateSellAmountSum(auctionId, 2)).not.to
+      //  .be.reverted;
     });
   });
   describe("verifyPrice", async () => {
