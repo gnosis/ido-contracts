@@ -39,7 +39,8 @@ contract EasyAuction is Ownable {
 
     modifier atStageSolutionSubmission(uint256 auctionId) {
         require(
-            block.timestamp > auctionData[auctionId].auctionEndDate &&
+            auctionIsInitialized(auctionId) &&
+                block.timestamp > auctionData[auctionId].auctionEndDate &&
                 auctionData[auctionId].clearingPriceOrder == bytes32(0),
             "Auction not in solution submission phase"
         );
@@ -414,6 +415,7 @@ contract EasyAuction is Ownable {
             uint256 sumBiddingTokenAmount
         )
     {
+        require(auctionIsInitialized(auctionId), "auction is not initialized");
         for (uint256 i = 0; i < orders.length; i++) {
             require(
                 sellOrders[auctionId].removeWithHighSuccessRate(
@@ -469,6 +471,7 @@ contract EasyAuction is Ownable {
         internal
         returns (uint256 auctioningTokenAmount, uint256 biddingTokenAmount)
     {
+        require(auctionIsInitialized(auctionId), "auction is not initialized");
         (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
@@ -566,6 +569,14 @@ contract EasyAuction is Ownable {
             userId = registerUser(user);
             emit NewUser(userId, user);
         }
+    }
+
+    function auctionIsInitialized(uint256 auctionId)
+        public
+        view
+        returns (bool)
+    {
+        return auctionData[auctionId].initialAuctionOrder != bytes32(0);
     }
 
     function getSecondsRemainingInBatch(uint256 auctionId)
