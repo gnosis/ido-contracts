@@ -579,7 +579,7 @@ describe("EasyAuction", async () => {
 
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[1]));
     });
-    it.only("succeeds with valid user orders whose price is far apart", async () => {
+    it("succeeds with valid user orders whose price is far apart", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("2"),
         buyAmount: ethers.utils.parseEther("2"),
