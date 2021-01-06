@@ -146,6 +146,8 @@ contract EasyAuction is Ownable {
                 FEE_DENOMINATOR
             )
         );
+        require(_auctionedSellAmount > 0, "cannot auction zero tokens");
+        require(_minBuyAmount > 0, "tokens cannot be auctioned for free");
         require(
             minimumBiddingAmount > 0,
             "minimumBiddingAmount is not allowed to be zero"
