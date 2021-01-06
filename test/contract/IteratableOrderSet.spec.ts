@@ -60,6 +60,7 @@ describe("IterableOrderedOrderSet", function () {
     );
 
     set = await IterableOrderedOrderSetWrapper.deploy();
+    await set.initializeEmptyList();
   });
 
   it("should contain the added values", async () => {
