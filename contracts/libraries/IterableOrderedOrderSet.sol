@@ -60,8 +60,8 @@ library IterableOrderedOrderSet {
             return false;
         }
         if (
-            !(elementBeforeNewOne == QUEUE_START ||
-                contains(self, elementBeforeNewOne))
+            elementBeforeNewOne != QUEUE_START &&
+            self.prevMap[elementBeforeNewOne] == bytes32(0)
         ) {
             return false;
         }
@@ -77,7 +77,7 @@ library IterableOrderedOrderSet {
         // Note that following the link backwards returns elements that are
         // before `elementBeforeNewOne` in sorted order.
         while (self.nextMap[elementBeforeNewOne] == bytes32(0)) {
-            elementBeforeNewOne = self.nextMap[elementBeforeNewOne];
+            elementBeforeNewOne = self.prevMap[elementBeforeNewOne];
         }
 
         // `elementBeforeNewOne` belongs now to the linked list. We search the
