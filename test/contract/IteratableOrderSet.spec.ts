@@ -147,36 +147,6 @@ describe("IterableOrderedOrderSet", function () {
       set.callStatic.insertAt(queueLastElement, queueStartElement),
     ).to.be.revertedWith("Inserting element is not valid");
   });
-  it("should allow to insert element with insertWithHighSuccessRate", async () => {
-    await set.insert(BYTES32_ONE);
-
-    expect(
-      await set.callStatic.insertWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_ONE,
-      ),
-    ).to.equal(true);
-    await set.insertWithHighSuccessRate(
-      BYTES32_TWO,
-      BYTES32_THREE,
-      BYTES32_ONE,
-    );
-    expect(
-      await set.callStatic.insertWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_ONE,
-      ),
-    ).to.equal(false);
-    expect(
-      await set.callStatic.insertWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_THREE,
-      ),
-    ).to.equal(false);
-  });
 
   it("should insert element according to rate", async () => {
     await set.insert(BYTES32_THREE);
