@@ -43,6 +43,14 @@ contract IterableOrderedOrderSetWrapper {
         return data.next(value);
     }
 
+    function nextMap(bytes32 value) public view returns (bytes32) {
+        return data.nextMap[value];
+    }
+
+    function prevMap(bytes32 value) public view returns (bytes32) {
+        return data.prevMap[value];
+    }
+
     function decodeOrder(bytes32 value)
         public
         pure
