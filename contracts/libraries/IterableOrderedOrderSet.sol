@@ -25,10 +25,13 @@ library IterableOrderedOrderSet {
         uint96 sellAmount;
     }
 
+    function initializeEmptyList(Data storage self) internal {
+        self.nextMap[QUEUE_START] = QUEUE_END;
+        self.prevMap[QUEUE_END] = QUEUE_START;
+    }
+
     function isEmpty(Data storage self) internal view returns (bool) {
-        return
-            self.nextMap[QUEUE_START] == bytes32(0) ||
-            self.nextMap[QUEUE_START] == QUEUE_END;
+        return self.nextMap[QUEUE_START] == QUEUE_END;
     }
 
     function insertWithHighSuccessRate(
@@ -63,31 +66,25 @@ library IterableOrderedOrderSet {
         ) {
             return false;
         }
-        if (isEmpty(self)) {
-            self.nextMap[QUEUE_START] = elementToInsert;
-            self.prevMap[elementToInsert] = QUEUE_START;
-            self.nextMap[elementToInsert] = QUEUE_END;
-            self.prevMap[QUEUE_END] = QUEUE_START;
-        } else {
-            if (!elementBeforeNewOne.smallerThan(elementToInsert)) {
-                return false;
-            }
-
-            bytes32 previous;
-            bytes32 current = elementBeforeNewOne;
-            // elementBeforeNewOne can be any element smaller than the element
-            // to insert. We want to keep the elements sorted after inserting
-            // elementToInsert.
-            do {
-                previous = current;
-                current = self.nextMap[current];
-            } while (current.smallerThan(elementToInsert));
-            // Note: previous < elementToInsert < current
-            self.nextMap[previous] = elementToInsert;
-            self.prevMap[current] = elementToInsert;
-            self.prevMap[elementToInsert] = previous;
-            self.nextMap[elementToInsert] = current;
+        if (!elementBeforeNewOne.smallerThan(elementToInsert)) {
+            return false;
         }
+
+        bytes32 previous;
+        bytes32 current = elementBeforeNewOne;
+        // elementBeforeNewOne can be any element smaller than the element
+        // to insert. We want to keep the elements sorted after inserting
+        // elementToInsert.
+        do {
+            previous = current;
+            current = self.nextMap[current];
+        } while (current.smallerThan(elementToInsert));
+        // Note: previous < elementToInsert < current
+        self.nextMap[previous] = elementToInsert;
+        self.prevMap[current] = elementToInsert;
+        self.prevMap[elementToInsert] = previous;
+        self.nextMap[elementToInsert] = current;
+
         return true;
     }
 
@@ -166,15 +163,13 @@ library IterableOrderedOrderSet {
         view
         returns (bytes32)
     {
+        require(value != QUEUE_END, "Trying to get next of last element");
+        bytes32 nextElement = self.nextMap[value];
         require(
-            value != QUEUE_END,
+            nextElement != bytes32(0),
             "Trying to get next of non-existent element"
         );
-        require(
-            self.nextMap[value] != bytes32(0),
-            "Trying to get next of last element"
-        );
-        return self.nextMap[value];
+        return nextElement;
     }
 
     function decodeOrder(bytes32 _orderData)

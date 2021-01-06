@@ -153,6 +153,7 @@ contract EasyAuction is Ownable {
             "minimumBiddingAmount is not allowed to be zero"
         );
         auctionCounter++;
+        sellOrders[auctionCounter].initializeEmptyList();
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,

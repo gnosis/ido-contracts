@@ -7,6 +7,10 @@ contract IterableOrderedOrderSetWrapper {
 
     IterableOrderedOrderSet.Data internal data;
 
+    function initializeEmptyList() public {
+        data.initializeEmptyList();
+    }
+
     function insert(bytes32 value) public returns (bool) {
         return data.insert(value, IterableOrderedOrderSet.QUEUE_START);
     }
