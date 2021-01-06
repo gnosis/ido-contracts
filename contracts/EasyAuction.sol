@@ -38,11 +38,15 @@ contract EasyAuction is Ownable {
     }
 
     modifier atStageSolutionSubmission(uint256 auctionId) {
-        require(
-            block.timestamp > auctionData[auctionId].auctionEndDate &&
-                auctionData[auctionId].clearingPriceOrder == bytes32(0),
-            "Auction not in solution submission phase"
-        );
+        {
+            uint256 auctionEndDate = auctionData[auctionId].auctionEndDate;
+            require(
+                auctionEndDate != 0 &&
+                    block.timestamp > auctionEndDate &&
+                    auctionData[auctionId].clearingPriceOrder == bytes32(0),
+                "Auction not in solution submission phase"
+            );
+        }
         _;
     }
 
