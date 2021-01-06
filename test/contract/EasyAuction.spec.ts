@@ -50,6 +50,50 @@ describe("EasyAuction", async () => {
         ),
       ).to.be.revertedWith("minimumBiddingAmount is not allowed to be zero");
     });
+    it("throws if auctioned amount is zero", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      await expect(
+        easyAuction.initiateAuction(
+          auctioningToken.address,
+          biddingToken.address,
+          60 * 60,
+          60 * 60,
+          0,
+          ethers.utils.parseEther("1"),
+          1,
+        ),
+      ).to.be.revertedWith("cannot auction zero tokens");
+    });
+    it("throws if auction is a giveaway", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      await expect(
+        easyAuction.initiateAuction(
+          auctioningToken.address,
+          biddingToken.address,
+          60 * 60,
+          60 * 60,
+          ethers.utils.parseEther("1"),
+          0,
+          1,
+        ),
+      ).to.be.revertedWith("tokens cannot be auctioned for free");
+    });
     it("initiateAuction stores the parameters correctly", async () => {
       const {
         auctioningToken,
