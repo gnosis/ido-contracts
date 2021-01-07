@@ -97,6 +97,8 @@ contract EasyAuction is Ownable {
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
         uint256 feeNumerator;
+        uint256 minFundingThreshold;
+        bool minFundingThresholdNotReached;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -130,7 +132,8 @@ contract EasyAuction is Ownable {
         uint256 duration,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
-        uint256 minimumBiddingAmount
+        uint256 minimumBiddingAmount,
+        uint256 minFundingThreshold
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
 
@@ -162,7 +165,9 @@ contract EasyAuction is Ownable {
             bytes32(0),
             bytes32(0),
             0,
-            feeNumerator
+            feeNumerator,
+            minFundingThreshold,
+            false
         );
         emit NewAuction(auctionCounter, _auctioningToken, _biddingToken);
         return auctionCounter;
@@ -342,6 +347,9 @@ contract EasyAuction is Ownable {
                 clearingOrderBuyAmount.mul(priceDenominator).div(priceNumerator)
             )
                 .toUint96();
+            sumBuyAmount = sumBuyAmount.add(
+                auctionData[auctionId].volumeClearingPriceOrder
+            );
             require(
                 auctionData[auctionId].volumeClearingPriceOrder <=
                     sellAmountOfIter,
@@ -386,12 +394,15 @@ contract EasyAuction is Ownable {
                 );
             }
         }
-
-        emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
-        if (auctionData[auctionId].feeNumerator > 0) {
-            claimFees(auctionId);
+        if (auctionData[auctionId].minFundingThreshold > sumBuyAmount) {
+            auctionData[auctionId].minFundingThresholdNotReached = true;
+        } else {
+            if (auctionData[auctionId].feeNumerator > 0) {
+                claimFees(auctionId);
+            }
         }
         claimAuctioneerFunds(auctionId);
+        emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
     }
 
     function claimFromParticipantOrder(
@@ -415,72 +426,95 @@ contract EasyAuction is Ownable {
         (, uint96 priceNumerator, uint96 priceDenominator) =
             auction.clearingPriceOrder.decodeOrder();
         (uint64 userId, , ) = orders[0].decodeOrder();
-        for (uint256 i = 0; i < orders.length; i++) {
-            (uint64 userIdOrder, uint96 buyAmount, uint96 sellAmount) =
-                orders[i].decodeOrder();
-            require(
-                userIdOrder == userId,
-                "only allowed to claim for same user"
-            );
-            if (orders[i] == auction.clearingPriceOrder) {
-                sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
-                    auction.volumeClearingPriceOrder.mul(priceNumerator).div(
-                        priceDenominator
-                    )
+        if (auctionData[auctionId].minFundingThresholdNotReached) {
+            for (uint256 i = 0; i < orders.length; i++) {
+                (uint64 userIdOrder, , uint96 sellAmount) =
+                    orders[i].decodeOrder();
+                require(
+                    userIdOrder == userId,
+                    "only allowed to claim for same user"
                 );
-                sumBiddingTokenAmount = sumBiddingTokenAmount.add(
-                    sellAmount.sub(auction.volumeClearingPriceOrder)
+                sumBiddingTokenAmount = sumBiddingTokenAmount.add(sellAmount);
+            }
+            sendOutTokens(auctionId, 0, sumBiddingTokenAmount, userId);
+        } else {
+            for (uint256 i = 0; i < orders.length; i++) {
+                (uint64 userIdOrder, uint96 buyAmount, uint96 sellAmount) =
+                    orders[i].decodeOrder();
+                require(
+                    userIdOrder == userId,
+                    "only allowed to claim for same user"
                 );
-            } else {
-                if (orders[i].smallerThan(auction.clearingPriceOrder)) {
+                if (orders[i] == auction.clearingPriceOrder) {
                     sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
-                        sellAmount.mul(priceNumerator).div(priceDenominator)
+                        auction
+                            .volumeClearingPriceOrder
+                            .mul(priceNumerator)
+                            .div(priceDenominator)
+                    );
+                    sumBiddingTokenAmount = sumBiddingTokenAmount.add(
+                        sellAmount.sub(auction.volumeClearingPriceOrder)
                     );
                 } else {
-                    sumBiddingTokenAmount = sumBiddingTokenAmount.add(
-                        sellAmount
-                    );
+                    if (orders[i].smallerThan(auction.clearingPriceOrder)) {
+                        sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
+                            sellAmount.mul(priceNumerator).div(priceDenominator)
+                        );
+                    } else {
+                        sumBiddingTokenAmount = sumBiddingTokenAmount.add(
+                            sellAmount
+                        );
+                    }
                 }
+                emit ClaimedFromOrder(auctionId, userId, buyAmount, sellAmount);
             }
-            emit ClaimedFromOrder(auctionId, userId, buyAmount, sellAmount);
+            sendOutTokens(
+                auctionId,
+                sumAuctioningTokenAmount,
+                sumBiddingTokenAmount,
+                userId
+            );
         }
-        sendOutTokens(
-            auctionId,
-            sumAuctioningTokenAmount,
-            sumBiddingTokenAmount,
-            userId
-        );
     }
 
     function claimAuctioneerFunds(uint256 auctionId)
         internal
         returns (uint256 auctioningTokenAmount, uint256 biddingTokenAmount)
     {
-        (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
-            auctionData[auctionId].initialAuctionOrder.decodeOrder();
-        auctionData[auctionId].initialAuctionOrder = bytes32(0);
-        (, uint96 priceNumerator, uint96 priceDenominator) =
-            auctionData[auctionId].clearingPriceOrder.decodeOrder();
-        if (priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)) {
-            // In this case we have a partial match of the initialSellOrder
-            auctioningTokenAmount = sellAmount.sub(
-                auctionData[auctionId].volumeClearingPriceOrder
-            );
-            biddingTokenAmount = auctionData[auctionId]
-                .volumeClearingPriceOrder
-                .mul(priceDenominator)
-                .div(priceNumerator);
+        if (auctionData[auctionId].minFundingThresholdNotReached) {
+            (uint64 auctioneerId, , uint96 sellAmount) =
+                auctionData[auctionId].initialAuctionOrder.decodeOrder();
+            sendOutTokens(auctionId, sellAmount, 0, auctioneerId);
         } else {
-            biddingTokenAmount = sellAmount.mul(priceDenominator).div(
-                priceNumerator
+            (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
+                auctionData[auctionId].initialAuctionOrder.decodeOrder();
+            auctionData[auctionId].initialAuctionOrder = bytes32(0);
+            (, uint96 priceNumerator, uint96 priceDenominator) =
+                auctionData[auctionId].clearingPriceOrder.decodeOrder();
+            if (
+                priceNumerator.mul(buyAmount) ==
+                priceDenominator.mul(sellAmount)
+            ) {
+                // In this case we have a partial match of the initialSellOrder
+                auctioningTokenAmount = sellAmount.sub(
+                    auctionData[auctionId].volumeClearingPriceOrder
+                );
+                biddingTokenAmount = auctionData[auctionId]
+                    .volumeClearingPriceOrder
+                    .mul(priceDenominator)
+                    .div(priceNumerator);
+            } else {
+                biddingTokenAmount = sellAmount.mul(priceDenominator).div(
+                    priceNumerator
+                );
+            }
+            sendOutTokens(
+                auctionId,
+                auctioningTokenAmount,
+                biddingTokenAmount,
+                auctioneerId
             );
         }
-        sendOutTokens(
-            auctionId,
-            auctioningTokenAmount,
-            biddingTokenAmount,
-            auctioneerId
-        );
     }
 
     function claimFees(uint256 auctionId) internal {
