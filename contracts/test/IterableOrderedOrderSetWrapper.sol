@@ -7,6 +7,10 @@ contract IterableOrderedOrderSetWrapper {
 
     IterableOrderedOrderSet.Data internal data;
 
+    function initializeEmptyList() public {
+        data.initializeEmptyList();
+    }
+
     function insert(bytes32 value) public returns (bool) {
         return data.insert(value, IterableOrderedOrderSet.QUEUE_START);
     }
@@ -15,16 +19,12 @@ contract IterableOrderedOrderSetWrapper {
         return data.insert(value, at);
     }
 
-    function insertWithHighSuccessRate(
-        bytes32 value,
-        bytes32 at,
-        bytes32 at2
-    ) public returns (bool) {
-        return data.insertWithHighSuccessRate(value, at, at2);
-    }
-
     function remove(bytes32 value) public returns (bool) {
         return data.remove(value);
+    }
+
+    function removeKeepHistory(bytes32 value) public returns (bool) {
+        return data.removeKeepHistory(value);
     }
 
     function contains(bytes32 value) public view returns (bool) {
@@ -41,6 +41,14 @@ contract IterableOrderedOrderSetWrapper {
 
     function next(bytes32 value) public view returns (bytes32) {
         return data.next(value);
+    }
+
+    function nextMap(bytes32 value) public view returns (bytes32) {
+        return data.nextMap[value];
+    }
+
+    function prevMap(bytes32 value) public view returns (bytes32) {
+        return data.prevMap[value];
     }
 
     function decodeOrder(bytes32 value)

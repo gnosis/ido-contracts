@@ -38,11 +38,15 @@ contract EasyAuction is Ownable {
     }
 
     modifier atStageSolutionSubmission(uint256 auctionId) {
-        require(
-            block.timestamp > auctionData[auctionId].auctionEndDate &&
-                auctionData[auctionId].clearingPriceOrder == bytes32(0),
-            "Auction not in solution submission phase"
-        );
+        {
+            uint256 auctionEndDate = auctionData[auctionId].auctionEndDate;
+            require(
+                auctionEndDate != 0 &&
+                    block.timestamp > auctionEndDate &&
+                    auctionData[auctionId].clearingPriceOrder == bytes32(0),
+                "Auction not in solution submission phase"
+            );
+        }
         _;
     }
 
@@ -145,11 +149,14 @@ contract EasyAuction is Ownable {
                 FEE_DENOMINATOR
             )
         );
+        require(_auctionedSellAmount > 0, "cannot auction zero tokens");
+        require(_minBuyAmount > 0, "tokens cannot be auctioned for free");
         require(
             minimumBiddingAmount > 0,
             "minimumBiddingAmount is not allowed to be zero"
         );
         auctionCounter++;
+        sellOrders[auctionCounter].initializeEmptyList();
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,
@@ -177,8 +184,7 @@ contract EasyAuction is Ownable {
         uint256 auctionId,
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders,
-        bytes32[] memory _fallbackPrevSellOrders
+        bytes32[] memory _prevSellOrders
     ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
         {
             // Run verifications of all orders
@@ -206,14 +212,13 @@ contract EasyAuction is Ownable {
         userId = getUserId(msg.sender);
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
             bool success =
-                sellOrders[auctionId].insertWithHighSuccessRate(
+                sellOrders[auctionId].insert(
                     IterableOrderedOrderSet.encodeOrder(
                         userId,
                         _minBuyAmounts[i],
                         _sellAmounts[i]
                     ),
-                    _prevSellOrders[i],
-                    _fallbackPrevSellOrders[i]
+                    _prevSellOrders[i]
                 );
             if (success) {
                 sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
@@ -239,7 +244,10 @@ contract EasyAuction is Ownable {
         uint64 userId = getUserId(msg.sender);
         uint256 claimableAmount = 0;
         for (uint256 i = 0; i < _sellOrders.length; i++) {
-            bool success = sellOrders[auctionId].remove(_sellOrders[i]);
+            // Note: we keep the back pointer of the deleted element so that
+            // it can be used as a reference point to insert a new node.
+            bool success =
+                sellOrders[auctionId].removeKeepHistory(_sellOrders[i]);
             if (success) {
                 (
                     uint64 userIdOfIter,
@@ -417,6 +425,8 @@ contract EasyAuction is Ownable {
         )
     {
         for (uint256 i = 0; i < orders.length; i++) {
+            // Note: we don't need to keep any information about the node since
+            // no new elements need to be inserted.
             require(
                 sellOrders[auctionId].remove(orders[i]),
                 "order is no longer claimable"
