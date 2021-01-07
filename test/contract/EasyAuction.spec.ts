@@ -1464,8 +1464,111 @@ describe("EasyAuction", async () => {
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
+    it("checks whether the minimalFundingThreshold is not met", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("10"),
+        buyAmount: ethers.utils.parseEther("10"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1").div(2),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1").div(4),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        ethers.utils.parseEther("5"),
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      expect(price).to.eql(initialAuctionOrder);
+      const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.minFundingThresholdNotReached).to.equal(true);
+    });
   });
   describe("claimFromAuctioneerOrder", async () => {
+    it("checks that auctioneer receives all their auctioningTokens back if minFundingThreshold was not met", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("10"),
+        buyAmount: ethers.utils.parseEther("10"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1").div(2),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1").div(4),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        ethers.utils.parseEther("5"),
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+
+      await expect(() =>
+        easyAuction
+          .verifyPrice(auctionId, encodeOrder(price))
+          .to.changeTokenBalances(
+            auctioningToken,
+            [user_1],
+            [initialAuctionOrder.sellAmount],
+          ),
+      );
+    });
     it("checks the claimed amounts for a fully matched initialAuctionOrder and buyOrder", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
@@ -1579,6 +1682,61 @@ describe("EasyAuction", async () => {
     });
   });
   describe("claimFromParticipantOrder", async () => {
+    it("checks that participant receives all their biddingTokens back if minFundingThreshold was not met", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("10"),
+        buyAmount: ethers.utils.parseEther("10"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1").div(2),
+          userId: BigNumber.from(1),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("1"),
+          buyAmount: ethers.utils.parseEther("1").div(4),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        ethers.utils.parseEther("5"),
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      const price = await calculateClearingPrice(easyAuction, auctionId);
+      await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+      await expect(() =>
+        easyAuction.claimFromParticipantOrder(
+          auctionId,
+          sellOrders.map((order) => encodeOrder(order)),
+        ),
+      ).to.changeTokenBalances(
+        biddingToken,
+        [user_2],
+        [sellOrders[0].sellAmount.add(sellOrders[1].sellAmount)],
+      );
+    });
     it("checks that claiming only works after the finishing of the auction", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
