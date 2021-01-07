@@ -264,14 +264,23 @@ describe("IterableOrderedOrderSet", function () {
       await set.insert(BYTES32_TWO);
       await set.insert(BYTES32_THREE);
       await set.insert(BYTES32_FIVE);
+      // 1 ─> 2 ─> 3 ─> 5
 
       await set.removeKeepHistory(BYTES32_TWO);
+      // 1  ─> 3 ─> 5
+      // └───> 2
       expect(await set.prevMap(BYTES32_TWO)).to.equal(BYTES32_ONE);
       expect(await set.nextMap(BYTES32_TWO)).to.equal(ethers.constants.Zero);
       await set.removeKeepHistory(BYTES32_THREE);
+      // 1 ─> 5
+      // └──> 2
+      // └──> 3
       expect(await set.prevMap(BYTES32_THREE)).to.equal(BYTES32_ONE);
       expect(await set.nextMap(BYTES32_THREE)).to.equal(ethers.constants.Zero);
       await set.insertAt(BYTES32_FOUR, BYTES32_TWO);
+      // 1 ─> 4 ─> 5
+      // └──> 2
+      // └──> 3
 
       const first = await set.first();
       const second = await set.next(first);
@@ -289,14 +298,23 @@ describe("IterableOrderedOrderSet", function () {
       await set.insert(BYTES32_TWO);
       await set.insert(BYTES32_THREE);
       await set.insert(BYTES32_FIVE);
+      // 1 ─> 2 ─> 3 ─> 5
 
       await set.removeKeepHistory(BYTES32_THREE);
+      // 1 ─> 2 ─> 5
+      //      └──> 3
       expect(await set.prevMap(BYTES32_THREE)).to.equal(BYTES32_TWO);
       expect(await set.nextMap(BYTES32_THREE)).to.equal(ethers.constants.Zero);
       await set.removeKeepHistory(BYTES32_TWO);
+      // 1 ─> 5
+      // └──> 2
+      //      └──> 3
       expect(await set.prevMap(BYTES32_TWO)).to.equal(BYTES32_ONE);
       expect(await set.nextMap(BYTES32_TWO)).to.equal(ethers.constants.Zero);
-      await set.insertAt(BYTES32_FOUR, BYTES32_TWO);
+      await set.insertAt(BYTES32_FOUR, BYTES32_THREE);
+      // 1 ─> 4 ─> 5
+      // └──> 2
+      //      └──> 3
 
       const first = await set.first();
       const second = await set.next(first);
@@ -313,16 +331,23 @@ describe("IterableOrderedOrderSet", function () {
       await set.insert(BYTES32_ONE);
       await set.insert(BYTES32_TWO);
       await set.insert(BYTES32_FIVE);
+      // 1 ─> 2 ─> 5
 
       await set.removeKeepHistory(BYTES32_TWO);
+      // 1 ─> 5
+      // └──> 2
       expect(await set.prevMap(BYTES32_TWO)).to.equal(BYTES32_ONE);
       expect(await set.nextMap(BYTES32_TWO)).to.equal(ethers.constants.Zero);
 
       await set.insert(BYTES32_THREE);
+      // 1 ─> 3 ─> 5
+      // └──> 2
       expect(await set.prevMap(BYTES32_THREE)).to.equal(BYTES32_ONE);
       expect(await set.nextMap(BYTES32_THREE)).to.equal(BYTES32_FIVE);
 
       await set.insertAt(BYTES32_FOUR, BYTES32_TWO);
+      // 1 ─> 3 ─> 4 ─> 5
+      // └──> 2
       expect(await set.prevMap(BYTES32_FOUR)).to.equal(BYTES32_THREE);
       expect(await set.nextMap(BYTES32_FOUR)).to.equal(BYTES32_FIVE);
 
