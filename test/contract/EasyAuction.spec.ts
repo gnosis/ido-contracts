@@ -176,7 +176,6 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1")],
           [ethers.utils.parseEther("1").add(1)],
           [queueStartElement],
-          [queueStartElement],
         ),
       ).to.be.revertedWith("no longer in order placement phase");
     });
@@ -207,7 +206,6 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1")],
           [ethers.utils.parseEther("1").add(1)],
           [queueStartElement],
-          [queueStartElement],
         ),
       ).to.be.revertedWith("no longer in order placement phase");
     });
@@ -237,7 +235,6 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1").add(1)],
           [ethers.utils.parseEther("1")],
           [queueStartElement],
-          [queueStartElement],
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
       await expect(
@@ -245,7 +242,6 @@ describe("EasyAuction", async () => {
           auctionId,
           [ethers.utils.parseEther("1")],
           [ethers.utils.parseEther("1")],
-          [queueStartElement],
           [queueStartElement],
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
@@ -282,7 +278,6 @@ describe("EasyAuction", async () => {
         [buyAmount, buyAmount],
         [sellAmount, sellAmount.add(1)],
         [queueStartElement, queueStartElement],
-        [queueStartElement, queueStartElement],
       );
       const transferredbiddingTokenAmount = sellAmount.add(sellAmount.add(1));
 
@@ -293,51 +288,7 @@ describe("EasyAuction", async () => {
         balanceBeforeOrderPlacement.sub(transferredbiddingTokenAmount),
       );
     });
-    it("places a new order via fallbackPrevSellOrder", async () => {
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        easyAuction,
-        [user_1, user_2],
-        hre,
-      );
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
-        easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256)",
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("1"),
-        1,
-      );
-
-      const balanceBeforeOrderPlacement = await biddingToken.balanceOf(
-        user_1.address,
-      );
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-      const arbitraryElement =
-        "0x0000000000000000000001000000000000000000000000000000000000000005";
-      await easyAuction.placeSellOrders(
-        auctionId,
-        [buyAmount],
-        [sellAmount],
-        [arbitraryElement],
-        [queueStartElement],
-      );
-      const transferredbiddingTokenAmount = sellAmount;
-
-      expect(await biddingToken.balanceOf(easyAuction.address)).to.equal(
-        transferredbiddingTokenAmount,
-      );
-      expect(await biddingToken.balanceOf(user_1.address)).to.equal(
-        balanceBeforeOrderPlacement.sub(transferredbiddingTokenAmount),
-      );
-    });
-    it("fallbackPrevSellOrder does not place an order twice", async () => {
+    it("an order is only placed once", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -365,7 +316,6 @@ describe("EasyAuction", async () => {
         auctionId,
         [buyAmount],
         [sellAmount],
-        [queueStartElement],
         [queueStartElement],
       );
       const allPlacedOrders = await getAllSellOrders(easyAuction, auctionId);
@@ -411,7 +361,6 @@ describe("EasyAuction", async () => {
           sellOrders.map((buyOrder) => buyOrder.buyAmount),
           sellOrders.map((buyOrder) => buyOrder.sellAmount),
           Array(sellOrders.length).fill(queueStartElement),
-          Array(sellOrders.length).fill(queueStartElement),
         ),
       ).to.be.revertedWith("order too small");
     });
@@ -447,7 +396,6 @@ describe("EasyAuction", async () => {
           auctionId,
           [buyAmount, buyAmount],
           [sellAmount, sellAmount.add(1)],
-          [queueStartElement, queueStartElement],
           [queueStartElement, queueStartElement],
         ),
       ).to.be.revertedWith("ERC20: transfer amount exceeds allowance");

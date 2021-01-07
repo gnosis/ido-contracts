@@ -8,6 +8,8 @@ import {
   encodeOrder,
 } from "../../src/priceCalculation";
 
+const QUEUE_END =
+  "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 const BYTES32_ZERO = encodeOrder({
   userId: BigNumber.from(0),
   sellAmount: BigNumber.from(0),
@@ -36,6 +38,16 @@ const BYTES32_TWO = encodeOrder({
 const BYTES32_THREE = encodeOrder({
   userId: BigNumber.from(1),
   buyAmount: BigNumber.from(6),
+  sellAmount: BigNumber.from(2),
+});
+const BYTES32_FOUR = encodeOrder({
+  userId: BigNumber.from(1),
+  buyAmount: BigNumber.from(8),
+  sellAmount: BigNumber.from(2),
+});
+const BYTES32_FIVE = encodeOrder({
+  userId: BigNumber.from(1),
+  buyAmount: BigNumber.from(10),
   sellAmount: BigNumber.from(2),
 });
 
@@ -147,36 +159,6 @@ describe("IterableOrderedOrderSet", function () {
       set.callStatic.insertAt(queueLastElement, queueStartElement),
     ).to.be.revertedWith("Inserting element is not valid");
   });
-  it("should allow to insert element with insertWithHighSuccessRate", async () => {
-    await set.insert(BYTES32_ONE);
-
-    expect(
-      await set.callStatic.insertWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_ONE,
-      ),
-    ).to.equal(true);
-    await set.insertWithHighSuccessRate(
-      BYTES32_TWO,
-      BYTES32_THREE,
-      BYTES32_ONE,
-    );
-    expect(
-      await set.callStatic.insertWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_ONE,
-      ),
-    ).to.equal(false);
-    expect(
-      await set.callStatic.insertWithHighSuccessRate(
-        BYTES32_TWO,
-        BYTES32_THREE,
-        BYTES32_THREE,
-      ),
-    ).to.equal(false);
-  });
 
   it("should insert element according to rate", async () => {
     await set.insert(BYTES32_THREE);
@@ -218,9 +200,30 @@ describe("IterableOrderedOrderSet", function () {
 
     const first = await set.first();
     const second = await set.next(first);
+    const prev_of_removed = await set.prevMap(BYTES32_TWO);
+    const next_of_removed = await set.nextMap(BYTES32_TWO);
 
     expect(first).to.equal(BYTES32_ONE);
     expect(second).to.equal(BYTES32_THREE);
+    expect(prev_of_removed).to.equal(ethers.constants.Zero);
+    expect(next_of_removed).to.equal(ethers.constants.Zero);
+  });
+  it("should remove element keeping history", async () => {
+    await set.insert(BYTES32_THREE);
+    await set.insert(BYTES32_ONE);
+    await set.insert(BYTES32_TWO);
+
+    await set.removeKeepHistory(BYTES32_TWO);
+
+    const first = await set.first();
+    const second = await set.next(first);
+    const prev_of_removed = await set.prevMap(BYTES32_TWO);
+    const next_of_removed = await set.nextMap(BYTES32_TWO);
+
+    expect(first).to.equal(BYTES32_ONE);
+    expect(second).to.equal(BYTES32_THREE);
+    expect(prev_of_removed).to.equal(BYTES32_ONE);
+    expect(next_of_removed).to.equal(ethers.constants.Zero);
   });
 
   it("should allow to remove element twice", async () => {
@@ -231,6 +234,135 @@ describe("IterableOrderedOrderSet", function () {
     expect(await set.callStatic.remove(BYTES32_TWO)).to.equal(true);
     await set.remove(BYTES32_TWO);
     expect(await set.callStatic.remove(BYTES32_TWO)).to.equal(false);
+  });
+
+  describe("insert elements using removed element as reference", () => {
+    it("single element removed", async () => {
+      await set.insert(BYTES32_ONE);
+      await set.insert(BYTES32_TWO);
+      await set.insert(BYTES32_FOUR);
+
+      await set.removeKeepHistory(BYTES32_TWO);
+      expect(
+        await set.callStatic.insertAt(BYTES32_THREE, BYTES32_TWO),
+      ).to.equal(true);
+      await set.insertAt(BYTES32_THREE, BYTES32_TWO);
+
+      const first = await set.first();
+      const second = await set.next(first);
+      const third = await set.next(second);
+      const next_of_third = await set.nextMap(third);
+
+      expect(first).to.equal(BYTES32_ONE);
+      expect(second).to.equal(BYTES32_THREE);
+      expect(third).to.equal(BYTES32_FOUR);
+      expect(next_of_third).to.equal(QUEUE_END);
+    });
+
+    it("two elements removed, backtrack once", async () => {
+      await set.insert(BYTES32_ONE);
+      await set.insert(BYTES32_TWO);
+      await set.insert(BYTES32_THREE);
+      await set.insert(BYTES32_FIVE);
+      // 1 ─> 2 ─> 3 ─> 5
+
+      await set.removeKeepHistory(BYTES32_TWO);
+      // 1  ─> 3 ─> 5
+      // └───> 2
+      expect(await set.prevMap(BYTES32_TWO)).to.equal(BYTES32_ONE);
+      expect(await set.nextMap(BYTES32_TWO)).to.equal(ethers.constants.Zero);
+      await set.removeKeepHistory(BYTES32_THREE);
+      // 1 ─> 5
+      // └──> 2
+      // └──> 3
+      expect(await set.prevMap(BYTES32_THREE)).to.equal(BYTES32_ONE);
+      expect(await set.nextMap(BYTES32_THREE)).to.equal(ethers.constants.Zero);
+      await set.insertAt(BYTES32_FOUR, BYTES32_TWO);
+      // 1 ─> 4 ─> 5
+      // └──> 2
+      // └──> 3
+
+      const first = await set.first();
+      const second = await set.next(first);
+      const third = await set.next(second);
+      const next_of_third = await set.nextMap(third);
+
+      expect(first).to.equal(BYTES32_ONE);
+      expect(second).to.equal(BYTES32_FOUR);
+      expect(third).to.equal(BYTES32_FIVE);
+      expect(next_of_third).to.equal(QUEUE_END);
+    });
+
+    it("two elements removed, backtrack twice", async () => {
+      await set.insert(BYTES32_ONE);
+      await set.insert(BYTES32_TWO);
+      await set.insert(BYTES32_THREE);
+      await set.insert(BYTES32_FIVE);
+      // 1 ─> 2 ─> 3 ─> 5
+
+      await set.removeKeepHistory(BYTES32_THREE);
+      // 1 ─> 2 ─> 5
+      //      └──> 3
+      expect(await set.prevMap(BYTES32_THREE)).to.equal(BYTES32_TWO);
+      expect(await set.nextMap(BYTES32_THREE)).to.equal(ethers.constants.Zero);
+      await set.removeKeepHistory(BYTES32_TWO);
+      // 1 ─> 5
+      // └──> 2
+      //      └──> 3
+      expect(await set.prevMap(BYTES32_TWO)).to.equal(BYTES32_ONE);
+      expect(await set.nextMap(BYTES32_TWO)).to.equal(ethers.constants.Zero);
+      await set.insertAt(BYTES32_FOUR, BYTES32_THREE);
+      // 1 ─> 4 ─> 5
+      // └──> 2
+      //      └──> 3
+
+      const first = await set.first();
+      const second = await set.next(first);
+      const third = await set.next(second);
+      const next_of_third = await set.nextMap(third);
+
+      expect(first).to.equal(BYTES32_ONE);
+      expect(second).to.equal(BYTES32_FOUR);
+      expect(third).to.equal(BYTES32_FIVE);
+      expect(next_of_third).to.equal(QUEUE_END);
+    });
+
+    it("one element removed, one added", async () => {
+      await set.insert(BYTES32_ONE);
+      await set.insert(BYTES32_TWO);
+      await set.insert(BYTES32_FIVE);
+      // 1 ─> 2 ─> 5
+
+      await set.removeKeepHistory(BYTES32_TWO);
+      // 1 ─> 5
+      // └──> 2
+      expect(await set.prevMap(BYTES32_TWO)).to.equal(BYTES32_ONE);
+      expect(await set.nextMap(BYTES32_TWO)).to.equal(ethers.constants.Zero);
+
+      await set.insert(BYTES32_THREE);
+      // 1 ─> 3 ─> 5
+      // └──> 2
+      expect(await set.prevMap(BYTES32_THREE)).to.equal(BYTES32_ONE);
+      expect(await set.nextMap(BYTES32_THREE)).to.equal(BYTES32_FIVE);
+
+      await set.insertAt(BYTES32_FOUR, BYTES32_TWO);
+      // 1 ─> 3 ─> 4 ─> 5
+      // └──> 2
+      expect(await set.prevMap(BYTES32_FOUR)).to.equal(BYTES32_THREE);
+      expect(await set.nextMap(BYTES32_FOUR)).to.equal(BYTES32_FIVE);
+
+      const first = await set.first();
+      const second = await set.next(first);
+      const third = await set.next(second);
+      const fourth = await set.next(third);
+      const next_of_third = await set.nextMap(fourth);
+
+      expect(first).to.equal(BYTES32_ONE);
+      expect(second).to.equal(BYTES32_THREE);
+      expect(third).to.equal(BYTES32_FOUR);
+      expect(fourth).to.equal(BYTES32_FIVE);
+      expect(next_of_third).to.equal(QUEUE_END);
+    });
   });
 
   it("should recognize empty sets", async () => {
@@ -256,6 +388,9 @@ describe("IterableOrderedOrderSet", function () {
     await set.insert(BYTES32_TWO);
 
     expect(await set.callStatic.remove(BYTES32_THREE)).to.equal(false);
+    expect(await set.callStatic.removeKeepHistory(BYTES32_THREE)).to.equal(
+      false,
+    );
   });
 
   it("can add element BYTES32_ONE => rate of startingElement ==0", async () => {
