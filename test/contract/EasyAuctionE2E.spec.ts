@@ -19,7 +19,7 @@ describe("EasyAuction", async () => {
     easyAuction = await EasyAuction.deploy();
   });
 
-  it("e2e  - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of verifyPrice", async () => {
+  it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of verifyPrice", async () => {
     const {
       auctioningToken,
       biddingToken,
