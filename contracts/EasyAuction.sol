@@ -311,6 +311,11 @@ contract EasyAuction is Ownable {
             sumBidAmount = sumBidAmount.add(sellAmountOfIter);
         }
 
+        require(
+            iterOrder != IterableOrderedOrderSet.QUEUE_END,
+            "reached end of order list"
+        );
+
         // it is checked that not too many iteration steps were taken:
         // require that the sum of SellAmounts times the price of the last order
         // is not more than intially sold amount
@@ -359,7 +364,7 @@ contract EasyAuction is Ownable {
         uint256 sumBuyAmount =
             sumBidAmount.mul(priceNumerator).div(priceDenominator);
         if (price == iterOrder) {
-            // case 1: one sellOrder is partically filled
+            // case 1: one sellOrder is partially filled
             // The partially filled order is the iterOrder, if:
             // 1) The sumBuyAmounts is not bigger than the intitial order's sell amount
             // i.e, sellAmount >= sumBuyAmount
@@ -386,7 +391,7 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].clearingPriceOrder = iterOrder;
         } else {
             if (sumBuyAmount < auctioneerSellAmount) {
-                // case 2: initialAuction order is partically filled
+                // case 2: initialAuction order is partially filled
                 // We require that the price was the initialOrderLimit price's inverse
                 // as this ensures that the for-loop iterated through all orders
                 // and all orders are considered
@@ -404,7 +409,7 @@ contract EasyAuction is Ownable {
                     priceDenominator
                 );
             } else {
-                // case 3: no order is partically filled
+                // case 3: no order is partially filled
                 // In this case the sumBuyAmount must be equal to
                 // the sellAmount of the initialAuctionOrder, without
                 // any rounding errors.

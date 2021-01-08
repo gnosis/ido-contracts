@@ -53,7 +53,7 @@ library IterableOrderedOrderSet {
         (, , uint96 denominator) = decodeOrder(elementToInsert);
         require(denominator != uint96(0), "Inserting zero is not supported");
         require(
-            !(elementToInsert == QUEUE_START || elementToInsert == QUEUE_END),
+            elementToInsert != QUEUE_START && elementToInsert != QUEUE_END,
             "Inserting element is not valid"
         );
         if (contains(self, elementToInsert)) {
@@ -135,9 +135,11 @@ library IterableOrderedOrderSet {
         view
         returns (bool)
     {
-        if (value == QUEUE_START || value == QUEUE_END) {
+        if (value == QUEUE_START) {
             return false;
         }
+        // Note: QUEUE_END is not contained in the list since it has no
+        // successor.
         return self.nextMap[value] != bytes32(0);
     }
 
