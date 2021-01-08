@@ -484,13 +484,11 @@ contract EasyAuction is Ownable {
         internal
         returns (uint256 auctioningTokenAmount, uint256 biddingTokenAmount)
     {
+        (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
+            auctionData[auctionId].initialAuctionOrder.decodeOrder();
         if (auctionData[auctionId].minFundingThresholdNotReached) {
-            (uint64 auctioneerId, , uint96 sellAmount) =
-                auctionData[auctionId].initialAuctionOrder.decodeOrder();
             sendOutTokens(auctionId, sellAmount, 0, auctioneerId);
         } else {
-            (uint64 auctioneerId, uint96 buyAmount, uint96 sellAmount) =
-                auctionData[auctionId].initialAuctionOrder.decodeOrder();
             auctionData[auctionId].initialAuctionOrder = bytes32(0);
             (, uint96 priceNumerator, uint96 priceDenominator) =
                 auctionData[auctionId].clearingPriceOrder.decodeOrder();
