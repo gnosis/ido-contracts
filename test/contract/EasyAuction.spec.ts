@@ -28,7 +28,7 @@ describe("EasyAuction", async () => {
     easyAuction = await EasyAuction.deploy();
   });
   describe("initiate Auction", async () => {
-    it("throws if minimumBiddingAmount is zero", async () => {
+    it("throws if minimumBiddingAmountPerOrder is zero", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -49,7 +49,9 @@ describe("EasyAuction", async () => {
           0,
           0,
         ),
-      ).to.be.revertedWith("minimumBiddingAmount is not allowed to be zero");
+      ).to.be.revertedWith(
+        "minimumBiddingAmountPerOrder is not allowed to be zero",
+      );
     });
     it("throws if auctioned amount is zero", async () => {
       const {

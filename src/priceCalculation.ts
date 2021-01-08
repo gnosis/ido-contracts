@@ -16,7 +16,7 @@ export interface OrderResult {
   auctionEndDate: BigNumber;
   orderCancellationEndDate: BigNumber;
   initialAuctionOrder: string;
-  minimumBiddingAmount: BigNumber;
+  minimumBiddingAmountPerOrder: BigNumber;
   interimSumBidAmount: BigNumber;
   interimOrder: string;
   clearingPriceOrder: string;

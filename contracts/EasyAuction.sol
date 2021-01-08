@@ -95,7 +95,7 @@ contract EasyAuction is Ownable {
         uint256 orderCancellationEndDate;
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
-        uint256 minimumBiddingAmount;
+        uint256 minimumBiddingAmountPerOrder;
         uint256 interimSumBidAmount;
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
@@ -136,7 +136,7 @@ contract EasyAuction is Ownable {
         uint256 duration,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
-        uint256 minimumBiddingAmount,
+        uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
@@ -152,8 +152,8 @@ contract EasyAuction is Ownable {
         require(_auctionedSellAmount > 0, "cannot auction zero tokens");
         require(_minBuyAmount > 0, "tokens cannot be auctioned for free");
         require(
-            minimumBiddingAmount > 0,
-            "minimumBiddingAmount is not allowed to be zero"
+            minimumBiddingAmountPerOrder > 0,
+            "minimumBiddingAmountPerOrder is not allowed to be zero"
         );
         auctionCounter++;
         sellOrders[auctionCounter].initializeEmptyList();
@@ -167,7 +167,7 @@ contract EasyAuction is Ownable {
                 _minBuyAmount,
                 _auctionedSellAmount
             ),
-            minimumBiddingAmount,
+            minimumBiddingAmountPerOrder,
             0,
             bytes32(0),
             bytes32(0),
@@ -203,7 +203,7 @@ contract EasyAuction is Ownable {
                 // required to compute the final price of the auction.
                 require(
                     _sellAmounts[i] >
-                        auctionData[auctionId].minimumBiddingAmount,
+                        auctionData[auctionId].minimumBiddingAmountPerOrder,
                     "order too small"
                 );
             }
