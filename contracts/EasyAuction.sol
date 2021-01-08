@@ -436,25 +436,18 @@ contract EasyAuction is Ownable {
         (, uint96 priceNumerator, uint96 priceDenominator) =
             auction.clearingPriceOrder.decodeOrder();
         (uint64 userId, , ) = orders[0].decodeOrder();
-        if (auctionData[auctionId].minFundingThresholdNotReached) {
-            for (uint256 i = 0; i < orders.length; i++) {
-                (uint64 userIdOrder, , uint96 sellAmount) =
-                    orders[i].decodeOrder();
-                require(
-                    userIdOrder == userId,
-                    "only allowed to claim for same user"
-                );
+        bool minFundingThresholdNotReached =
+            auctionData[auctionId].minFundingThresholdNotReached;
+        for (uint256 i = 0; i < orders.length; i++) {
+            (uint64 userIdOrder, uint96 buyAmount, uint96 sellAmount) =
+                orders[i].decodeOrder();
+            require(
+                userIdOrder == userId,
+                "only allowed to claim for same user"
+            );
+            if (minFundingThresholdNotReached) {
                 sumBiddingTokenAmount = sumBiddingTokenAmount.add(sellAmount);
-            }
-            sendOutTokens(auctionId, 0, sumBiddingTokenAmount, userId);
-        } else {
-            for (uint256 i = 0; i < orders.length; i++) {
-                (uint64 userIdOrder, uint96 buyAmount, uint96 sellAmount) =
-                    orders[i].decodeOrder();
-                require(
-                    userIdOrder == userId,
-                    "only allowed to claim for same user"
-                );
+            } else {
                 if (orders[i] == auction.clearingPriceOrder) {
                     sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
                         auction
@@ -476,15 +469,15 @@ contract EasyAuction is Ownable {
                         );
                     }
                 }
-                emit ClaimedFromOrder(auctionId, userId, buyAmount, sellAmount);
             }
-            sendOutTokens(
-                auctionId,
-                sumAuctioningTokenAmount,
-                sumBiddingTokenAmount,
-                userId
-            );
+            emit ClaimedFromOrder(auctionId, userId, buyAmount, sellAmount);
         }
+        sendOutTokens(
+            auctionId,
+            sumAuctioningTokenAmount,
+            sumBiddingTokenAmount,
+            userId
+        );
     }
 
     function claimAuctioneerFunds(uint256 auctionId)
