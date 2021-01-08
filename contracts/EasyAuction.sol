@@ -351,20 +351,29 @@ contract EasyAuction is Ownable {
         // note: all order have a price that is better than the auction min price
         do {
             console.log("loop");
+            bytes32 nextOrder = sellOrders[auctionId].next(currentOrder);
+            if (nextOrder == IterableOrderedOrderSet.QUEUE_END) {
+                break;
+            }
             previousOrder = currentOrder;
             previousBidSum = currentBidSum;
-            currentOrder = sellOrders[auctionId].next(currentOrder);
+            currentOrder = nextOrder;
             (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
             currentBidSum = currentBidSum.add(sellAmountOfIter);
         } while (
-            (currentOrder != IterableOrderedOrderSet.QUEUE_END) &&
-                (currentBidSum.mul(buyAmountOfIter) <
-                    fullAuctionedAmount.mul(sellAmountOfIter))
+            (currentBidSum.mul(buyAmountOfIter) <
+                fullAuctionedAmount.mul(sellAmountOfIter))
         );
 
-        if (currentOrder == IterableOrderedOrderSet.QUEUE_END) {
-            console.log("end of orders reached");
-            // end of order loop reached, partial match
+        if (
+            currentBidSum.mul(buyAmountOfIter) <
+            fullAuctionedAmount.mul(sellAmountOfIter)
+        ) {
+            // The exit condition must have been
+            //  currentOrder == IterableOrderedOrderSet.QUEUE_END
+            // From the if condition, even with the same price as the initial
+            // order then not all auction tokens will be fully filled.
+            console.log("incomplete auction");
             (, uint96 auctioneerBuyAmount, ) =
                 initialAuctionOrder.decodeOrder();
 
@@ -379,28 +388,61 @@ contract EasyAuction is Ownable {
                 auctioneerBuyAmount
             );
 
-            auctionData[auctionId].volumeClearingPriceOrder = (
-                previousBidSum.mul(fullAuctionedAmount).div(auctioneerBuyAmount)
+            /*auctionData[auctionId].volumeClearingPriceOrder = (
+                currentBidSum.mul(fullAuctionedAmount).div(auctioneerBuyAmount)
             )
-                .toUint96();
+                .toUint96();*/
         } else {
-            console.log("terminated with spare orders");
-            // more orders available than tokens auctiones
-            // cuorrent order may be partially matched
-            // by exit condition must be
-            // currentBidSum * buyAmountOfIter >= fullAuctionedAmount * sellAmountOfIter
-            // previousBidSum * buyAmountOfIter < fullAuctionedAmount * sellAmountOfIter
-            // there exists x s.t. 0 < x <= sellAmountOfIter and
-            // (previousBidSum + x) * buyAmountOfIter = fullAuctionedAmount * sellAmountOfIter
-            auctionData[auctionId].clearingPriceOrder = currentOrder;
-            /*uint256 previousAuctionTokenSum =
+            // All tokens are auctioned away. The last order might be partially
+            // filled.
+            console.log("all auction tokens sold");
+            // more orders available than tokens auctions
+            // current order may be partially matched
+            // based on the exit condition we have:
+            // currentBidSum * currentBuyAmountOfIter >= fullAuctionedAmount * currentSellAmountOfIter
+            // previousBidSum * previousSuyAmountOfIter < fullAuctionedAmount * previousSellAmountOfIter
+            // The price is some price p such that
+            //   previousOrder > p >= currentOrder.
+            // There are two further cases:
+            // 1. p != currentOrder. Then currentOrder is ignored and the price
+            //       is defined as p = (num, den) such that:
+            //       previousBidSum * num = fullAuctionedAmount * den
+            // 2. p = currentOrder, which means that currentOrder is included
+            //       and partially filled. The price must be exactly
+            //       `currentOrder`, and we need to find currentBidSum' such
+            //       that:
+            //       currentBidSum' * currentBuyAmountOfIter = fullAuctionedAmount * currentSellAmountOfIter
+            //       note that currentBidSum' > previousBidSum
+
+            //implement...
+
+            //buyAmountOfIter, sellAmountOfIter
+            uint256 auctionedAmountFilledAtCurrentPrice =
+                currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter);
+
+            if (auctionedAmountFilledAtCurrentPrice <= fullAuctionedAmount) {
+                // current order is fully filled
+                console.log(" - current fully filled");
+
+                auctionData[auctionId]
+                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
+                    0xffffffffffffffff, // max user ID. user id is not relevant
+                    fullAuctionedAmount,
+                    currentBidSum.toUint96()
+                );
+            } else {
+                console.log(" - current partially filled");
+                auctionData[auctionId].clearingPriceOrder = currentOrder;
+
+                /*uint256 previousAuctionTokenSum =
                 previousBidSum.mul(sellAmountOfIter).div(buyAmountOfIter);
             uint256 totalBidSum =
                 fullAuctionedAmount.mul(sellAmountOfIter).div(buyAmountOfIter);*/
-            auctionData[auctionId]
-                .volumeClearingPriceOrder = (// fullAuctionedAmount.sub(previousAuctionTokenSum)
-            0 * fullAuctionedAmount);
-            //.toUint96();
+                auctionData[auctionId]
+                    .volumeClearingPriceOrder = (// fullAuctionedAmount.sub(previousAuctionTokenSum)
+                0 * fullAuctionedAmount); // fix me!
+                //.toUint96();
+            }
         }
 
         uint256 sumBuyAmount; // todo
