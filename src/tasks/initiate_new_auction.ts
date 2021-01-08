@@ -24,6 +24,12 @@ const initiateAuction: () => void = () => {
       "The amount of biddingToken to be bought at least for selling sellAmount in atoms",
     )
     .addOptionalParam(
+      "minFundingThreshold",
+      "The minimal funding threshold for executing the settlement. If funding is not reached, everyone will get back their investment",
+      "0",
+      types.string,
+    )
+    .addOptionalParam(
       "orderCancellationPeriod",
       "Describes how long the auction should allow to cancel orders in seconds",
       "360000",
@@ -66,6 +72,10 @@ const initiateAuction: () => void = () => {
         taskArgs.minBuyAmountPerOrder,
         await biddingToken.callStatic.decimals(),
       );
+      const minFundingThresholdInAtoms = ethers.utils.parseUnits(
+        taskArgs.minFundingThreshold,
+        await biddingToken.callStatic.decimals(),
+      );
 
       console.log("Using EasyAuction deployed to:", easyAuction.address);
 
@@ -93,6 +103,7 @@ const initiateAuction: () => void = () => {
           sellAmountsInAtoms,
           minBuyAmountInAtoms,
           minParticipantsBuyAmount,
+          minFundingThresholdInAtoms,
         );
       const txResult = await tx.wait();
       const auctionId = txResult.events
