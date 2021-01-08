@@ -1527,12 +1527,12 @@ describe("EasyAuction", async () => {
         {
           sellAmount: ethers.utils.parseEther("1"),
           buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(0),
+          userId: BigNumber.from(1),
         },
         {
           sellAmount: ethers.utils.parseEther("1"),
           buyAmount: ethers.utils.parseEther("1").div(4),
-          userId: BigNumber.from(0),
+          userId: BigNumber.from(2),
         },
       ];
       const {
@@ -1540,7 +1540,7 @@ describe("EasyAuction", async () => {
         biddingToken,
       } = await createTokensAndMintAndApprove(
         easyAuction,
-        [user_1, user_2],
+        [user_1, user_2, user_3],
         hre,
       );
 
