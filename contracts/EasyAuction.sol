@@ -163,11 +163,15 @@ contract EasyAuction is Ownable {
         );
         auctionCounter++;
         sellOrders[auctionCounter].initializeEmptyList();
+
+        uint256 orderCancellationEndDate =
+            block.timestamp + orderCancelationPeriodDuration;
+        uint256 auctionEndDate = block.timestamp + duration;
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,
-            block.timestamp + orderCancelationPeriodDuration,
-            block.timestamp + duration,
+            orderCancellationEndDate,
+            auctionEndDate,
             IterableOrderedOrderSet.encodeOrder(
                 userId,
                 _minBuyAmount,
@@ -186,8 +190,8 @@ contract EasyAuction is Ownable {
             auctionCounter,
             _auctioningToken,
             _biddingToken,
-            block.timestamp + orderCancelationPeriodDuration,
-            block.timestamp + duration,
+            orderCancellationEndDate,
+            auctionEndDate,
             _auctionedSellAmount,
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
