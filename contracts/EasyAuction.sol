@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "./libraries/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract EasyAuction is Ownable {
     using SafeERC20 for IERC20;
@@ -179,7 +180,7 @@ contract EasyAuction is Ownable {
             ),
             minimumBiddingAmountPerOrder,
             0,
-            bytes32(0),
+            IterableOrderedOrderSet.QUEUE_START,
             bytes32(0),
             0,
             feeNumerator,
@@ -301,19 +302,20 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
         uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
-        if (iterOrder == bytes32(0)) {
-            iterOrder = IterableOrderedOrderSet.QUEUE_START;
-        }
 
         for (uint256 i = 0; i < iterationSteps; i++) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
             (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
             sumBidAmount = sumBidAmount.add(sellAmountOfIter);
         }
+        require(
+            iterOrder != IterableOrderedOrderSet.QUEUE_END,
+            "surpassed end of order list"
+        );
 
         // it is checked that not too many iteration steps were taken:
         // require that the sum of SellAmounts times the price of the last order
-        // is not more than intially sold amount
+        // is not more than initially sold amount
         (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
             iterOrder.decodeOrder();
         require(
@@ -335,6 +337,84 @@ contract EasyAuction is Ownable {
         public
         atStageSolutionSubmission(auctionId)
     {
+        bytes32 initialAuctionOrder =
+            auctionData[auctionId].initialAuctionOrder;
+        (, , uint96 fullAuctionedAmount) = initialAuctionOrder.decodeOrder();
+
+        uint256 currentBidSum = auctionData[auctionId].interimSumBidAmount;
+        uint256 previousBidSum;
+        bytes32 currentOrder = auctionData[auctionId].interimOrder;
+        bytes32 previousOrder;
+        // same loop as function before
+        uint256 buyAmountOfIter;
+        uint256 sellAmountOfIter;
+        // note: all order have a price that is better than the auction min price
+        do {
+            console.log("loop");
+            previousOrder = currentOrder;
+            previousBidSum = currentBidSum;
+            currentOrder = sellOrders[auctionId].next(currentOrder);
+            (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
+            currentBidSum = currentBidSum.add(sellAmountOfIter);
+        } while (
+            (currentOrder != IterableOrderedOrderSet.QUEUE_END) &&
+                (currentBidSum.mul(buyAmountOfIter) <
+                    fullAuctionedAmount.mul(sellAmountOfIter))
+        );
+
+        if (currentOrder == IterableOrderedOrderSet.QUEUE_END) {
+            console.log("end of orders reached");
+            // end of order loop reached, partial match
+            (, uint96 auctioneerBuyAmount, ) =
+                initialAuctionOrder.decodeOrder();
+
+            // This order matches auctionData[auctionId].initialAuctionOrder
+            // exactly (note that numerator and denominator are inverted).
+            // It enforces the price to be the same as the initial auction
+            // order, since no better price could be determined.
+            auctionData[auctionId].clearingPriceOrder = IterableOrderedOrderSet
+                .encodeOrder(
+                0xffffffffffffffff, // max user ID. user id is not relevant
+                fullAuctionedAmount,
+                auctioneerBuyAmount
+            );
+
+            auctionData[auctionId].volumeClearingPriceOrder = (
+                previousBidSum.mul(fullAuctionedAmount).div(auctioneerBuyAmount)
+            )
+                .toUint96();
+        } else {
+            console.log("terminated with spare orders");
+            // more orders available than tokens auctiones
+            // cuorrent order may be partially matched
+            // by exit condition must be
+            // currentBidSum * buyAmountOfIter >= fullAuctionedAmount * sellAmountOfIter
+            // previousBidSum * buyAmountOfIter < fullAuctionedAmount * sellAmountOfIter
+            // there exists x s.t. 0 < x <= sellAmountOfIter and
+            // (previousBidSum + x) * buyAmountOfIter = fullAuctionedAmount * sellAmountOfIter
+            auctionData[auctionId].clearingPriceOrder = currentOrder;
+            /*uint256 previousAuctionTokenSum =
+                previousBidSum.mul(sellAmountOfIter).div(buyAmountOfIter);
+            uint256 totalBidSum =
+                fullAuctionedAmount.mul(sellAmountOfIter).div(buyAmountOfIter);*/
+            auctionData[auctionId]
+                .volumeClearingPriceOrder = (// fullAuctionedAmount.sub(previousAuctionTokenSum)
+            0 * fullAuctionedAmount);
+            //.toUint96();
+        }
+
+        uint256 sumBuyAmount; // todo
+        if (auctionData[auctionId].minFundingThreshold > sumBuyAmount) {
+            auctionData[auctionId].minFundingThresholdNotReached = true;
+        } else {
+            if (auctionData[auctionId].feeNumerator > 0) {
+                claimFees(auctionId);
+            }
+        }
+        claimAuctioneerFunds(auctionId);
+        //todo emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
+
+        /*
         (, uint96 priceNumerator, uint96 priceDenominator) =
             price.decodeOrder();
         (
@@ -345,9 +425,6 @@ contract EasyAuction is Ownable {
         require(priceNumerator > 0, "price must be postive");
         uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
-        if (iterOrder == bytes32(0)) {
-            iterOrder = IterableOrderedOrderSet.QUEUE_START;
-        }
         if (!sellOrders[auctionId].isEmpty()) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
             while (iterOrder != price && iterOrder.smallerThan(price)) {
@@ -431,6 +508,7 @@ contract EasyAuction is Ownable {
         }
         claimAuctioneerFunds(auctionId);
         emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
+        */
     }
 
     function claimFromParticipantOrder(
