@@ -80,7 +80,13 @@ contract EasyAuction is Ownable {
     event NewAuction(
         uint256 indexed auctionId,
         IERC20 indexed _auctioningToken,
-        IERC20 indexed _biddingToken
+        IERC20 indexed _biddingToken,
+        uint256 orderCancellationEndDate,
+        uint256 auctionEndDate,
+        uint96 _auctionedSellAmount,
+        uint96 _minBuyAmount,
+        uint256 minimumBiddingAmountPerOrder,
+        uint256 minFundingThreshold
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -176,7 +182,17 @@ contract EasyAuction is Ownable {
             minFundingThreshold,
             false
         );
-        emit NewAuction(auctionCounter, _auctioningToken, _biddingToken);
+        emit NewAuction(
+            auctionCounter,
+            _auctioningToken,
+            _biddingToken,
+            block.timestamp + orderCancelationPeriodDuration,
+            block.timestamp + duration,
+            _auctionedSellAmount,
+            _minBuyAmount,
+            minimumBiddingAmountPerOrder,
+            minFundingThreshold
+        );
         return auctionCounter;
     }
 
