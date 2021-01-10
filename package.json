@@ -1,6 +1,6 @@
 {
   "name": "@gnosis.pm/ido-contracts",
-  "version": "0.0.1-alpha.6",
+  "version": "0.0.1-alpha.7",
   "directories": {
     "test": "test"
   },
@@ -28,8 +28,6 @@
     "yargs": "^16.1.1"
   },
   "devDependencies": {
-    "hardhat-deploy": "^0.7.0-beta.30",
-    "solidity-coverage": "^0.7.13",
     "@gnosis.pm/mock-contract": "^3.0.8",
     "@gnosis.pm/util-contracts": "^2.0.6",
     "@nomiclabs/hardhat-ethers": "^2.0.0",
@@ -52,10 +50,12 @@
     "eslint-plugin-prettier": "^3.1.4",
     "ethereum-waffle": "^3.2.0",
     "hardhat": "^2.0.3",
+    "hardhat-deploy": "^0.7.0-beta.30",
     "prettier": "^2.1.2",
     "prettier-plugin-solidity": "^1.0.0-alpha.60",
     "solhint": "^3.3.2",
     "solhint-plugin-prettier": "^0.0.5",
+    "solidity-coverage": "^0.7.13",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.5"
   }
