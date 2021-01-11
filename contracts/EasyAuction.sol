@@ -349,7 +349,6 @@ contract EasyAuction is Ownable {
 
         uint256 currentBidSum = auctionData[auctionId].interimSumBidAmount;
         bytes32 currentOrder = auctionData[auctionId].interimOrder;
-        bytes32 previousOrder;
         uint256 buyAmountOfIter;
         uint256 sellAmountOfIter;
         // Sum order up, until fullAuctionedAmount is fully bought or queue end is reached
@@ -358,13 +357,12 @@ contract EasyAuction is Ownable {
             if (nextOrder == IterableOrderedOrderSet.QUEUE_END) {
                 break;
             }
-            previousOrder = currentOrder;
             currentOrder = nextOrder;
             (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
             currentBidSum = currentBidSum.add(sellAmountOfIter);
         } while (
-            (currentBidSum.mul(buyAmountOfIter) <=
-                fullAuctionedAmount.mul(sellAmountOfIter))
+            currentBidSum.mul(buyAmountOfIter) <
+                fullAuctionedAmount.mul(sellAmountOfIter)
         );
 
         (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
@@ -394,7 +392,7 @@ contract EasyAuction is Ownable {
                     .div(buyAmountOfIter);
 
             if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
-                // Case 1: Auction fully filled via partial match of iterOrder
+                // Case 1,5,7: Auction fully filled via partial match of iterOrder
                 uint256 sellAmountClearingOrder =
                     sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
                 auctionData[auctionId]
@@ -403,35 +401,13 @@ contract EasyAuction is Ownable {
                 currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
                 auctionData[auctionId].clearingPriceOrder = currentOrder;
             } else {
-                // Case 2,5,7: Auction fully filled via price between iterOrder and previousOrder
-                (
-                    ,
-                    uint96 previousOrderBuyAmount,
-                    uint96 previousOrderSellAmount
-                ) = previousOrder.decodeOrder();
-                if (
-                    previousOrderSellAmount.mul(fullAuctionedAmount) ==
-                    previousOrderBuyAmount.mul(
-                        currentBidSum.sub(sellAmountOfIter)
-                    )
-                ) {
-                    console.log("case 5,7 is used");
-
-                    // Case 5,7: price equals exactly previous order
-                    auctionData[auctionId].clearingPriceOrder = previousOrder;
-                    auctionData[auctionId]
-                        .volumeClearingPriceOrder = previousOrderSellAmount;
-                } else {
-                    // Case 2:
-                    console.log("case 2 is used");
-                    auctionData[auctionId]
-                        .clearingPriceOrder = IterableOrderedOrderSet
-                        .encodeOrder(
-                        uint64(-1),
-                        fullAuctionedAmount,
-                        currentBidSum.sub(sellAmountOfIter).toUint96()
-                    );
-                }
+                // Case 2: Auction fully filled via price between iterOrder and previousOrder
+                auctionData[auctionId]
+                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
+                    uint64(-1),
+                    fullAuctionedAmount,
+                    currentBidSum.sub(sellAmountOfIter).toUint96()
+                );
             }
         } else {
             // Cases: All considered/summed orders are not sufficient to close the auction fully at price of last order
