@@ -22,7 +22,7 @@ const clearAuction: () => void = () => {
       console.log("Clearing price will be:", price);
       const tx = await easyAuction
         .connect(caller)
-        .verifyPrice(taskArgs.auctionId, encodeOrder(price));
+        .settleAuction(taskArgs.auctionId, encodeOrder(price));
       const txResult = await tx.wait();
       console.log(txResult);
     });
