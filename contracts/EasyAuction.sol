@@ -363,7 +363,7 @@ contract EasyAuction is Ownable {
             (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
             currentBidSum = currentBidSum.add(sellAmountOfIter);
         } while (
-            (currentBidSum.mul(buyAmountOfIter) <
+            (currentBidSum.mul(buyAmountOfIter) <=
                 fullAuctionedAmount.mul(sellAmountOfIter))
         );
 
@@ -374,7 +374,7 @@ contract EasyAuction is Ownable {
             fullAuctionedAmount.mul(sellAmountOfIter)
         ) {
             // Cases: All considered/summed orders are sufficient to close the auction fully at price of last order
-            // Case 1,2,7:
+            // Case 1,2,5,7:
             // uint256 uncoveredAuctionSellVolume =
             //     currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
             //         fullAuctionedAmount
@@ -459,7 +459,7 @@ contract EasyAuction is Ownable {
                         auctionData[auctionId]
                             .volumeClearingPriceOrder = fullAuctionedAmount;
                     } else {
-                        // Price higher to last order would fill the auction
+                        // Price higher than last order would fill the auction
                         // Case: 3,9,
                         auctionData[auctionId]
                             .clearingPriceOrder = IterableOrderedOrderSet
@@ -472,6 +472,7 @@ contract EasyAuction is Ownable {
                 } else {
                     // Last order fully filled
                     // Case 5
+                    console.log("should not be here");
                     auctionData[auctionId].clearingPriceOrder = currentOrder;
                     auctionData[auctionId]
                         .volumeClearingPriceOrder = sellAmountOfIter.toUint96();
