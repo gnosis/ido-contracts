@@ -3,7 +3,5 @@ module.exports = {
     mocha: true,
   },
   plugins: ["no-only-tests"],
-  rules: {
-    "no-only-tests/no-only-tests": "error",
-  },
+  rules: {},
 };
