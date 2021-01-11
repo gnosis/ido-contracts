@@ -318,6 +318,11 @@ contract EasyAuction is Ownable {
             "reached end of order list"
         );
 
+        require(
+            iterOrder != IterableOrderedOrderSet.QUEUE_END,
+            "reached end of order list"
+        );
+
         // it is checked that not too many iteration steps were taken:
         // require that the sum of SellAmounts times the price of the last order
         // is not more than initially sold amount
