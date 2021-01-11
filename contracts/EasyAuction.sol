@@ -365,9 +365,10 @@ contract EasyAuction is Ownable {
         (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
         if (
             currentBidSum > 0 &&
-            currentBidSum.mul(buyAmountOfIter) >
+            currentBidSum.mul(buyAmountOfIter) >=
             fullAuctionedAmount.mul(sellAmountOfIter)
         ) {
+            // Cases: All considered/summed orders are sufficient to close the auction fully at price of last order
             // Case 1,2,7:
             // uint256 uncoveredAuctionSellVolume =
             //     currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
@@ -425,29 +426,53 @@ contract EasyAuction is Ownable {
                 }
             }
         } else {
+            // Cases: All considered/summed orders are not sufficient to close the auction fully at price of last order
+            // Either a higher price must be used or auction is only partially filled
             // Case 3,4,5,6,8,9:
             (uint64 auctioneerUserId, uint96 minAuctionedBuyAmount, ) =
                 initialAuctionOrder.decodeOrder();
 
             if (currentBidSum >= minAuctionedBuyAmount) {
-                // Case 3,5,6,9: Last order fully filled
-                if (currentBidSum > minAuctionedBuyAmount) {
-                    auctionData[auctionId]
-                        .clearingPriceOrder = IterableOrderedOrderSet
-                        .encodeOrder(
-                        uint64(-1),
-                        fullAuctionedAmount,
-                        currentBidSum.toUint96()
-                    );
+                // Case 3,5,6,9: Last order fully filled the auction
+                if (
+                    fullAuctionedAmount.mul(sellAmountOfIter) >
+                    currentBidSum.mul(buyAmountOfIter)
+                ) {
+                    // Price higher than or equal to last order
+                    // Case: 3,9,6
+                    if (currentBidSum == minAuctionedBuyAmount) {
+                        // Price equal to last order would fill the auction
+                        // But we use min initalOrder price as clearing price
+                        // Case 6
+                        auctionData[auctionId]
+                            .clearingPriceOrder = IterableOrderedOrderSet
+                            .encodeOrder(
+                            auctioneerUserId,
+                            fullAuctionedAmount,
+                            minAuctionedBuyAmount
+                        );
+                        auctionData[auctionId]
+                            .volumeClearingPriceOrder = fullAuctionedAmount;
+                    } else {
+                        // Price higher to last order would fill the auction
+                        // Case: 3,9,
+                        auctionData[auctionId]
+                            .clearingPriceOrder = IterableOrderedOrderSet
+                            .encodeOrder(
+                            0,
+                            fullAuctionedAmount,
+                            currentBidSum.toUint96()
+                        );
+                    }
                 } else {
-                    auctionData[auctionId].clearingPriceOrder = previousOrder;
-                    (, , uint96 previousOrderSellAmount) =
-                        previousOrder.decodeOrder();
+                    // Last order fully filled
+                    // Case 5
+                    auctionData[auctionId].clearingPriceOrder = currentOrder;
                     auctionData[auctionId]
-                        .volumeClearingPriceOrder = previousOrderSellAmount;
+                        .volumeClearingPriceOrder = sellAmountOfIter.toUint96();
                 }
             } else {
-                // Case 4,8: Auction partially or exactly fully filled
+                // Case 4,8: Auction partially filled
                 auctionData[auctionId]
                     .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
                     auctioneerUserId,

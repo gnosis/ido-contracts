@@ -780,10 +780,12 @@ describe("EasyAuction", async () => {
         encodeOrder({
           sellAmount: initialAuctionOrder.buyAmount,
           buyAmount: initialAuctionOrder.sellAmount,
-          userId: BigNumber.from(2).pow(64).sub(1),
+          userId: BigNumber.from(0),
         }),
       );
-      expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        initialAuctionOrder.sellAmount,
+      );
       await easyAuction.claimFromParticipantOrder(
         auctionId,
         sellOrders.map((order) => encodeOrder(order)),
@@ -844,7 +846,7 @@ describe("EasyAuction", async () => {
         encodeOrder({
           sellAmount: ethers.utils.parseEther("3"),
           buyAmount: initialAuctionOrder.sellAmount,
-          userId: BigNumber.from(2).pow(64).sub(1),
+          userId: BigNumber.from(0),
         }),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
@@ -1030,7 +1032,9 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId, encodeOrder(price));
       expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
-      expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        sellOrders[1].sellAmount,
+      );
       await expect(() =>
         easyAuction.claimFromParticipantOrder(auctionId, [
           encodeOrder(sellOrders[0]),
@@ -1101,7 +1105,9 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId, encodeOrder(price));
       expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
-      expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        sellOrders[1].sellAmount,
+      );
       await expect(() =>
         easyAuction.claimFromParticipantOrder(auctionId, [
           encodeOrder(sellOrders[0]),
@@ -1130,7 +1136,7 @@ describe("EasyAuction", async () => {
         [sellOrders[2].sellAmount],
       );
     });
-    it("example why userId should always be given", async () => {
+    it("checks case 7: it shows an example why userId should always be given", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("0.5"),
@@ -1181,7 +1187,9 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId, encodeOrder(price));
       // expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
-      expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        sellOrders[1].sellAmount,
+      );
       await expect(() =>
         easyAuction.claimFromParticipantOrder(auctionId, [
           encodeOrder(sellOrders[0]),
@@ -1196,7 +1204,7 @@ describe("EasyAuction", async () => {
           encodeOrder(sellOrders[1]),
         ]),
       ).to.changeTokenBalances(
-        auctioningToken,
+        biddingToken,
         [user_3],
         [sellOrders[1].sellAmount],
       );
@@ -1205,7 +1213,7 @@ describe("EasyAuction", async () => {
           encodeOrder(sellOrders[2]),
         ]),
       ).to.changeTokenBalances(
-        biddingToken,
+        auctioningToken,
         [user_3],
         [sellOrders[2].sellAmount],
       );
@@ -1499,7 +1507,9 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId, encodeOrder(price));
       expect(price).to.eql(initialAuctionOrder);
       const auctionData = await easyAuction.auctionData(auctionId);
-      expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      expect(auctionData.volumeClearingPriceOrder).to.equal(
+        initialAuctionOrder.sellAmount,
+      );
       // check that claiming all funds is possible
       easyAuction.claimFromParticipantOrder(
         auctionId,
