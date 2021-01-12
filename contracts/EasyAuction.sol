@@ -106,9 +106,10 @@ contract EasyAuction is Ownable {
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
+        bool minFundingThresholdNotReached;
+        bool isAtomicClosureAllowed;
         uint256 feeNumerator;
         uint256 minFundingThreshold;
-        bool minFundingThresholdNotReached;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -151,7 +152,8 @@ contract EasyAuction is Ownable {
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
-        uint256 minFundingThreshold
+        uint256 minFundingThreshold,
+        bool isAtomicClosureAllowed
     ) public returns (uint256) {
         uint64 userId = getUserId(msg.sender);
 
@@ -190,9 +192,10 @@ contract EasyAuction is Ownable {
             IterableOrderedOrderSet.QUEUE_START,
             bytes32(0),
             0,
+            false,
+            isAtomicClosureAllowed,
             feeNumerator,
-            minFundingThreshold,
-            false
+            minFundingThreshold
         );
         emit NewAuction(
             auctionCounter,
@@ -214,6 +217,21 @@ contract EasyAuction is Ownable {
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders
     ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
+        return
+            _placeSellOrders(
+                auctionId,
+                _minBuyAmounts,
+                _sellAmounts,
+                _prevSellOrders
+            );
+    }
+
+    function _placeSellOrders(
+        uint256 auctionId,
+        uint96[] memory _minBuyAmounts,
+        uint96[] memory _sellAmounts,
+        bytes32[] memory _prevSellOrders
+    ) internal returns (uint64 userId) {
         {
             // Run verifications of all orders
             (
@@ -334,6 +352,20 @@ contract EasyAuction is Ownable {
 
         auctionData[auctionId].interimSumBidAmount = sumBidAmount;
         auctionData[auctionId].interimOrder = iterOrder;
+    }
+
+    function settleAuctionAtomically(
+        uint256 auctionId,
+        uint96[] memory _minBuyAmount,
+        uint96[] memory _sellAmount,
+        bytes32[] memory _prevSellOrder
+    ) public atStageSolutionSubmission(auctionId) {
+        require(
+            auctionData[auctionId].isAtomicClosureAllowed,
+            "not allowed to settle auction atomically"
+        );
+        _placeSellOrders(auctionId, _minBuyAmount, _sellAmount, _prevSellOrder);
+        settleAuction(auctionId);
     }
 
     // @dev function settling the auction and calculating the price
