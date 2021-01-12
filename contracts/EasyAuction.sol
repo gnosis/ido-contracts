@@ -370,7 +370,7 @@ contract EasyAuction is Ownable {
                 );
 
             if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
-                // Auction fully filled via partial match of iterOrder
+                // Auction fully filled via partial match of currentOrder
                 uint256 sellAmountClearingOrder =
                     sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
                 auctionData[auctionId]
