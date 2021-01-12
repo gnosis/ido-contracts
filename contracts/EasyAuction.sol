@@ -140,8 +140,9 @@ contract EasyAuction is Ownable {
     // 2^96 units of the biddingToken, don't start the auction, as
     // it will not be settlable. E.g, one can not raise more than
     // 7.9e10 DAI.
-    // Also make sure that prices between biddingToken and auctioningToken
-    // are well presented by a fraction of uint96/uint96
+    //
+    // Prices between biddingToken and auctioningToken are expressed by a
+    // fraction whose components are stored as uint96.
     function initiateAuction(
         IERC20 _auctioningToken,
         IERC20 _biddingToken,
