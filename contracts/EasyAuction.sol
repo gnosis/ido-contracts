@@ -400,7 +400,7 @@ contract EasyAuction is Ownable {
                     currentBidSum.toUint96()
                 );
             } else {
-                // Auction partially filled
+                // Even at the initial auction price, the auction is partially filled
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
                     fullAuctionedAmount,
