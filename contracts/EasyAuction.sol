@@ -379,7 +379,8 @@ contract EasyAuction is Ownable {
                 currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
                 clearingOrder = currentOrder;
             } else {
-                // Auction fully filled via price between iterOrder and previousOrder
+                // Auction fully filled via price between currentOrder and the order
+                // immediately before
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
