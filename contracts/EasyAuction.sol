@@ -456,10 +456,9 @@ contract EasyAuction is Ownable {
 
         if (auctionData[auctionId].minFundingThreshold > currentBidSum) {
             auctionData[auctionId].minFundingThresholdNotReached = true;
-        } else {
-            if (auctionData[auctionId].feeNumerator > 0) {
-                claimFees(auctionId);
-            }
+        }
+        if (auctionData[auctionId].feeNumerator > 0) {
+            claimFees(auctionId);
         }
         claimAuctioneerFunds(auctionId);
         (, uint96 priceNumerator, uint96 priceDenominator) =
@@ -581,7 +580,11 @@ contract EasyAuction is Ownable {
             sellAmount.mul(auctionData[auctionId].feeNumerator).div(
                 FEE_DENOMINATOR
             );
-        if (priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)) {
+        if (auctionData[auctionId].minFundingThresholdNotReached) {
+            sendOutTokens(auctionId, feeAmount, 0, auctioneerId);
+        } else if (
+            priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)
+        ) {
             // In this case we have a partial match of the initialSellOrder
             uint256 auctioningTokenAmount =
                 sellAmount.sub(auctionData[auctionId].volumeClearingPriceOrder);

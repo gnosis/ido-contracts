@@ -1639,7 +1639,14 @@ describe("EasyAuction", async () => {
         [user_1, user_2, user_3],
         hre,
       );
-
+      const auctioningTokenBalanceBeforeAuction = await auctioningToken.balanceOf(
+        user_1.address,
+      );
+      const feeReceiver = user_3;
+      const feeNumerator = 10;
+      await easyAuction
+        .connect(user_1)
+        .setFeeParameters(feeNumerator, feeReceiver.address);
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
         "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
@@ -1655,14 +1662,11 @@ describe("EasyAuction", async () => {
       );
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
       await closeAuction(easyAuction, auctionId);
-      await expect(() =>
-        easyAuction
-          .settleAuction(auctionId)
-          .to.changeTokenBalances(
-            auctioningToken,
-            [user_1],
-            [initialAuctionOrder.sellAmount],
-          ),
+      await easyAuction.settleAuction(auctionId);
+      const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.minFundingThresholdNotReached).to.equal(true);
+      expect(await auctioningToken.balanceOf(user_1.address)).to.be.equal(
+        auctioningTokenBalanceBeforeAuction,
       );
     });
     it("checks the claimed amounts for a fully matched initialAuctionOrder and buyOrder", async () => {
