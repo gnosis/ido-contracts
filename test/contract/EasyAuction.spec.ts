@@ -12,7 +12,7 @@ import {
   placeOrders,
   calculateClearingPrice,
   getAllSellOrders,
-  reversePriceOrder,
+  reverseOrderPrice,
 } from "../../src/priceCalculation";
 
 import {
@@ -733,7 +733,7 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+        encodeOrder(reverseOrderPrice(initialAuctionOrder)),
       );
       const price = decodeOrder(auctionData.clearingPriceOrder);
       expect(auctionData.volumeClearingPriceOrder).to.equal(
@@ -786,7 +786,7 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+        encodeOrder(reverseOrderPrice(initialAuctionOrder)),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         initialAuctionOrder.sellAmount,
@@ -889,7 +889,7 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+        encodeOrder(reverseOrderPrice(initialAuctionOrder)),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
@@ -1520,7 +1520,7 @@ describe("EasyAuction", async () => {
       expect(price).to.eql(initialAuctionOrder);
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+        encodeOrder(reverseOrderPrice(initialAuctionOrder)),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         initialAuctionOrder.sellAmount,

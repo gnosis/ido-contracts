@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "./libraries/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 
 contract EasyAuction is Ownable {
     using SafeERC20 for IERC20;
@@ -318,11 +317,6 @@ contract EasyAuction is Ownable {
             "reached end of order list"
         );
 
-        require(
-            iterOrder != IterableOrderedOrderSet.QUEUE_END,
-            "reached end of order list"
-        );
-
         // it is checked that not too many iteration steps were taken:
         // require that the sum of SellAmounts times the price of the last order
         // is not more than initially sold amount
@@ -523,15 +517,11 @@ contract EasyAuction is Ownable {
             sendOutTokens(auctionId, sellAmount, 0, auctioneerId);
         } else {
             auctionData[auctionId].initialAuctionOrder = bytes32(0);
-            (
-                uint64 priceUserId,
-                uint96 priceNumerator,
-                uint96 priceDenominator
-            ) = auctionData[auctionId].clearingPriceOrder.decodeOrder();
+            (, uint96 priceNumerator, uint96 priceDenominator) =
+                auctionData[auctionId].clearingPriceOrder.decodeOrder();
             if (
                 priceNumerator.mul(buyAmount) ==
-                priceDenominator.mul(sellAmount) &&
-                priceUserId == auctioneerId
+                priceDenominator.mul(sellAmount)
             ) {
                 // In this case we have a partial match of the initialSellOrder
                 auctioningTokenAmount = sellAmount.sub(
@@ -615,10 +605,6 @@ contract EasyAuction is Ownable {
         );
         userId = numUsers;
         numUsers = numUsers.add(1).toUint64();
-        require(
-            numUsers < uint64(-1) - 1,
-            "too many users for save representation of settled order"
-        );
         emit UserRegistration(user, userId);
     }
 
