@@ -413,6 +413,8 @@ contract EasyAuction is Ownable {
                 // Auction fully filled via partial match of currentOrder
                 uint256 sellAmountClearingOrder =
                     sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
+                // Note: The volumeClearingPriceOrder could potentially be rounded down
+                // See footnote 1, why this is not an issue.
                 auctionData[auctionId]
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
@@ -446,6 +448,8 @@ contract EasyAuction is Ownable {
                     fullAuctionedAmount,
                     minAuctionedBuyAmount
                 );
+                // Note: The volumeClearingPriceOrder could potentially be rounded down
+                // See footnote 2, why this is not an issue.
                 auctionData[auctionId].volumeClearingPriceOrder = currentBidSum
                     .mul(fullAuctionedAmount)
                     .div(minAuctionedBuyAmount)
@@ -666,3 +670,22 @@ contract EasyAuction is Ownable {
         return sellOrders[auctionId].contains(order);
     }
 }
+
+// Footnote 1:
+// If we have a partial fill of an iterOrder, the volumeClearingPriceOrder could be rounded down
+// Hence, the owner of the iterOrder could potentially claim on biddingToken Wei too much.
+// This is not a problem due to:
+// Claims_of_bidding_token_from_auction = fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter
+// Claims_of_bidding_token_from_iterOrder = sellAmountOfIter - volumeClearingPriceOrder
+//                                  = sellAmountOfIter - (sellAmountOfIter - (currentSumBid - fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter))
+//                                  = (currentSumBid - fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter)
+//
+// Hence Claims_of_bidding_token_from_auction + Claims_of_bidding_token_from_iterOrder <= currentSumBid
+
+// Footnote 2:
+// If we have a partial fill of the initialAuction order, the volumeClearingPriceOrder could be rounded down
+// Hence, the auctionieer could potentially claim more auctions tokens as allowed.
+// Claims_of_auctioning_token_from_auction = fullAuctionedAmount - currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
+// Claims_of_auctioning_token_others = currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
+
+// Hence Claims_of_auctioning_token_from_auction + Claims_of_auctioning_token_others <= fullAuctionedAmount
