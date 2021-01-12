@@ -361,13 +361,11 @@ contract EasyAuction is Ownable {
             fullAuctionedAmount.mul(sellAmountOfIter)
         ) {
             // All considered/summed orders are sufficient to close the auction fully at price of last order
-            uint256 uncoveredAuctionSellVolume =
-                currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
-                    fullAuctionedAmount
-                );
             uint256 uncoveredSellVolumeOfIter =
-                uncoveredAuctionSellVolume.mul(sellAmountOfIter).div(
-                    buyAmountOfIter
+                currentBidSum.sub(
+                    fullAuctionedAmount.mul(sellAmountOfIter).div(
+                        buyAmountOfIter
+                    )
                 );
 
             if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
