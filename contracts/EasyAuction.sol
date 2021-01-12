@@ -336,6 +336,7 @@ contract EasyAuction is Ownable {
     function settleAuction(uint256 auctionId)
         public
         atStageSolutionSubmission(auctionId)
+        returns (bytes32 clearingOrder)
     {
         bytes32 initialAuctionOrder =
             auctionData[auctionId].initialAuctionOrder;
@@ -384,12 +385,11 @@ contract EasyAuction is Ownable {
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
                 currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
-                auctionData[auctionId].clearingPriceOrder = currentOrder;
+                clearingOrder = currentOrder;
             } else {
                 // Case 2: Auction fully filled via price between iterOrder and previousOrder
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
-                auctionData[auctionId]
-                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
+                clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
                     fullAuctionedAmount,
                     currentBidSum.toUint96()
@@ -405,16 +405,14 @@ contract EasyAuction is Ownable {
             if (currentBidSum > minAuctionedBuyAmount) {
                 // Price higher than last order would fill the auction
                 // Case: 3,9,
-                auctionData[auctionId]
-                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
+                clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
                     fullAuctionedAmount,
                     currentBidSum.toUint96()
                 );
             } else {
                 // Case 4,8,3,9,6: Auction partially filled
-                auctionData[auctionId]
-                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
+                clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     auctioneerUserId,
                     fullAuctionedAmount,
                     minAuctionedBuyAmount
@@ -425,6 +423,8 @@ contract EasyAuction is Ownable {
                     .toUint96();
             }
         }
+        auctionData[auctionId].clearingPriceOrder = clearingOrder;
+
         if (auctionData[auctionId].minFundingThreshold > currentBidSum) {
             auctionData[auctionId].minFundingThresholdNotReached = true;
         } else {
@@ -433,11 +433,9 @@ contract EasyAuction is Ownable {
             }
         }
         claimAuctioneerFunds(auctionId);
-        {
-            (, uint96 priceNumerator, uint96 priceDenominator) =
-                auctionData[auctionId].clearingPriceOrder.decodeOrder();
-            emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
-        }
+        (, uint96 priceNumerator, uint96 priceDenominator) =
+            clearingOrder.decodeOrder();
+        emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
     }
 
     function claimFromParticipantOrder(
