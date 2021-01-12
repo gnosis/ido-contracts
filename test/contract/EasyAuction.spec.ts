@@ -2558,7 +2558,6 @@ describe("EasyAuction", async () => {
         .setFeeParameters(10, feeReceiver.address);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await expect(() =>
         easyAuction.settleAuction(auctionId),
       ).to.changeTokenBalances(

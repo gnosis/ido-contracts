@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 import { BigNumber } from "ethers";
 import { task } from "hardhat/config";
 
-import { calculateClearingPrice, encodeOrder } from "../priceCalculation";
+import { calculateClearingPrice } from "../priceCalculation";
 
 import { getEasyAuctionContract } from "./utils";
 

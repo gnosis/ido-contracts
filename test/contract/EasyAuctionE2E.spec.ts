@@ -2,10 +2,8 @@ import { Contract, BigNumber } from "ethers";
 import hre, { ethers, waffle } from "hardhat";
 
 import {
-  encodeOrder,
   createTokensAndMintAndApprove,
   placeOrders,
-  calculateClearingPrice,
 } from "../../src/priceCalculation";
 
 import { sendTxAndGetReturnValue, closeAuction } from "./utilities";
