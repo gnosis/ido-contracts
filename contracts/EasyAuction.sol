@@ -135,6 +135,14 @@ contract EasyAuction is Ownable {
         feeNumerator = newFeeNumerator;
     }
 
+    // @dev: function to intiate a new auction
+    // Warning: In case the auction is expected to raise more than
+    // 2^96 units of the biddingToken, don't start the auction, as
+    // it will not be settlable. This corresponds to about 79
+    // billion DAI.
+    //
+    // Prices between biddingToken and auctioningToken are expressed by a
+    // fraction whose components are stored as uint96.
     function initiateAuction(
         IERC20 _auctioningToken,
         IERC20 _biddingToken,

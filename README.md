@@ -44,6 +44,12 @@ The proposed batch auction system has a number of advantages over dutch auction.
 - Dutch auctions calculate their price based the blocktime. This pricing is hard to predict for all participants, as the mining is a stochastical process Additionally, the unpredictability for the mining time of the next block
 - Dutch auctions are causing a gas price bidding war to close the auction. In contrast in batch auction, different buyers will bid against other bidder in the mem-pool. Especially, once (EIP-1559)[https://eips.ethereum.org/EIPS/eip-1559] is implemented and the mining of a transaction is guaranteed for the next block, then bidders have to compete on bidding limit-prices instead of the gas-prices to get included into the auction.
 
+## Warnings
+
+In case the auction is expected to raise more than 2^96 units of the biddingToken, don't start the auction,as it will not be settlable. This corresponds to about 79 billion DAI.
+
+Prices between biddingToken and auctioningToken are expressed by a fraction whose components are stored as uint96. Make sure your expected prices are representable as such fractions.
+
 ## Instructions
 
 ### Backend
