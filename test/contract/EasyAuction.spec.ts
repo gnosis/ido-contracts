@@ -6,17 +6,20 @@ import "@nomiclabs/hardhat-ethers";
 import {
   toReceivedFunds,
   encodeOrder,
+  decodeOrder,
   queueStartElement,
   createTokensAndMintAndApprove,
   placeOrders,
   calculateClearingPrice,
   getAllSellOrders,
+  reversePriceOrder,
 } from "../../src/priceCalculation";
 
 import {
   sendTxAndGetReturnValue,
   closeAuction,
   increaseTime,
+  claimFromAllOrders,
 } from "./utilities";
 
 describe("EasyAuction", async () => {
@@ -629,6 +632,7 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[0].sellAmount, // times prices (=1)
       );
@@ -673,9 +677,11 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
       );
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("checks case 4, it verifies the price in case of clearingOrder == initialAuctionOrder with 3 orders", async () => {
       const initialAuctionOrder = {
@@ -724,15 +730,19 @@ describe("EasyAuction", async () => {
 
       await closeAuction(easyAuction, auctionId);
 
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(
+        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+      );
+      const price = decodeOrder(auctionData.clearingPriceOrder);
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[0].sellAmount
           .mul(3)
           .mul(price.buyAmount)
           .div(price.sellAmount),
       );
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("checks case 6, it verifies the price in case of clearingOrder == initialOrder, although last iterOrder would also be possible", async () => {
       // This test demonstrates the case 6,
@@ -773,15 +783,10 @@ describe("EasyAuction", async () => {
 
       await closeAuction(easyAuction, auctionId);
 
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder({
-          sellAmount: initialAuctionOrder.buyAmount,
-          buyAmount: initialAuctionOrder.sellAmount,
-          userId: BigNumber.from(0),
-        }),
+        encodeOrder(reversePriceOrder(initialAuctionOrder)),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         initialAuctionOrder.sellAmount,
@@ -839,7 +844,6 @@ describe("EasyAuction", async () => {
 
       await closeAuction(easyAuction, auctionId);
 
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -850,21 +854,13 @@ describe("EasyAuction", async () => {
         }),
       );
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
-      await easyAuction.claimFromParticipantOrder(auctionId, [
-        encodeOrder(sellOrders[0]),
-      ]);
-      await easyAuction.claimFromParticipantOrder(auctionId, [
-        encodeOrder(sellOrders[1]),
-      ]);
-      await easyAuction.claimFromParticipantOrder(auctionId, [
-        encodeOrder(sellOrders[2]),
-      ]);
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("checks case 8, it verifies the price in case of no participation of the auction", async () => {
       const initialAuctionOrder = {
         sellAmount: BigNumber.from(1000),
         buyAmount: BigNumber.from(1000),
-        userId: BigNumber.from(1),
+        userId: BigNumber.from(0),
       };
 
       const {
@@ -890,9 +886,11 @@ describe("EasyAuction", async () => {
 
       await closeAuction(easyAuction, auctionId);
 
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(
+        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+      );
       expect(auctionData.volumeClearingPriceOrder).to.equal(BigNumber.from(0));
     });
     it("checks case 2, it verifies the price in case without a partially filled order", async () => {
@@ -937,8 +935,17 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
+      const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(
+        encodeOrder({
+          sellAmount: sellOrders[0].sellAmount,
+          buyAmount: initialAuctionOrder.sellAmount,
+          userId: BigNumber.from(0),
+        }),
+      );
+      expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("checks case 10, verifies the price in case one sellOrder is eating initialAuctionOrder completely", async () => {
       const initialAuctionOrder = {
@@ -977,14 +984,17 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(
+        encodeOrder(sellOrders[0]),
+      );
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         initialAuctionOrder.sellAmount
-          .mul(price.sellAmount)
-          .div(price.buyAmount),
+          .mul(sellOrders[0].sellAmount)
+          .div(sellOrders[0].buyAmount),
       );
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("checks case 5, bidding amount matches min buyAmount of initialOrder perfectly", async () => {
       const initialAuctionOrder = {
@@ -1028,10 +1038,9 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[1].sellAmount,
       );
@@ -1101,10 +1110,9 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[1].sellAmount,
       );
@@ -1136,7 +1144,7 @@ describe("EasyAuction", async () => {
         [sellOrders[2].sellAmount],
       );
     });
-    it("checks case 7: it shows an example why userId should always be given", async () => {
+    it("checks case 10: it shows an example why userId should always be given: 2 orders with the same price", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("0.5"),
@@ -1183,10 +1191,11 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-      // expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(
+        encodeOrder(sellOrders[0]),
+      );
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         sellOrders[1].sellAmount,
       );
@@ -1266,11 +1275,11 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("verifies the price in case of 2 of 3 sellOrders eating initialAuctionOrder completely - with precalculateSellAmountSum step", async () => {
       const initialAuctionOrder = {
@@ -1320,13 +1329,12 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       // this is the additional step
       await easyAuction.precalculateSellAmountSum(auctionId, 1);
 
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
     });
     it("verifies the price in case of 2 of 4 sellOrders eating initialAuctionOrder completely - with precalculateSellAmountSum step and one more step within settleAuction", async () => {
@@ -1382,7 +1390,6 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       // this is the additional step
       await easyAuction.precalculateSellAmountSum(auctionId, 1);
 
@@ -1392,9 +1399,12 @@ describe("EasyAuction", async () => {
       );
       expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(sellOrders[2]);
       const auctionData2 = await easyAuction.auctionData(auctionId);
+      expect(auctionData2.clearingPriceOrder).to.eql(
+        encodeOrder(sellOrders[2]),
+      );
       expect(auctionData2.volumeClearingPriceOrder).to.equal(0);
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("verifies the price in case of clearing order is decided by userId", async () => {
       const initialAuctionOrder = {
@@ -1444,11 +1454,13 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(sellOrders[1]);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.be.equal(
+        encodeOrder(sellOrders[1]),
+      );
       expect(auctionData.volumeClearingPriceOrder).to.equal(0);
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("simple version of e2e gas test", async () => {
       const initialAuctionOrder = {
@@ -1507,14 +1519,13 @@ describe("EasyAuction", async () => {
       await easyAuction.settleAuction(auctionId);
       expect(price).to.eql(initialAuctionOrder);
       const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.clearingPriceOrder).to.equal(
+        encodeOrder(reversePriceOrder(initialAuctionOrder)),
+      );
       expect(auctionData.volumeClearingPriceOrder).to.equal(
         initialAuctionOrder.sellAmount,
       );
-      // check that claiming all funds is possible
-      easyAuction.claimFromParticipantOrder(
-        auctionId,
-        sellOrders.map((order) => encodeOrder(order)),
-      );
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
     });
     it("checks whether the minimalFundingThreshold is not met", async () => {
       const initialAuctionOrder = {
@@ -1607,10 +1618,7 @@ describe("EasyAuction", async () => {
         ethers.utils.parseEther("5"),
       );
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
-
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
-
       await expect(() =>
         easyAuction
           .settleAuction(auctionId)
@@ -1707,8 +1715,6 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       const callPromise = easyAuction.settleAuction(auctionId);
       // auctioneer reward check:
       await expect(callPromise)
@@ -1770,7 +1776,6 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
       await expect(() =>
         easyAuction.claimFromParticipantOrder(
@@ -1945,11 +1950,8 @@ describe("EasyAuction", async () => {
         0,
       );
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
-
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-
       const receivedAmounts = toReceivedFunds(
         await easyAuction.callStatic.claimFromParticipantOrder(auctionId, [
           encodeOrder(sellOrders[2]),
@@ -2057,9 +2059,7 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await easyAuction.settleAuction(auctionId);
-
       await easyAuction.claimFromParticipantOrder(auctionId, [
         encodeOrder(sellOrders[0]),
       ]),
@@ -2108,9 +2108,7 @@ describe("EasyAuction", async () => {
     await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
     await closeAuction(easyAuction, auctionId);
-    const price = await calculateClearingPrice(easyAuction, auctionId);
     await easyAuction.settleAuction(auctionId);
-
     await expect(
       easyAuction.claimFromParticipantOrder(auctionId, [
         encodeOrder(sellOrders[0]),
@@ -2493,7 +2491,6 @@ describe("EasyAuction", async () => {
       sellOrders = await getAllSellOrders(easyAuction, auctionId);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await expect(() =>
         easyAuction.settleAuction(auctionId),
       ).to.changeTokenBalances(
@@ -2621,7 +2618,6 @@ describe("EasyAuction", async () => {
       sellOrders = await getAllSellOrders(easyAuction, auctionId);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
       await expect(() =>
         easyAuction.settleAuction(auctionId),
       ).to.changeTokenBalances(

@@ -396,7 +396,7 @@ contract EasyAuction is Ownable {
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 auctionData[auctionId]
                     .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
-                    uint64(-1),
+                    0,
                     fullAuctionedAmount,
                     currentBidSum.toUint96()
                 );

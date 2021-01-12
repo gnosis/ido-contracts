@@ -1,6 +1,8 @@
 import { BigNumber, Contract } from "ethers";
 import { ethers } from "hardhat";
 
+import { encodeOrder, Order } from "../../src/priceCalculation";
+
 export async function closeAuction(
   instance: Contract,
   auctionId: BigNumber,
@@ -9,6 +11,18 @@ export async function closeAuction(
     await instance.getSecondsRemainingInBatch(auctionId)
   ).toNumber();
   await increaseTime(time_remaining + 1);
+}
+
+export async function claimFromAllOrders(
+  easyAuction: Contract,
+  auctionId: BigNumber,
+  orders: Order[],
+): Promise<void> {
+  for (const order of orders) {
+    await easyAuction.claimFromParticipantOrder(auctionId, [
+      encodeOrder(order),
+    ]);
+  }
 }
 
 export async function increaseTime(duration: number): Promise<void> {
