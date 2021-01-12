@@ -475,18 +475,11 @@ contract EasyAuction is Ownable {
                 sumBiddingTokenAmount = sumBiddingTokenAmount.add(sellAmount);
             } else {
                 if (orders[i] == auction.clearingPriceOrder) {
-                    if (auction.volumeClearingPriceOrder != 0) {
+                    if (auction.volumeClearingPriceOrder > 0) {
                         sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
                             auction
                                 .volumeClearingPriceOrder
                                 .sub(1) // as the volumeClearingPriceOrder might be rounded up
-                                .mul(priceNumerator)
-                                .div(priceDenominator)
-                        );
-                    } else {
-                        sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
-                            auction
-                                .volumeClearingPriceOrder
                                 .mul(priceNumerator)
                                 .div(priceDenominator)
                         );

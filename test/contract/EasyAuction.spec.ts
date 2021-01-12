@@ -1060,7 +1060,7 @@ describe("EasyAuction", async () => {
       ).to.changeTokenBalances(
         auctioningToken,
         [user_3],
-        [sellOrders[1].sellAmount],
+        [sellOrders[1].sellAmount.sub(1)],
       );
     });
     it("checks case 7, bidding amount matches min buyAmount of initialOrder perfectly with additional order", async () => {
@@ -1132,7 +1132,7 @@ describe("EasyAuction", async () => {
       ).to.changeTokenBalances(
         auctioningToken,
         [user_3],
-        [sellOrders[1].sellAmount],
+        [sellOrders[1].sellAmount.sub(1)],
       );
       await expect(() =>
         easyAuction.claimFromParticipantOrder(auctionId, [
@@ -1206,7 +1206,7 @@ describe("EasyAuction", async () => {
       ).to.changeTokenBalances(
         auctioningToken,
         [user_2],
-        [sellOrders[0].sellAmount],
+        [sellOrders[0].sellAmount.sub(1)],
       );
       await expect(() =>
         easyAuction.claimFromParticipantOrder(auctionId, [
@@ -1899,7 +1899,9 @@ describe("EasyAuction", async () => {
             .sub(initialAuctionOrder.sellAmount),
         )
         .sub(1);
-      expect(receivedAmounts.auctioningTokenAmount).to.equal(settledBuyAmount);
+      expect(receivedAmounts.auctioningTokenAmount).to.equal(
+        settledBuyAmount.sub(1),
+      );
       expect(receivedAmounts.biddingTokenAmount).to.equal(
         sellOrders[1].sellAmount
           .sub(settledBuyAmount.mul(price.sellAmount).div(price.buyAmount))
@@ -2174,7 +2176,7 @@ describe("EasyAuction", async () => {
         ),
     );
     expect(receivedAmounts.auctioningTokenAmount).to.equal(
-      initialAuctionOrder.sellAmount.sub(1),
+      initialAuctionOrder.sellAmount.sub(2),
     );
   });
   describe("cancelOrder", async () => {
