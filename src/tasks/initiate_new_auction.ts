@@ -47,6 +47,12 @@ const initiateAuction: () => void = () => {
       "0.01",
       types.string,
     )
+    .addOptionalParam(
+      "isAtomicClosureAllowed",
+      "Describes whether the auction should be allowed to be closed atomically",
+      "false",
+      types.string,
+    )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
       console.log("Using the account:", caller.address);
@@ -104,6 +110,7 @@ const initiateAuction: () => void = () => {
           minBuyAmountInAtoms,
           minParticipantsBuyAmount,
           minFundingThresholdInAtoms,
+          taskArgs.isAtomicClosureAllowed,
         );
       const txResult = await tx.wait();
       const auctionId = txResult.events
