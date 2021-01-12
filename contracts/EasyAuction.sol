@@ -307,10 +307,6 @@ contract EasyAuction is Ownable {
             (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
             sumBidAmount = sumBidAmount.add(sellAmountOfIter);
         }
-        require(
-            iterOrder != IterableOrderedOrderSet.QUEUE_END,
-            "surpassed end of order list"
-        );
 
         require(
             iterOrder != IterableOrderedOrderSet.QUEUE_END,
