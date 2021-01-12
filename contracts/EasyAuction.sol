@@ -338,9 +338,8 @@ contract EasyAuction is Ownable {
         atStageSolutionSubmission(auctionId)
         returns (bytes32 clearingOrder)
     {
-        bytes32 initialAuctionOrder =
-            auctionData[auctionId].initialAuctionOrder;
-        (, , uint96 fullAuctionedAmount) = initialAuctionOrder.decodeOrder();
+        (, uint96 minAuctionedBuyAmount, uint96 fullAuctionedAmount) =
+            auctionData[auctionId].initialAuctionOrder.decodeOrder();
 
         uint256 currentBidSum = auctionData[auctionId].interimSumBidAmount;
         bytes32 currentOrder = auctionData[auctionId].interimOrder;
@@ -360,7 +359,6 @@ contract EasyAuction is Ownable {
                 fullAuctionedAmount.mul(sellAmountOfIter)
         );
 
-        (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
         if (
             currentBidSum > 0 &&
             currentBidSum.mul(buyAmountOfIter) >=
@@ -397,8 +395,6 @@ contract EasyAuction is Ownable {
         } else {
             // Cases: All considered/summed orders are not sufficient to close the auction fully at price of last order
             // Either a higher price must be used or auction is only partially filled
-            (uint64 auctioneerUserId, uint96 minAuctionedBuyAmount, ) =
-                initialAuctionOrder.decodeOrder();
 
             if (currentBidSum > minAuctionedBuyAmount) {
                 // Price higher than last order would fill the auction
@@ -410,7 +406,7 @@ contract EasyAuction is Ownable {
             } else {
                 // Auction partially filled
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
-                    auctioneerUserId,
+                    0,
                     fullAuctionedAmount,
                     minAuctionedBuyAmount
                 );
