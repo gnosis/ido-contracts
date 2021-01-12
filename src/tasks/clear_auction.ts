@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 import { BigNumber } from "ethers";
 import { task } from "hardhat/config";
 
-import { calculateClearingPrice, encodeOrder } from "../priceCalculation";
+import { calculateClearingPrice } from "../priceCalculation";
 
 import { getEasyAuctionContract } from "./utils";
 
@@ -22,7 +22,7 @@ const clearAuction: () => void = () => {
       console.log("Clearing price will be:", price);
       const tx = await easyAuction
         .connect(caller)
-        .verifyPrice(taskArgs.auctionId, encodeOrder(price));
+        .settleAuction(taskArgs.auctionId);
       const txResult = await tx.wait();
       console.log(txResult);
     });

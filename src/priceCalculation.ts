@@ -35,6 +35,13 @@ export const queueStartElement =
 export const queueLastElement =
   "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 
+export function reverseOrderPrice(order: Order): Order {
+  return {
+    userId: order.userId,
+    sellAmount: order.buyAmount,
+    buyAmount: order.sellAmount,
+  };
+}
 export function encodeOrder(order: Order): string {
   return (
     "0x" +

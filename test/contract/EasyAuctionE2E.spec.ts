@@ -2,10 +2,8 @@ import { Contract, BigNumber } from "ethers";
 import hre, { ethers, waffle } from "hardhat";
 
 import {
-  encodeOrder,
   createTokensAndMintAndApprove,
   placeOrders,
-  calculateClearingPrice,
 } from "../../src/priceCalculation";
 
 import { sendTxAndGetReturnValue, closeAuction } from "./utilities";
@@ -19,7 +17,7 @@ describe("EasyAuction", async () => {
     easyAuction = await EasyAuction.deploy();
   });
 
-  it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of verifyPrice", async () => {
+  it("e2e - places a lot of sellOrders, such that the second last order is the clearingOrder and calculates the price to test gas usage of settleAuction", async () => {
     const {
       auctioningToken,
       biddingToken,
@@ -56,8 +54,7 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrder, auctionId, hre);
     }
     await closeAuction(easyAuction, auctionId);
-    const price = await calculateClearingPrice(easyAuction, auctionId);
-    const tx = await easyAuction.verifyPrice(auctionId, encodeOrder(price));
+    const tx = await easyAuction.settleAuction(auctionId);
     const gasUsed = (await tx.wait()).gasUsed;
 
     console.log("Gas usage for verification", gasUsed.toString());

@@ -187,7 +187,7 @@ contract EasyAuction is Ownable {
             ),
             minimumBiddingAmountPerOrder,
             0,
-            bytes32(0),
+            IterableOrderedOrderSet.QUEUE_START,
             bytes32(0),
             0,
             feeNumerator,
@@ -309,9 +309,6 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
         uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
-        if (iterOrder == bytes32(0)) {
-            iterOrder = IterableOrderedOrderSet.QUEUE_START;
-        }
 
         for (uint256 i = 0; i < iterationSteps; i++) {
             iterOrder = sellOrders[auctionId].next(iterOrder);
@@ -326,7 +323,7 @@ contract EasyAuction is Ownable {
 
         // it is checked that not too many iteration steps were taken:
         // require that the sum of SellAmounts times the price of the last order
-        // is not more than intially sold amount
+        // is not more than initially sold amount
         (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
             iterOrder.decodeOrder();
         require(
@@ -339,103 +336,93 @@ contract EasyAuction is Ownable {
         auctionData[auctionId].interimOrder = iterOrder;
     }
 
-    // @dev function verifiying the auction price
-    // @parameter price: This should either be a price encoded as an order
-    // with userId = 0, priceNumerator = buyAmount, priceDenominator = sellAmount
-    // or it should reference to the particular order settled only partially within
-    // this auction.
-    function verifyPrice(uint256 auctionId, bytes32 price)
+    // @dev function settling the auction and calculating the price
+    function settleAuction(uint256 auctionId)
         public
         atStageSolutionSubmission(auctionId)
+        returns (bytes32 clearingOrder)
     {
-        (, uint96 priceNumerator, uint96 priceDenominator) =
-            price.decodeOrder();
-        (
-            uint64 auctioneerId,
-            uint96 auctioneerBuyAmount,
-            uint96 auctioneerSellAmount
-        ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
-        require(priceNumerator > 0, "price must be postive");
-        uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
-        bytes32 iterOrder = auctionData[auctionId].interimOrder;
-        if (iterOrder == bytes32(0)) {
-            iterOrder = IterableOrderedOrderSet.QUEUE_START;
-        }
-        if (!sellOrders[auctionId].isEmpty()) {
-            iterOrder = sellOrders[auctionId].next(iterOrder);
-            while (iterOrder != price && iterOrder.smallerThan(price)) {
-                (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
-                sumBidAmount = sumBidAmount.add(sellAmountOfIter);
-                iterOrder = sellOrders[auctionId].next(iterOrder);
+        (, uint96 minAuctionedBuyAmount, uint96 fullAuctionedAmount) =
+            auctionData[auctionId].initialAuctionOrder.decodeOrder();
+
+        uint256 currentBidSum = auctionData[auctionId].interimSumBidAmount;
+        bytes32 currentOrder = auctionData[auctionId].interimOrder;
+        uint256 buyAmountOfIter;
+        uint256 sellAmountOfIter;
+        // Sum order up, until fullAuctionedAmount is fully bought or queue end is reached
+        do {
+            bytes32 nextOrder = sellOrders[auctionId].next(currentOrder);
+            if (nextOrder == IterableOrderedOrderSet.QUEUE_END) {
+                break;
             }
-        }
-        uint256 sumBuyAmount =
-            sumBidAmount.mul(priceNumerator).div(priceDenominator);
-        if (price == iterOrder) {
-            // case 1: one sellOrder is partially filled
-            // The partially filled order is the iterOrder, if:
-            // 1) The sumBuyAmounts is not bigger than the intitial order's sell amount
-            // i.e, sellAmount >= sumBuyAmount
-            // 2) The volume of the particial order is not bigger than its sell volume
-            // i.e. auctionData[auctionId].volumeClearingPriceOrder <= sellAmountOfIter,
-            (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
-            uint256 clearingOrderBuyAmount =
-                auctioneerSellAmount.sub(sumBuyAmount);
-            // Attention: This conversion can prevent closing auctions, if rounding down
-            // to uint96 does fail. Should not happen, unless token has more than 18 digits
-            // or prices are huge.
-            auctionData[auctionId].volumeClearingPriceOrder = (
-                clearingOrderBuyAmount.mul(priceDenominator).div(priceNumerator)
-            )
-                .toUint96();
-            sumBuyAmount = sumBuyAmount.add(
-                auctionData[auctionId].volumeClearingPriceOrder
-            );
-            require(
-                auctionData[auctionId].volumeClearingPriceOrder <=
-                    sellAmountOfIter,
-                "order can not be clearing order"
-            );
-            auctionData[auctionId].clearingPriceOrder = iterOrder;
-        } else {
-            if (sumBuyAmount < auctioneerSellAmount) {
-                // case 2: initialAuction order is partially filled
-                // We require that the price was the initialOrderLimit price's inverse
-                // as this ensures that the for-loop iterated through all orders
-                // and all orders are considered
-                require(
-                    priceNumerator.mul(auctioneerBuyAmount) ==
-                        auctioneerSellAmount.mul(priceDenominator),
-                    "supplied price must be inverse initialOrderLimit"
+            currentOrder = nextOrder;
+            (, buyAmountOfIter, sellAmountOfIter) = currentOrder.decodeOrder();
+            currentBidSum = currentBidSum.add(sellAmountOfIter);
+        } while (
+            currentBidSum.mul(buyAmountOfIter) <
+                fullAuctionedAmount.mul(sellAmountOfIter)
+        );
+
+        if (
+            currentBidSum > 0 &&
+            currentBidSum.mul(buyAmountOfIter) >=
+            fullAuctionedAmount.mul(sellAmountOfIter)
+        ) {
+            // All considered/summed orders are sufficient to close the auction fully
+            // at price between current and previous orders.
+            uint256 uncoveredSellVolumeOfIter =
+                currentBidSum.sub(
+                    fullAuctionedAmount.mul(sellAmountOfIter).div(
+                        buyAmountOfIter
+                    )
                 );
-                auctionData[auctionId].volumeClearingPriceOrder = sumBuyAmount
-                    .toUint96();
+
+            if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
+                // Auction fully filled via partial match of currentOrder
+                uint256 sellAmountClearingOrder =
+                    sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
                 auctionData[auctionId]
-                    .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
-                    auctioneerId,
-                    priceNumerator,
-                    priceDenominator
+                    .volumeClearingPriceOrder = sellAmountClearingOrder
+                    .toUint96();
+                currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
+                clearingOrder = currentOrder;
+            } else {
+                // Auction fully filled via price between currentOrder and the order
+                // immediately before
+                currentBidSum = currentBidSum.sub(sellAmountOfIter);
+                clearingOrder = IterableOrderedOrderSet.encodeOrder(
+                    0,
+                    fullAuctionedAmount,
+                    currentBidSum.toUint96()
+                );
+            }
+        } else {
+            // All considered/summed orders are not sufficient to close the auction fully at price of last order
+            // Either a higher price must be used or auction is only partially filled
+
+            if (currentBidSum > minAuctionedBuyAmount) {
+                // Price higher than last order would fill the auction
+                clearingOrder = IterableOrderedOrderSet.encodeOrder(
+                    0,
+                    fullAuctionedAmount,
+                    currentBidSum.toUint96()
                 );
             } else {
-                // case 3: no order is partially filled
-                // In this case the sumBuyAmount must be equal to
-                // the sellAmount of the initialAuctionOrder, without
-                // any rounding errors.
-                // This price is always existing as we can choose
-                // priceNumerator = sellAmount and priceDenominator = sumSellAmount
-                auctionData[auctionId].clearingPriceOrder = price;
-                require(
-                    sumBuyAmount == auctioneerSellAmount,
-                    "price is not clearing price"
+                // Even at the initial auction price, the auction is partially filled
+                clearingOrder = IterableOrderedOrderSet.encodeOrder(
+                    0,
+                    fullAuctionedAmount,
+                    minAuctionedBuyAmount
                 );
-                require(
-                    priceNumerator.mul(auctioneerBuyAmount) <=
-                        auctioneerSellAmount.mul(priceDenominator),
-                    "clearing price is better than initialAuctionOrder"
-                );
+                auctionData[auctionId].volumeClearingPriceOrder = currentBidSum
+                    .mul(fullAuctionedAmount)
+                    .div(minAuctionedBuyAmount)
+                    .toUint96();
             }
         }
-        if (auctionData[auctionId].minFundingThreshold > sumBuyAmount) {
+        auctionData[auctionId].clearingPriceOrder = clearingOrder;
+
+        if (auctionData[auctionId].minFundingThreshold > currentBidSum) {
             auctionData[auctionId].minFundingThresholdNotReached = true;
         } else {
             if (auctionData[auctionId].feeNumerator > 0) {
@@ -443,6 +430,8 @@ contract EasyAuction is Ownable {
             }
         }
         claimAuctioneerFunds(auctionId);
+        (, uint96 priceNumerator, uint96 priceDenominator) =
+            clearingOrder.decodeOrder();
         emit AuctionCleared(auctionId, priceNumerator, priceDenominator);
     }
 
