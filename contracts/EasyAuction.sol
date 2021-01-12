@@ -339,7 +339,7 @@ contract EasyAuction is Ownable {
     }
 
     // @dev function settling the auction and calculating the price
-    function settleAuction(uint256 auctionId, bytes32 price)
+    function settleAuction(uint256 auctionId)
         public
         atStageSolutionSubmission(auctionId)
     {
@@ -373,23 +373,14 @@ contract EasyAuction is Ownable {
         ) {
             // Cases: All considered/summed orders are sufficient to close the auction fully at price of last order
             // Case 1,2,5,7:
-            // uint256 uncoveredAuctionSellVolume =
-            //     currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
-            //         fullAuctionedAmount
-            //     );
-            // uint256 uncoveredSellVolumeOfIter =
-            //     uncoveredAuctionSellVolume.mul(sellAmountOfIter).div(
-            //         buyAmountOfIter
-            //     );
+            uint256 uncoveredAuctionSellVolume =
+                currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
+                    fullAuctionedAmount
+                );
             uint256 uncoveredSellVolumeOfIter =
-                (
-                    currentBidSum
-                        .mul(buyAmountOfIter)
-                        .div(sellAmountOfIter)
-                        .sub(fullAuctionedAmount)
-                )
-                    .mul(sellAmountOfIter)
-                    .div(buyAmountOfIter);
+                uncoveredAuctionSellVolume.mul(sellAmountOfIter).div(
+                    buyAmountOfIter
+                );
 
             if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
                 // Case 1,5,7: Auction fully filled via partial match of iterOrder
@@ -402,11 +393,12 @@ contract EasyAuction is Ownable {
                 auctionData[auctionId].clearingPriceOrder = currentOrder;
             } else {
                 // Case 2: Auction fully filled via price between iterOrder and previousOrder
+                currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 auctionData[auctionId]
                     .clearingPriceOrder = IterableOrderedOrderSet.encodeOrder(
                     uint64(-1),
                     fullAuctionedAmount,
-                    currentBidSum.sub(sellAmountOfIter).toUint96()
+                    currentBidSum.toUint96()
                 );
             }
         } else {

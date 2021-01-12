@@ -56,8 +56,7 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrder, auctionId, hre);
     }
     await closeAuction(easyAuction, auctionId);
-    const price = await calculateClearingPrice(easyAuction, auctionId);
-    const tx = await easyAuction.settleAuction(auctionId, encodeOrder(price));
+    const tx = await easyAuction.settleAuction(auctionId);
     const gasUsed = (await tx.wait()).gasUsed;
 
     console.log("Gas usage for verification", gasUsed.toString());
