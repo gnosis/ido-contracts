@@ -1897,7 +1897,8 @@ describe("EasyAuction", async () => {
             .mul(price.buyAmount)
             .div(price.sellAmount)
             .sub(initialAuctionOrder.sellAmount),
-        );
+        )
+        .sub(1);
       expect(receivedAmounts.auctioningTokenAmount).to.equal(settledBuyAmount);
       expect(receivedAmounts.biddingTokenAmount).to.equal(
         sellOrders[1].sellAmount
@@ -2170,11 +2171,10 @@ describe("EasyAuction", async () => {
           initialAuctionOrder.sellAmount
             .mul(price.sellAmount)
             .div(price.buyAmount),
-        )
-        .sub(1),
+        ),
     );
     expect(receivedAmounts.auctioningTokenAmount).to.equal(
-      initialAuctionOrder.sellAmount,
+      initialAuctionOrder.sellAmount.sub(1),
     );
   });
   describe("cancelOrder", async () => {

@@ -366,28 +366,27 @@ contract EasyAuction is Ownable {
             currentBidSum.mul(buyAmountOfIter) >=
             fullAuctionedAmount.mul(sellAmountOfIter)
         ) {
-            // Cases: All considered/summed orders are sufficient to close the auction fully at price of last order
-            // Case 1,2,5,7:
-            uint256 uncoveredAuctionSellVolume =
-                currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
-                    fullAuctionedAmount
-                );
+            // All considered/summed orders are sufficient to close the auction fully at price of last order
             uint256 uncoveredSellVolumeOfIter =
-                uncoveredAuctionSellVolume.mul(sellAmountOfIter).div(
-                    buyAmountOfIter
+                currentBidSum.sub(
+                    fullAuctionedAmount.mul(sellAmountOfIter).div(
+                        buyAmountOfIter
+                    )
                 );
 
             if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
-                // Case 1,5,7: Auction fully filled via partial match of iterOrder
+                // Auction fully filled via partial match of iterOrder
                 uint256 sellAmountClearingOrder =
                     sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
+                // Note: sellAmountClearingOrder could be rounded up
+                // But we decrease the value in the payout function
                 auctionData[auctionId]
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
                 currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
                 clearingOrder = currentOrder;
             } else {
-                // Case 2: Auction fully filled via price between iterOrder and previousOrder
+                // Auction fully filled via price between iterOrder and previousOrder
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
@@ -398,25 +397,27 @@ contract EasyAuction is Ownable {
         } else {
             // Cases: All considered/summed orders are not sufficient to close the auction fully at price of last order
             // Either a higher price must be used or auction is only partially filled
-            // Case 3,4,6,8,9:
             (uint64 auctioneerUserId, uint96 minAuctionedBuyAmount, ) =
                 initialAuctionOrder.decodeOrder();
 
             if (currentBidSum > minAuctionedBuyAmount) {
                 // Price higher than last order would fill the auction
-                // Case: 3,9,
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
                     fullAuctionedAmount,
                     currentBidSum.toUint96()
                 );
             } else {
-                // Case 4,8,3,9,6: Auction partially filled
+                // Auction partially filled
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     auctioneerUserId,
                     fullAuctionedAmount,
                     minAuctionedBuyAmount
                 );
+                // Note: volumeClearingPriceOrder could be rounded down.
+                // This means that the auctioneer will claim a little bit more
+                // auctioning tokens. This will not lead to a deficit, as for
+                // one bidder there needs to be a rounding down as well.
                 auctionData[auctionId].volumeClearingPriceOrder = currentBidSum
                     .mul(fullAuctionedAmount)
                     .div(minAuctionedBuyAmount)
@@ -474,12 +475,22 @@ contract EasyAuction is Ownable {
                 sumBiddingTokenAmount = sumBiddingTokenAmount.add(sellAmount);
             } else {
                 if (orders[i] == auction.clearingPriceOrder) {
-                    sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
-                        auction
-                            .volumeClearingPriceOrder
-                            .mul(priceNumerator)
-                            .div(priceDenominator)
-                    );
+                    if (auction.volumeClearingPriceOrder != 0) {
+                        sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
+                            auction
+                                .volumeClearingPriceOrder
+                                .sub(1) // as the volumeClearingPriceOrder might be rounded up
+                                .mul(priceNumerator)
+                                .div(priceDenominator)
+                        );
+                    } else {
+                        sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
+                            auction
+                                .volumeClearingPriceOrder
+                                .mul(priceNumerator)
+                                .div(priceDenominator)
+                        );
+                    }
                     sumBiddingTokenAmount = sumBiddingTokenAmount.add(
                         sellAmount.sub(auction.volumeClearingPriceOrder)
                     );
