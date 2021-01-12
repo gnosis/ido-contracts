@@ -22,6 +22,11 @@ import {
   claimFromAllOrders,
 } from "./utilities";
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Some tests use different test cases 1,..,10. These test cases are illustrated in the following jam board:
+// https://jamboard.google.com/d/1DMgMYCQQzsSLKPq_hlK3l32JNBbRdIhsOrLB1oHaEYY/edit?usp=sharing
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 describe("EasyAuction", async () => {
   const [user_1, user_2, user_3] = waffle.provider.getWallets();
   let easyAuction: Contract;

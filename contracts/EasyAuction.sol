@@ -364,8 +364,7 @@ contract EasyAuction is Ownable {
             currentBidSum.mul(buyAmountOfIter) >=
             fullAuctionedAmount.mul(sellAmountOfIter)
         ) {
-            // Cases: All considered/summed orders are sufficient to close the auction fully at price of last order
-            // Case 1,2,5,7:
+            // All considered/summed orders are sufficient to close the auction fully at price of last order
             uint256 uncoveredAuctionSellVolume =
                 currentBidSum.mul(buyAmountOfIter).div(sellAmountOfIter).sub(
                     fullAuctionedAmount
@@ -376,7 +375,7 @@ contract EasyAuction is Ownable {
                 );
 
             if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
-                // Case 1,5,7: Auction fully filled via partial match of iterOrder
+                // Auction fully filled via partial match of iterOrder
                 uint256 sellAmountClearingOrder =
                     sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
                 auctionData[auctionId]
@@ -385,7 +384,7 @@ contract EasyAuction is Ownable {
                 currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
                 clearingOrder = currentOrder;
             } else {
-                // Case 2: Auction fully filled via price between iterOrder and previousOrder
+                // Auction fully filled via price between iterOrder and previousOrder
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
@@ -394,20 +393,18 @@ contract EasyAuction is Ownable {
                 );
             }
         } else {
-            // Cases: All considered/summed orders are not sufficient to close the auction fully at price of last order
+            // All considered/summed orders are not sufficient to close the auction fully at price of last order
             // Either a higher price must be used or auction is only partially filled
-            // Case 3,4,6,8,9:
 
             if (currentBidSum > minAuctionedBuyAmount) {
                 // Price higher than last order would fill the auction
-                // Case: 3,9,
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
                     fullAuctionedAmount,
                     currentBidSum.toUint96()
                 );
             } else {
-                // Case 4,8,3,9,6: Auction partially filled
+                // Auction partially filled
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
                     fullAuctionedAmount,
