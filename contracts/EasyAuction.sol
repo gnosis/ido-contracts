@@ -675,7 +675,7 @@ contract EasyAuction is Ownable {
 // If we have a partial fill of an iterOrder, the volumeClearingPriceOrder could be rounded down
 // Hence, the owner of the iterOrder could potentially claim on biddingToken Wei too much.
 // This is not a problem due to:
-// Claims_of_bidding_token_from_auction = fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter
+// Claims_of_bidding_token_from_auctioneer = fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter
 // Claims_of_bidding_token_from_iterOrder = sellAmountOfIter - volumeClearingPriceOrder
 //                                  = sellAmountOfIter - (sellAmountOfIter - (currentSumBid - fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter))
 //                                  = (currentSumBid - fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter)
@@ -684,8 +684,8 @@ contract EasyAuction is Ownable {
 
 // Footnote 2:
 // If we have a partial fill of the initialAuction order, the volumeClearingPriceOrder could be rounded down
-// Hence, the auctionieer could potentially claim more auctions tokens as allowed.
-// Claims_of_auctioning_token_from_auction = fullAuctionedAmount - currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
+// Hence, the auctioneer could potentially claim more auctions tokens as allowed.
+// Claims_of_auctioning_token_from_auctioneer = fullAuctionedAmount - currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
 // Claims_of_auctioning_token_others = currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
 
 // Hence Claims_of_auctioning_token_from_auction + Claims_of_auctioning_token_others <= fullAuctionedAmount
