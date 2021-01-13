@@ -171,6 +171,10 @@ contract EasyAuction is Ownable {
             minimumBiddingAmountPerOrder > 0,
             "minimumBiddingAmountPerOrder is not allowed to be zero"
         );
+        require(
+            orderCancelationPeriodDuration <= duration,
+            "time periods are not configured correctly"
+        );
         auctionCounter++;
         sellOrders[auctionCounter].initializeEmptyList();
 
