@@ -431,7 +431,7 @@ contract EasyAuction is Ownable {
                 );
             }
         } else {
-            // All considered/summed orders are not sufficient to close the auction fully at price of last order //[21]
+            // All considered/summed orders are not sufficient to close the auction fully at price of last order //[18]
             // Either a higher price must be used or auction is only partially filled
 
             if (currentBidSum > minAuctionedBuyAmount) {
@@ -587,13 +587,13 @@ contract EasyAuction is Ownable {
         uint256 feeAmount =
             sellAmount.mul(auctionData[auctionId].feeNumerator).div(
                 FEE_DENOMINATOR
-            ); //[19]
+            ); //[20]
         if (auctionData[auctionId].minFundingThresholdNotReached) {
             sendOutTokens(auctionId, feeAmount, 0, auctioneerId); //[6]
         } else if (
             priceNumerator.mul(buyAmount) == priceDenominator.mul(sellAmount)
         ) {
-            //[18]
+            //[19]
             // In this case we have a partial match of the initialSellOrder
             uint256 auctioningTokenAmount =
                 sellAmount.sub(auctionData[auctionId].volumeClearingPriceOrder);
