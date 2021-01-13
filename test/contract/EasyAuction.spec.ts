@@ -110,6 +110,30 @@ describe("EasyAuction", async () => {
         ),
       ).to.be.revertedWith("tokens cannot be auctioned for free");
     });
+    it("throws if auction periods do not make sense", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      await expect(
+        easyAuction.initiateAuction(
+          auctioningToken.address,
+          biddingToken.address,
+          60 * 60 + 1,
+          60 * 60,
+          ethers.utils.parseEther("1"),
+          ethers.utils.parseEther("1"),
+          1,
+          0,
+          false,
+        ),
+      ).to.be.revertedWith("time periods are not configured correctly");
+    });
     it("initiateAuction stores the parameters correctly", async () => {
       const {
         auctioningToken,
