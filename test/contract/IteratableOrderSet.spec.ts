@@ -174,6 +174,16 @@ describe("IterableOrderedOrderSet", function () {
     expect(third).to.equal(BYTES32_THREE);
   });
 
+  it("does not allow to get next of the queue end element", async () => {
+    await set.insert(BYTES32_THREE);
+
+    const first = await set.first();
+    const second = await set.next(first);
+    await expect(set.next(second)).to.be.revertedWith(
+      "Trying to get next of last element",
+    );
+  });
+
   it("doesn't allow to insert a number with denominator == 0", async () => {
     await expect(set.insert(BYTES32_ZERO)).to.be.revertedWith(
       "Inserting zero is not supported",

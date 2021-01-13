@@ -268,6 +268,49 @@ describe("EasyAuction", async () => {
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
     });
+    it("does not withdraw funds, if orders are placed twice", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("1"),
+        1,
+        0,
+        false,
+      );
+      await expect(() =>
+        easyAuction.placeSellOrders(
+          auctionId,
+          [ethers.utils.parseEther("1").sub(1)],
+          [ethers.utils.parseEther("1")],
+          [queueStartElement],
+        ),
+      ).to.changeTokenBalances(
+        biddingToken,
+        [user_1],
+        [ethers.utils.parseEther("-1")],
+      );
+      await expect(() =>
+        easyAuction.placeSellOrders(
+          auctionId,
+          [ethers.utils.parseEther("1").sub(1)],
+          [ethers.utils.parseEther("1")],
+          [queueStartElement],
+        ),
+      ).to.changeTokenBalances(biddingToken, [user_1], [BigNumber.from(0)]);
+    });
     it("places a new order and checks that tokens were transferred", async () => {
       const {
         auctioningToken,
@@ -484,6 +527,48 @@ describe("EasyAuction", async () => {
       await expect(
         easyAuction.precalculateSellAmountSum(auctionId, 3),
       ).to.be.revertedWith("too many orders summed up");
+    });
+    it("fails if queue end is reached", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("1").mul(2),
+          buyAmount: ethers.utils.parseEther("1").div(5),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        false,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      await expect(
+        easyAuction.precalculateSellAmountSum(auctionId, 2),
+      ).to.be.revertedWith("reached end of order list");
     });
     it("verifies that interimSumBidAmount and iterOrder is set correctly", async () => {
       const initialAuctionOrder = {
@@ -2344,6 +2429,69 @@ describe("EasyAuction", async () => {
           buyAmount: initialAuctionOrder.sellAmount,
           userId: BigNumber.from(0),
         }),
+      );
+    });
+    it("can not settle auctions atomically, before auction finished", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("0.5"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("0.5"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const atomicSellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.4999"),
+          buyAmount: ethers.utils.parseEther("0.4999"),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        true,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await expect(
+        easyAuction
+          .connect(user_2)
+          .settleAuctionAtomically(
+            auctionId,
+            [atomicSellOrders[0].sellAmount],
+            [atomicSellOrders[0].buyAmount],
+            [queueStartElement],
+          ),
+      ).to.be.revertedWith("Auction not in solution submission phase");
+    });
+  });
+  describe("registerUser", async () => {
+    it("registers a user only once", async () => {
+      await easyAuction.registerUser(user_1.address);
+      await expect(easyAuction.registerUser(user_1.address)).to.be.revertedWith(
+        "User already registered",
       );
     });
   });

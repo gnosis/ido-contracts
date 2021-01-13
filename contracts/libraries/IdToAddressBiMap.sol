@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-newer
 pragma solidity ^0.6.0;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Contract does not have test coverage, as it was nearly copied from:
+// https://github.com/gnosis/solidity-data-structures/blob/master/contracts/libraries/IdToAddressBiMap.sol
+// The only change is uint16 -> uint64
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 library IdToAddressBiMap {
     struct Data {
         mapping(uint64 => address) idToAddress;
