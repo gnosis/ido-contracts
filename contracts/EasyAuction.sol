@@ -506,7 +506,9 @@ contract EasyAuction is Ownable {
                 //[10]
                 sumBiddingTokenAmount = sumBiddingTokenAmount.add(sellAmount);
             } else {
+                //[23]
                 if (orders[i] == auction.clearingPriceOrder) {
+                    //[x2]
                     sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
                         auction
                             .volumeClearingPriceOrder
@@ -523,6 +525,7 @@ contract EasyAuction is Ownable {
                             sellAmount.mul(priceNumerator).div(priceDenominator)
                         );
                     } else {
+                        //[24]
                         sumBiddingTokenAmount = sumBiddingTokenAmount.add(
                             sellAmount
                         );
