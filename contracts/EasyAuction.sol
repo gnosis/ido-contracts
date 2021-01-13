@@ -672,7 +672,7 @@ contract EasyAuction is Ownable {
 }
 
 // Footnote 1:
-// If we have a partial fill of an iterOrder, the volumeClearingPriceOrder could be rounded down
+// If we have a partial fill of an iterOrder, the volumeClearingPriceOrder could be rounded down.
 // Hence, the owner of the iterOrder could potentially claim one biddingToken Wei too much.
 // This is not a problem due to:
 // Claims_of_bidding_token_from_auctioneer = fullAuctionedAmount * sellAmountOfIter / buyAmountOfIter
@@ -684,7 +684,7 @@ contract EasyAuction is Ownable {
 
 // Footnote 2:
 // If we have a partial fill of the initialAuction order, the volumeClearingPriceOrder could be rounded down
-// Hence, the auctioneer could potentially claim more auctions tokens as allowed.
+// Hence, the auctioneer could potentially claim more auctions tokens as allowed. Again this is not a problem due to:
 // Claims_of_auctioning_token_from_auctioneer = fullAuctionedAmount - currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
 // Claims_of_auctioning_token_others = currentSumBid * fullAuctionedAmount /minAuctionedBuyAmount
 
@@ -693,14 +693,20 @@ contract EasyAuction is Ownable {
 // Footnote 3:
 // Claiming from the auctioneer will never fail, as:
 //  - Assuming the auctioneer has a partial filled order.
-//       AuctioningToken: Then see Footnote 2.
-//       BiddingToken:
+//       AuctioningToken are sufficient:  see Footnote 2.
+//       BiddingToken are sufficient:
 //           Bidding_token_for_auctioneer = volumeClearingPriceOrder * minAuctionedBuyAmount/ fullAuctionedAmount
 //                                        <= volumeClearingPriceOrder * currentBidSum/ fullAuctionedAmount <= currentBidSum
 //  - Assuming the auctioneer has sold all his tokens, then he will receive
 //      Bidding_token_for_auctioneer = fullAuctionedAmount * priceDenominator/ priceNumerator
 //                                   = fullAuctionedAmount * currentBidSum / fullAuctionedAmount or fullAuctionedAmount * buyAmountIterOrder / sellAmountIterOrder
 //
-// In the later case, we have as well from the if branch:
-// currentBidSum.mul(buyAmountOfIter) >= fullAuctionedAmount.mul(sellAmountOfIter)
-// currentBidSum >= fullAuctionedAmount.mul(sellAmountOfIter).div(buyAmountOfIter)
+//      In the later case, we have as well from the if branch:
+//      currentBidSum.mul(buyAmountOfIter) >= fullAuctionedAmount.mul(sellAmountOfIter)
+//      currentBidSum >= fullAuctionedAmount.mul(sellAmountOfIter).div(buyAmountOfIter)
+//
+//      Hence, we have in call cases again: Bidding_token_for_auctioneer <= currentBidSum
+
+// Footnote 4:
+// Fee calculations do not interact with the considerations from above. Fees are set aside during the intialization of an auction and later on
+// they are just claimed, potentially by different parties.
