@@ -7,7 +7,9 @@ of the tokens used (e.g., if the auction sells all and only existing token
 units).
 
 (References in square brackets can be found in the code as `\\[*]`. All
-operations in this document are integer divisions.)
+operations in this document are integer divisions rounding down to the smallest
+integer. For example, `1/2 = 0` and `(-1)/2 = -1`. A recurring property is that
+`a/c + b/c <= (a+b)/c`, where `c>0` and `a` and `b` are integers.)
 
 We wish to argue that the amount transferred out is no larger than the amount
 transferred in.
@@ -126,8 +128,13 @@ We treat each case separately depending on whether the auction was settled in
 case [13] (an order was partially matched) or any of [12], [14] (no order
 partially matched, full auctioned amount sold).
 
-In case [12] and [14] the price is `(priceNumerator, priceDenominator) = (fullAuctionedAmount, currentBidSum)` and `clearingOrder` is not an existing
-order.
+In case [12] and [14] the price is:
+
+```
+(priceNumerator, priceDenominator) = (fullAuctionedAmount, currentBidSum)
+```
+
+and `clearingOrder` is not an existing order.
 
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
 some bid tokens are deposited for every user order. They can be withdrawn in two
@@ -174,41 +181,68 @@ We have shown that in cases [12] and [14] no withdrawing issue is possible.
 
 It remains to consider case [13].
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
-some bid tokens are deposited for every user order. They can be withdrawn in three
-points: auctioneer claiming [12], partial order match claiming and unmatched orders [23].
-Unmatched orders can be considered as canceled orders. They are not touched by the calculation and owners are just withdrawing their funds.
-Auctioneer claiming [12] and partial order match claiming are considered only:
+some bid tokens are deposited for every user order. They can be withdrawn in
+three points: auctioneer claiming [12], partial order match claiming and
+unmatched orders [23].
+We start by considering the amount of bid tokens.
+We use the same argument in the previous case to see that all orders larger than
+`clearingPriceOrder` are settled leaving a total of `currentSumBid` still to
+settle. As before, we assume that the function `settleAuction` is built so that
+`currentBidSum` is the sum of the bids of all orders smaller than or equal to
+the clearing price order.
+
+Only auctioneer claiming [12] and clearing price order match [25] trigger a
+transfer of bid token:
 
 ```
 [12]: out_settle_auctioneer = sellAmount * priceDenominator / priceNumerator
-                 = sellAmount * partialOrderSellAmount / partialOrderBuyAmount
+                            = sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
 
-[x2] out_settle_partial_order = partialOrderSellAmount - volumeClearingPriceOrder
-                                using [13]
-                                = partialOrderSellAmount - (partialOrderSellAmount - (currentSumBid - sellAmount * partialOrderSellAmount / partialOrderBuyAmount))
-                                = (currentSumBid - sellAmount * partialOrderSellAmount / partialOrderBuyAmount)
-     out = out_settle_auctioneer + out_settle_partial_order <= currentSumBid
+[13]: volumeClearingPriceOrder = clearingPriceOrderSellAmount - (currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)
+                               = clearingPriceOrderSellAmount - currentSumBid + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
+[25]: out_settle_partial_order = clearingPriceOrderSellAmount - volumeClearingPriceOrder
+                               = clearingPriceOrderSellAmount - (clearingPriceOrderSellAmount - currentSumBid + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)
+                               = currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
+      out = out_settle_auctioneer + out_settle_partial_order = currentSumBid
 ```
 
-We assume that the function `settleAuction` is built so that `currentBidSum` is
-the sum of the bids of all orders smaller or equal (as defined in the library
-`IterableOrderedOrderSet`) than the partially matched order.
-
-We show next that, again in case [13], no more auction tokens are
-withdrawn than deposited.
-Auction tokens are withdrawn when claiming fees [9] and by the users in
-`claimFromParticipantOrder` [17]:
+Finally, we show that in case [13] no more auction tokens are withdrawn than
+deposited. Auction tokens are withdrawn when claiming fees [9] and by the users
+in `claimFromParticipantOrder` [17]:
 
 ```
 [9]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_fully_matched_order = orderSellAmount * priceNumerator / priceDenominator
-                    = orderSellAmount * partialOrderBuyAmount / partialOrderSellAmount
-[x2]: out_partially_matched_order =
-               volumeClearingPriceOrder * partialOrderBuyAmount / partialOrderSellAmount
-               = (partialOrderSellAmount - (currentSumBid - sellAmount * partialOrderSellAmount / partialOrderBuyAmount)) * partialOrderBuyAmount / partialOrderSellAmount
-               <= (partialOrderSellAmount - currentSumBid ) * partialOrderBuyAmount / partialOrderSellAmount + sellAmount
-               <= -(currentSumBid - partialOrderSellAmount) * partialOrderBuyAmount / partialOrderSellAmount + sellAmount
-out =  out_fees + out_per_fully_matched_order + sum(out_partially_matched_order)
-    <= sellAmount * feeNumerator / FEE_DENOMINATOR  + sellAmount * FEE_DENOMINATOR / FEE_DENOMINATOR
-    <= sellAmount * (feeNumerator + FEE_DENOMINATOR) / FEE_DENOMINATOR
+                                  = orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+[25]: out_clearing_price_order = volumeClearingPriceOrder * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+                               =  (clearingPriceOrderSellAmount - currentSumBid) + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+                               <= (clearingPriceOrderSellAmount - currentSumBid) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
 ```
+
+Note that `currentBidSum` is the sum of all orders including the full clearing
+price order:
+
+```
+currentBidSum = sum(orderSellAmount) + clearingPriceOrderSellAmount
+```
+
+where the sum is taken over all orders strictly smaller than the clearing price
+order. We use this to compute the following sum:
+
+```
+[17]: sum(out_per_fully_matched_order) =  sum(orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
+                                       <= sum(orderSellAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
+                                       =  (currentBidSum - clearingPriceOrderSellAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
+```
+
+Then the amount of auction token withdrawn is:
+
+```
+      out =  out_fees + out_clearing_price_order + sum(out_per_fully_matched_order)
+          <= sellAmount * feeNumerator / FEE_DENOMINATOR
+             + (clearingPriceOrderSellAmount - currentSumBid) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
+             + (currentBidSum - clearingPriceOrderSellAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
+          =  sellAmount * feeNumerator / FEE_DENOMINATOR + sellAmount
+```
+
+Which is smaller than the auction token input amount from [0].
