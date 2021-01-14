@@ -181,12 +181,12 @@ Auctioneer claiming [12] and partial order match claiming are considered only:
 
 ```
 [12]: out_settle_auctioneer = sellAmount * priceDenominator / priceNumerator
-                 = sellAmount * partialOrderSellAmount / partialOrderBuyAmount
+                 = sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
 
-[x2] out_settle_partial_order = partialOrderSellAmount - volumeClearingPriceOrder
+[x2] out_settle_partial_order = clearingPriceOrderSellAmount - volumeClearingPriceOrder
                                 using [13]
-                                = partialOrderSellAmount - (partialOrderSellAmount - (currentSumBid - sellAmount * partialOrderSellAmount / partialOrderBuyAmount))
-                                = (currentSumBid - sellAmount * partialOrderSellAmount / partialOrderBuyAmount)
+                                = clearingPriceOrderSellAmount - (clearingPriceOrderSellAmount - (currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount))
+                                = (currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)
      out = out_settle_auctioneer + out_settle_partial_order <= currentSumBid
 ```
 
@@ -202,12 +202,12 @@ Auction tokens are withdrawn when claiming fees [9] and by the users in
 ```
 [9]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_fully_matched_order = orderSellAmount * priceNumerator / priceDenominator
-                    = orderSellAmount * partialOrderBuyAmount / partialOrderSellAmount
+                    = orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
 [x2]: out_partially_matched_order =
-               volumeClearingPriceOrder * partialOrderBuyAmount / partialOrderSellAmount
-               = (partialOrderSellAmount - (currentSumBid - sellAmount * partialOrderSellAmount / partialOrderBuyAmount)) * partialOrderBuyAmount / partialOrderSellAmount
-               <= (partialOrderSellAmount - currentSumBid ) * partialOrderBuyAmount / partialOrderSellAmount + sellAmount
-               <= -(currentSumBid - partialOrderSellAmount) * partialOrderBuyAmount / partialOrderSellAmount + sellAmount
+               volumeClearingPriceOrder * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+               = (clearingPriceOrderSellAmount - (currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+               <= (clearingPriceOrderSellAmount - currentSumBid ) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
+               <= -(currentSumBid - clearingPriceOrderSellAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
 out =  out_fees + out_per_fully_matched_order + sum(out_partially_matched_order)
     <= sellAmount * feeNumerator / FEE_DENOMINATOR  + sellAmount * FEE_DENOMINATOR / FEE_DENOMINATOR
     <= sellAmount * (feeNumerator + FEE_DENOMINATOR) / FEE_DENOMINATOR
