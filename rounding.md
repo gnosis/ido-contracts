@@ -128,8 +128,13 @@ We treat each case separately depending on whether the auction was settled in
 case [13] (an order was partially matched) or any of [12], [14] (no order
 partially matched, full auctioned amount sold).
 
-In case [12] and [14] the price is `(priceNumerator, priceDenominator) = (fullAuctionedAmount, currentBidSum)` and `clearingOrder` is not an existing
-order.
+In case [12] and [14] the price is:
+
+```
+(priceNumerator, priceDenominator) = (fullAuctionedAmount, currentBidSum)
+```
+
+and `clearingOrder` is not an existing order.
 
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
 some bid tokens are deposited for every user order. They can be withdrawn in two
@@ -186,7 +191,7 @@ settle. As before, we assume that the function `settleAuction` is built so that
 `currentBidSum` is the sum of the bids of all orders smaller than or equal to
 the clearing price order.
 
-Only auctioneer claiming [12] and clearing price order match [x2] trigger a
+Only auctioneer claiming [12] and clearing price order match [25] trigger a
 transfer of bid token:
 
 ```
@@ -195,7 +200,7 @@ transfer of bid token:
 
 [13]: volumeClearingPriceOrder = clearingPriceOrderSellAmount - (currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)
                                = clearingPriceOrderSellAmount - currentSumBid + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
-[x2]: out_settle_partial_order = clearingPriceOrderSellAmount - volumeClearingPriceOrder
+[25]: out_settle_partial_order = clearingPriceOrderSellAmount - volumeClearingPriceOrder
                                = clearingPriceOrderSellAmount - (clearingPriceOrderSellAmount - currentSumBid + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)
                                = currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
       out = out_settle_auctioneer + out_settle_partial_order = currentSumBid
@@ -208,11 +213,10 @@ in `claimFromParticipantOrder` [17]:
 ```
 [9]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_fully_matched_order = orderSellAmount * priceNumerator / priceDenominator
-                    = orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
-[x2]: out_clearing_price_order =
-               volumeClearingPriceOrder * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
-               =  (clearingPriceOrderSellAmount - currentSumBid) + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
-               <= (clearingPriceOrderSellAmount - currentSumBid) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
+                                  = orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+[25]: out_clearing_price_order = volumeClearingPriceOrder * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+                               =  (clearingPriceOrderSellAmount - currentSumBid) + sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
+                               <= (clearingPriceOrderSellAmount - currentSumBid) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
 ```
 
 Note that `currentBidSum` is the sum of all orders including the full clearing

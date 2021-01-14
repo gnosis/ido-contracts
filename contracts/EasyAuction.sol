@@ -512,7 +512,7 @@ contract EasyAuction is Ownable {
             } else {
                 //[23]
                 if (orders[i] == auction.clearingPriceOrder) {
-                    //[x2]
+                    //[25]
                     sumAuctioningTokenAmount = sumAuctioningTokenAmount.add(
                         auction
                             .volumeClearingPriceOrder
