@@ -32,7 +32,7 @@ const initiateAuction: () => void = () => {
     .addOptionalParam(
       "orderCancellationPeriod",
       "Describes how long the auction should allow to cancel orders in seconds",
-      "360000",
+      "0",
       types.string,
     )
     .addOptionalParam(
@@ -50,8 +50,8 @@ const initiateAuction: () => void = () => {
     .addOptionalParam(
       "isAtomicClosureAllowed",
       "Describes whether the auction should be allowed to be closed atomically",
-      "false",
-      types.string,
+      false,
+      types.boolean,
     )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
@@ -85,6 +85,12 @@ const initiateAuction: () => void = () => {
 
       console.log("Using EasyAuction deployed to:", easyAuction.address);
 
+      const balance = await auctioningToken.callStatic.balanceOf(
+        caller.address,
+      );
+      if (sellAmountsInAtoms.gt(balance)) {
+        return new Error("Balance not sufficient");
+      }
       const allowance = await auctioningToken.callStatic.allowance(
         caller.address,
         easyAuction.address,
@@ -95,7 +101,7 @@ const initiateAuction: () => void = () => {
           .connect(caller)
           .approve(easyAuction.address, sellAmountsInAtoms);
         await tx.wait();
-        console.log("Done");
+        console.log("Approved");
       }
 
       console.log("Starting Auction:");
