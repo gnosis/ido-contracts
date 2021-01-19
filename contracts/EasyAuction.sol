@@ -405,27 +405,42 @@ contract EasyAuction is Ownable {
         ) {
             // All considered/summed orders are sufficient to close the auction fully
             // at price between current and previous orders.
-            uint256 uncoveredSellVolumeOfIter =
+            uint256 sellVolumeOfIter =
                 currentBidSum.sub(
                     fullAuctionedAmount.mul(sellAmountOfIter).div(
                         buyAmountOfIter
                     )
                 );
 
-            if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
+            if (sellAmountOfIter >= sellVolumeOfIter) {
                 //[13]
                 // Auction fully filled via partial match of currentOrder
                 uint256 sellAmountClearingOrder =
-                    sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
+                    sellAmountOfIter.sub(sellVolumeOfIter);
                 auctionData[auctionId]
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
-                currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
+                currentBidSum = currentBidSum.sub(sellVolumeOfIter);
                 clearingOrder = currentOrder;
             } else {
                 //[14]
-                // Auction fully filled via price between currentOrder and the order
+                // Auction fully filled via price strictly between currentOrder and the order
                 // immediately before
+                // First, we prove p < p(currentOrder) via contraction:
+                // We assume: p >= p(currentOrder)
+                // fullAuctionAmount / prevBidSum  >=  buyAmountOfIter /sellAmountOfIter
+                // fullAuctionAmount * sellAmountOfIter  >= prevBidSum  * buyAmountOfIter
+                // fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum
+                // 0 >= prevBidSum  - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+                // sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+                // sellAmountOfIter >= currentBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+                // sellAmountOfIter >= sellVolumeOfIter
+                // Hence, we will not end up in the branch. Contradiction
+                // Next, we prove p > p(previousOrder) <=>  fullAuctionedAmount/ prevBidSum < buyAmountOfPrevIter / sellAmountOfPrevIter:
+                // From the while loop condition, we have:
+                // prevBidSum* (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
+                // <=>(buyAmountOfPrevIter)  / (sellAmountOfPrevIter)< fullAuctionedAmount  / prevBidSum  (as Fractions)
+
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
