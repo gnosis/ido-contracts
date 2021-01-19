@@ -369,7 +369,7 @@ contract EasyAuction is Ownable {
         );
         require(
             _minBuyAmount.length == 1 && _sellAmount.length == 1,
-            "Only one order is allowed to place atomically"
+            "Only one order can be placed atomically"
         );
         uint64 userId = getUserId(msg.sender);
         require(

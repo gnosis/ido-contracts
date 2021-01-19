@@ -2448,7 +2448,7 @@ describe("EasyAuction", async () => {
           [atomicSellOrders[0].buyAmount, atomicSellOrders[1].buyAmount],
           [queueStartElement, queueStartElement],
         ),
-      ).to.be.revertedWith("Only one order is allowed to place atomically");
+      ).to.be.revertedWith("Only one order can be placed atomically");
     });
     it("can not settle atomically, if precalculateSellAmountSum was used", async () => {
       const initialAuctionOrder = {
