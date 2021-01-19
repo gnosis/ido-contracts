@@ -425,23 +425,7 @@ contract EasyAuction is Ownable {
             } else {
                 //[14]
                 // Auction fully filled via price strictly between currentOrder and the order
-                // immediately before
-                // First, we prove p < p(currentOrder) via contraction:
-                // We assume: p >= p(currentOrder)
-                // (In this proof all divisions are integer divisions)
-                // fullAuctionAmount / prevBidSum  >=  buyAmountOfIter /sellAmountOfIter
-                // fullAuctionAmount * sellAmountOfIter  >= prevBidSum  * buyAmountOfIter
-                // fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum
-                // 0 >= prevBidSum  - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
-                // sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
-                // sellAmountOfIter >= currentBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
-                // sellAmountOfIter >= sellVolumeOfIter
-                // Hence, we will not end up in the branch. Contradiction
-                // Next, we prove p > p(previousOrder):
-                // From the while loop condition, we have:
-                // prevBidSum* (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
-                // <=>(buyAmountOfPrevIter)  / (sellAmountOfPrevIter) < fullAuctionedAmount  / prevBidSum  (as Fractions)
-                // <=> p(previousOrder) < p
+                // immediately before. For a proof, see the security-considerations.md
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
