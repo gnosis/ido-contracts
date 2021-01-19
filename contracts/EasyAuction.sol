@@ -428,6 +428,7 @@ contract EasyAuction is Ownable {
                 // immediately before
                 // First, we prove p < p(currentOrder) via contraction:
                 // We assume: p >= p(currentOrder)
+                // (In this proof all divisions are integer divisions)
                 // fullAuctionAmount / prevBidSum  >=  buyAmountOfIter /sellAmountOfIter
                 // fullAuctionAmount * sellAmountOfIter  >= prevBidSum  * buyAmountOfIter
                 // fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum
@@ -436,11 +437,11 @@ contract EasyAuction is Ownable {
                 // sellAmountOfIter >= currentBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
                 // sellAmountOfIter >= sellVolumeOfIter
                 // Hence, we will not end up in the branch. Contradiction
-                // Next, we prove p > p(previousOrder) <=>  fullAuctionedAmount/ prevBidSum < buyAmountOfPrevIter / sellAmountOfPrevIter:
+                // Next, we prove p > p(previousOrder):
                 // From the while loop condition, we have:
                 // prevBidSum* (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
-                // <=>(buyAmountOfPrevIter)  / (sellAmountOfPrevIter)< fullAuctionedAmount  / prevBidSum  (as Fractions)
-
+                // <=>(buyAmountOfPrevIter)  / (sellAmountOfPrevIter) < fullAuctionedAmount  / prevBidSum  (as Fractions)
+                // <=> p(previousOrder) < p
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
