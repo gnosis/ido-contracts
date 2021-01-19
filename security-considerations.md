@@ -2,25 +2,33 @@
 
 ### Price considerations
 
-Claim: In the code is in branch [14], the clearing price p will be strictly between the
+Claim: In the code, in branch [14], the clearing price p will be strictly between the
 current iterOrder price and the previous iterOrder price.
 
 First, we prove p < p(currentOrder) via contraction:
 We assume: p >= p(currentOrder)
 (In this proof all divisions are integer divisions)
+
+```
 fullAuctionAmount / prevBidSum >= buyAmountOfIter /sellAmountOfIter
-fullAuctionAmount _ sellAmountOfIter >= prevBidSum _ buyAmountOfIter
-fullAuctionAmount _ sellAmountOfIter / buyAmountOfIter >= prevBidSum
-0 >= prevBidSum - fullAuctionAmount _ sellAmountOfIter / buyAmountOfIter
-sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount _ sellAmountOfIter / buyAmountOfIter
+fullAuctionAmount * sellAmountOfIter >= prevBidSum * buyAmountOfIter
+fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum
+0 >= prevBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
 sellAmountOfIter >= currentBidSum - fullAuctionAmount _ sellAmountOfIter / buyAmountOfIter
 sellAmountOfIter >= sellVolumeOfIter
+```
+
 Hence, we will not end up in the branch. Contradiction
+
 Next, we prove p > p(previousOrder):
 From the while loop condition, we have:
+
+```
 prevBidSum* (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
 <=>(buyAmountOfPrevIter) / (sellAmountOfPrevIter) < fullAuctionedAmount / prevBidSum (as Fractions)
 <=> p(previousOrder) < p
+```
 
 ### Rounding considerations
 
