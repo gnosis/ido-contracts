@@ -368,9 +368,19 @@ contract EasyAuction is Ownable {
             "not allowed to settle auction atomically"
         );
         require(
-            auctionData[auctionId].interimOrder ==
-                IterableOrderedOrderSet.QUEUE_START,
-            "doing preCalculation is not allowed for atomic settlements"
+            _minBuyAmount.length == 1 && _sellAmount.length == 1,
+            "Only one order is allowed to place atomically"
+        );
+        uint64 userId = getUserId(msg.sender);
+        require(
+            auctionData[auctionId].interimOrder.smallerThan(
+                IterableOrderedOrderSet.encodeOrder(
+                    userId,
+                    _minBuyAmount[0],
+                    _sellAmount[0]
+                )
+            ),
+            "precalculateSellAmountSum is already too advanced"
         );
         _placeSellOrders(auctionId, _minBuyAmount, _sellAmount, _prevSellOrder);
         settleAuction(auctionId);
