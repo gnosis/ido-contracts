@@ -1,6 +1,8 @@
-## Contract security considerations
+# Contract security considerations
 
-### Price considerations
+## Price considerations
+
+### branch [14]
 
 Claim: In the code, in branch [14], the clearing price p will be strictly between the
 current iterOrder price and the previous iterOrder price.
@@ -30,7 +32,28 @@ prevBidSum* (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
 <=> p(previousOrder) < p
 ```
 
-### Rounding considerations
+### branch [15]
+
+Claim: In the code, in branch [15], the clearing price p will be strictly between the
+current iterOrder price and initial auction price.
+
+First, we prove p > p(currentOrder):
+Due to if condition, we have:
+
+```
+currentBidSum * buyAmountOfIter < fullAuctionedAmount * sellAmountOfIter
+<=> buyAmountOfIter / sellAmountOfIter < fullAuctionedAmount / currentBidSum  (as fractions)
+<=> p(currentOrder) < p
+```
+
+Next, we prove p < p(initialAuctionPrice)
+
+```
+fullAuctionedAmount / currentBidSum < fullAuctionedAmount / minAuctionedBuyAmount
+ <=> p < p(initialAuctionPrice)
+```
+
+## Rounding considerations
 
 (Based on the code at commit `fad89a39eab3e61e35876f3673e796e1f8a92df4`.)
 
@@ -159,21 +182,22 @@ The final case in the case where the final auction price is higher than the
 initial auction price.
 
 We treat each case separately depending on whether the auction was settled in
-case [13] (an order was partially matched) or any of [12], [14] (no order
+case [13] (an order was partially matched) or any of [14], [15] (no order
 partially matched, full auctioned amount sold).
 
-In case [12] and [14] the price is:
+In case [14] and [15] the price is:
 
 ```
 (priceNumerator, priceDenominator) = (fullAuctionedAmount, currentBidSum)
 ```
 
-and `clearingOrder` is not an existing order.
+and `clearingOrder` is not an existing order (c.f. [Price considerations](##price-considerations)..
 
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
 some bid tokens are deposited for every user order. They can be withdrawn in two
 points: auctioneer claiming [12] and unmatched orders [23]. Note that no order
-is partially matched since `clearingOrder` is not an existing order.
+is partially matched since `clearingOrder` is not an existing order
+(c.f. [Price considerations](##price-considerations).
 
 ```
 [12]: out_settle = sellAmount * priceDenominator / priceNumerator
@@ -189,7 +213,7 @@ condition [23] is the total sum of all sold amounts in all orders minus
 `currentBidSum`. The sum of withdrawn tokens (including those by [12]) must be
 exactly the sum of all bid tokens sold by the users.
 
-We show next that, again in cases [12] and [14], no more auction tokens are
+We show next that, again in cases [14] and [15], no more auction tokens are
 withdrawn than deposited.
 Auction tokens are withdrawn when claiming fees [9] and by the users in
 `claimFromParticipantOrder` [17]:
@@ -211,7 +235,7 @@ We use this to show that `sum(out_per_order) <= sellAmount`:
                         <= sum(orderSellAmount) * sellAmount / buyAmount = buyAmount * sellAmount / buyAmount = sellAmount
 ```
 
-We have shown that in cases [12] and [14] no withdrawing issue is possible.
+We have shown that in cases [14] and [15] no withdrawing issue are possible.
 
 It remains to consider case [13].
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
