@@ -2391,6 +2391,64 @@ describe("EasyAuction", async () => {
         ),
       ).to.be.revertedWith("not allowed to settle auction atomically");
     });
+    it("can not settle atomically, if precalculateSellAmountSum was used", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("0.5"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("0.5"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const atomicSellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.499"),
+          buyAmount: ethers.utils.parseEther("0.4999"),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        true,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      await easyAuction.precalculateSellAmountSum(auctionId, 1);
+
+      await expect(
+        easyAuction.settleAuctionAtomically(
+          auctionId,
+          [atomicSellOrders[0].sellAmount],
+          [atomicSellOrders[0].buyAmount],
+          [queueStartElement],
+        ),
+      ).to.be.revertedWith(
+        "doing preCalculation is not allowed for atomic settlements",
+      );
+    });
     it("can settle atomically, if it is allowed", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),

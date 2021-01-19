@@ -367,6 +367,11 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].isAtomicClosureAllowed,
             "not allowed to settle auction atomically"
         );
+        require(
+            auctionData[auctionId].interimOrder ==
+                IterableOrderedOrderSet.QUEUE_START,
+            "doing preCalculation is not allowed for atomic settlements"
+        );
         _placeSellOrders(auctionId, _minBuyAmount, _sellAmount, _prevSellOrder);
         settleAuction(auctionId);
     }
