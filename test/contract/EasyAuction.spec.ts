@@ -763,6 +763,7 @@ describe("EasyAuction", async () => {
           auctionId,
           sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
           sellOrders[0].sellAmount,
+          encodeOrder(reverseOrderPrice(initialAuctionOrder)),
         );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
@@ -812,6 +813,7 @@ describe("EasyAuction", async () => {
           auctionId,
           sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
           sellOrders[0].sellAmount,
+          encodeOrder(reverseOrderPrice(initialAuctionOrder)),
         );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
@@ -874,6 +876,7 @@ describe("EasyAuction", async () => {
             .mul(price.buyAmount)
             .div(price.sellAmount),
           sellOrders[0].sellAmount.mul(3),
+          encodeOrder(reverseOrderPrice(initialAuctionOrder)),
         );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -927,6 +930,7 @@ describe("EasyAuction", async () => {
           auctionId,
           initialAuctionOrder.sellAmount,
           sellOrders[0].sellAmount,
+          encodeOrder(reverseOrderPrice(initialAuctionOrder)),
         );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(

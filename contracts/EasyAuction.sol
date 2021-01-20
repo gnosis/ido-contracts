@@ -89,8 +89,9 @@ contract EasyAuction is Ownable {
     );
     event AuctionCleared(
         uint256 indexed auctionId,
-        uint96 priceNumerator,
-        uint96 priceDenominator
+        uint96 soldAuctioningTokens,
+        uint96 soldBiddingTokens,
+        bytes32 clearingPriceOrder
     );
     event UserRegistration(address indexed user, uint64 userId);
 
@@ -472,7 +473,8 @@ contract EasyAuction is Ownable {
         emit AuctionCleared(
             auctionId,
             fillVolumeOfAuctioneerOrder,
-            uint96(currentBidSum)
+            uint96(currentBidSum),
+            clearingOrder
         );
     }
 
@@ -560,10 +562,10 @@ contract EasyAuction is Ownable {
         if (auctionData[auctionId].minFundingThresholdNotReached) {
             sendOutTokens(auctionId, sellAmount, 0, auctioneerId); //[4]
         } else {
+            //[11]
             auctionData[auctionId].initialAuctionOrder = bytes32(0);
             (, uint96 priceNumerator, uint96 priceDenominator) =
                 auctionData[auctionId].clearingPriceOrder.decodeOrder();
-            //[11]
             auctioningTokenAmount = sellAmount.sub(fillVolumeOfAuctioneerOrder);
             biddingTokenAmount = fillVolumeOfAuctioneerOrder
                 .mul(priceDenominator)
