@@ -2449,6 +2449,177 @@ describe("EasyAuction", async () => {
         ),
       ).to.be.revertedWith("not allowed to settle auction atomically");
     });
+    it("reverts, if more than one order is intended to be settled atomically", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("0.5"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("0.5"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const atomicSellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.49"),
+          buyAmount: ethers.utils.parseEther("0.49"),
+          userId: BigNumber.from(1),
+        },
+        {
+          sellAmount: ethers.utils.parseEther("0.4"),
+          buyAmount: ethers.utils.parseEther("0.4"),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        true,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      await expect(
+        easyAuction.settleAuctionAtomically(
+          auctionId,
+          [atomicSellOrders[0].sellAmount, atomicSellOrders[1].sellAmount],
+          [atomicSellOrders[0].buyAmount, atomicSellOrders[1].buyAmount],
+          [queueStartElement, queueStartElement],
+        ),
+      ).to.be.revertedWith("Only one order can be placed atomically");
+    });
+    it("can not settle atomically, if precalculateSellAmountSum was used", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("0.5"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("0.5"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const atomicSellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.499"),
+          buyAmount: ethers.utils.parseEther("0.4999"),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        true,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      await easyAuction.precalculateSellAmountSum(auctionId, 1);
+
+      await expect(
+        easyAuction.settleAuctionAtomically(
+          auctionId,
+          [atomicSellOrders[0].sellAmount],
+          [atomicSellOrders[0].buyAmount],
+          [queueStartElement],
+        ),
+      ).to.be.revertedWith("precalculateSellAmountSum is already too advanced");
+    });
+    it(" allows an atomic settlement, if the precalculation are not yet beyond the price of the inserted order", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("0.5"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("0.5"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const atomicSellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("0.55"),
+          userId: BigNumber.from(0),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        true,
+      );
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+      await easyAuction.precalculateSellAmountSum(auctionId, 1);
+
+      await easyAuction.settleAuctionAtomically(
+        auctionId,
+        [atomicSellOrders[0].buyAmount],
+        [atomicSellOrders[0].sellAmount],
+        [queueStartElement],
+      );
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
+      await claimFromAllOrders(easyAuction, auctionId, atomicSellOrders);
+    });
     it("can settle atomically, if it is allowed", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
