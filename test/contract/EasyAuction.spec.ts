@@ -6,7 +6,6 @@ import "@nomiclabs/hardhat-ethers";
 import {
   toReceivedFunds,
   encodeOrder,
-  decodeOrder,
   queueStartElement,
   createTokensAndMintAndApprove,
   placeOrders,
