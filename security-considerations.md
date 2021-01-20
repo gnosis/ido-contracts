@@ -86,7 +86,7 @@ Transfers out occur on:
 - users claiming funds after the auction is concluded [3].
 - auction closing and sending
   - funds to the auctioneer [4]✔, [5]
-  - fees to the dedicated address [6]✔, [7], [8], [9]
+  - fees to the dedicated address [6]✔, [7], [8]
 
 We will assume that cancelling an order is equivalent to not having created the
 order in the first place. In terms of amounts, this is what happens with [1] and
@@ -113,8 +113,7 @@ separately the amount of auction tokens and of bid tokens.
 
 We argue that both bid tokens and auctioned tokens are not withdrawn beyond
 reserves in this case.
-Funds claiming by the auctioneer can be either at the initial auction price [11]
-or at a higher price [12].
+Funds claiming by the auctioneer will be done via [11].
 Assuming the initial auction price is used [11], then it means that the auction
 has been settled at the price determined in case [16] (out of the four possible
 cases [13], [14], [15], [16] of `settleAuction`). Then:
@@ -195,12 +194,12 @@ and `clearingOrder` is not an existing order (c.f. [Price considerations](##pric
 
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
 some bid tokens are deposited for every user order. They can be withdrawn in two
-points: auctioneer claiming [12] and unmatched orders [23]. Note that no order
+points: auctioneer claiming [11] and unmatched orders [23]. Note that no order
 is partially matched since `clearingOrder` is not an existing order
 (c.f. [Price considerations](##price-considerations).
 
 ```
-[12]: out_settle = sellAmount * priceDenominator / priceNumerator
+[5]: out_settle = sellAmount * priceDenominator / priceNumerator
                  = fullAuctionedAmount * currentBidSum / fullAuctionedAmount
                  = currentBidSum
 ```
@@ -210,16 +209,16 @@ the sum of the bids of all orders smaller (as defined in the library
 `IterableOrderedOrderSet`, meaning that the equality case is excluded) than
 `clearingOrder`. This means in particular that the sum of orders matched in the
 condition [23] is the total sum of all sold amounts in all orders minus
-`currentBidSum`. The sum of withdrawn tokens (including those by [12]) must be
+`currentBidSum`. The sum of withdrawn tokens (including those by [11]) must be
 exactly the sum of all bid tokens sold by the users.
 
 We show next that, again in cases [14] and [15], no more auction tokens are
 withdrawn than deposited.
-Auction tokens are withdrawn when claiming fees [9] and by the users in
+Auction tokens are withdrawn when claiming fees [7] and by the users in
 `claimFromParticipantOrder` [17]:
 
 ```
-[9]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
+[7]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_order = orderSellAmount * priceNumerator / priceDenominator
                     = orderSellAmount * sellAmount / buyAmount
 
@@ -240,7 +239,7 @@ We have shown that in cases [14] and [15] no withdrawing issue are possible.
 It remains to consider case [13].
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
 some bid tokens are deposited for every user order. They can be withdrawn in
-three points: auctioneer claiming [12], partial order match claiming and
+three points: auctioneer claiming [11], partial order match claiming and
 unmatched orders [23].
 We start by considering the amount of bid tokens.
 We use the same argument in the previous case to see that all orders larger than
@@ -249,11 +248,11 @@ settle. As before, we assume that the function `settleAuction` is built so that
 `currentBidSum` is the sum of the bids of all orders smaller than or equal to
 the clearing price order.
 
-Only auctioneer claiming [12] and clearing price order match [25] trigger a
+Only auctioneer claiming [11] and clearing price order match [25] trigger a
 transfer of bid token:
 
 ```
-[12]: out_settle_auctioneer = sellAmount * priceDenominator / priceNumerator
+[5]: out_settle_auctioneer = sellAmount * priceDenominator / priceNumerator
                             = sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
 
 [13]: volumeClearingPriceOrder = clearingPriceOrderSellAmount - (currentSumBid - sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount)
@@ -265,11 +264,11 @@ transfer of bid token:
 ```
 
 Finally, we show that in case [13] no more auction tokens are withdrawn than
-deposited. Auction tokens are withdrawn when claiming fees [9] and by the users
+deposited. Auction tokens are withdrawn when claiming fees [7] and by the users
 in `claimFromParticipantOrder` [17]:
 
 ```
-[9]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
+[7]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_fully_matched_order = orderSellAmount * priceNumerator / priceDenominator
                                   = orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
 [25]: out_clearing_price_order = volumeClearingPriceOrder * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
