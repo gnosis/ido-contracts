@@ -927,6 +927,53 @@ describe("EasyAuction", async () => {
         sellOrders.map((order) => encodeOrder(order)),
       );
     });
+    it("checks case 12, it verifies that price can not be the initial auction price (Adam's case)", async () => {
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1").add(1),
+        buyAmount: ethers.utils.parseEther("0.1"),
+        userId: BigNumber.from(0),
+      };
+      const sellOrders = [
+        {
+          sellAmount: ethers.utils.parseEther("0.5"),
+          buyAmount: ethers.utils.parseEther("1"),
+          userId: BigNumber.from(0),
+        },
+        {
+          sellAmount: BigNumber.from(2),
+          buyAmount: BigNumber.from(4),
+          userId: BigNumber.from(1),
+        },
+      ];
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      await easyAuction.initiateAuction(
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        initialAuctionOrder.sellAmount,
+        initialAuctionOrder.buyAmount,
+        1,
+        0,
+        false,
+      );
+      const auctionId = BigNumber.from(1);
+      await placeOrders(easyAuction, sellOrders, auctionId, hre);
+
+      await closeAuction(easyAuction, auctionId);
+
+      await easyAuction.settleAuction(auctionId);
+      await easyAuction.auctionData(auctionId);
+      await claimFromAllOrders(easyAuction, auctionId, sellOrders);
+    });
     it("checks case 3, it verifies the price in case of clearingOrder != placed order with 3x participation", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("500"),

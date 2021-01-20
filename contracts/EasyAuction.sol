@@ -420,27 +420,27 @@ contract EasyAuction is Ownable {
         ) {
             // All considered/summed orders are sufficient to close the auction fully
             // at price between current and previous orders.
-            uint256 uncoveredSellVolumeOfIter =
+            uint256 sellVolumeOfIter =
                 currentBidSum.sub(
                     fullAuctionedAmount.mul(sellAmountOfIter).div(
                         buyAmountOfIter
                     )
                 );
 
-            if (sellAmountOfIter > uncoveredSellVolumeOfIter) {
+            if (sellAmountOfIter >= sellVolumeOfIter) {
                 //[13]
                 // Auction fully filled via partial match of currentOrder
                 uint256 sellAmountClearingOrder =
-                    sellAmountOfIter.sub(uncoveredSellVolumeOfIter);
+                    sellAmountOfIter.sub(sellVolumeOfIter);
                 auctionData[auctionId]
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
-                currentBidSum = currentBidSum.sub(uncoveredSellVolumeOfIter);
+                currentBidSum = currentBidSum.sub(sellVolumeOfIter);
                 clearingOrder = currentOrder;
             } else {
                 //[14]
-                // Auction fully filled via price between currentOrder and the order
-                // immediately before
+                // Auction fully filled via price strictly between currentOrder and the order
+                // immediately before. For a proof, see the security-considerations.md
                 currentBidSum = currentBidSum.sub(sellAmountOfIter);
                 clearingOrder = IterableOrderedOrderSet.encodeOrder(
                     0,
