@@ -649,12 +649,12 @@ contract EasyAuction is Ownable {
     }
 
     function registerUser(address user) public returns (uint64 userId) {
+        numUsers = numUsers.add(1).toUint64();
         require(
             registeredUsers.insert(numUsers, user),
             "User already registered"
         );
         userId = numUsers;
-        numUsers = numUsers.add(1).toUint64();
         emit UserRegistration(user, userId);
     }
 

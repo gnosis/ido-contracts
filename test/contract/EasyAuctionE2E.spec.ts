@@ -49,7 +49,7 @@ describe("EasyAuction", async () => {
             .div(BigNumber.from(nrTests - 2))
             .mul(i - 1)
             .div(BigNumber.from(i)),
-          userId: BigNumber.from(0),
+          userId: BigNumber.from(1),
         },
       ];
       await placeOrders(easyAuction, sellOrder, auctionId, hre);
