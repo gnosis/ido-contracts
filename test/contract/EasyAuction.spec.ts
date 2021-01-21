@@ -598,24 +598,24 @@ describe("EasyAuction", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(2),
+        userId: BigNumber.from(1),
       };
       const sellOrders = [
         {
           sellAmount: ethers.utils.parseEther("1").mul(2),
           buyAmount: ethers.utils.parseEther("1").div(5),
-          userId: BigNumber.from(2),
+          userId: BigNumber.from(1),
         },
         {
           sellAmount: ethers.utils.parseEther("1").mul(2),
           buyAmount: ethers.utils.parseEther("1"),
-          userId: BigNumber.from(2),
+          userId: BigNumber.from(1),
         },
 
         {
           sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
           buyAmount: ethers.utils.parseEther("1").mul(2),
-          userId: BigNumber.from(2),
+          userId: BigNumber.from(1),
         },
       ];
       const {
