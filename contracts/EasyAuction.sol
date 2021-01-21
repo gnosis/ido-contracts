@@ -422,22 +422,22 @@ contract EasyAuction is Ownable {
         ) {
             // All considered/summed orders are sufficient to close the auction fully
             // at price between current and previous orders.
-            uint256 sellVolumeOfIter =
+            uint256 uncoveredBids =
                 currentBidSum.sub(
                     fullAuctionedAmount.mul(sellAmountOfIter).div(
                         buyAmountOfIter
                     )
                 );
 
-            if (sellAmountOfIter >= sellVolumeOfIter) {
+            if (sellAmountOfIter >= uncoveredBids) {
                 //[13]
                 // Auction fully filled via partial match of currentOrder
                 uint256 sellAmountClearingOrder =
-                    sellAmountOfIter.sub(sellVolumeOfIter);
+                    sellAmountOfIter.sub(uncoveredBids);
                 auctionData[auctionId]
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
-                currentBidSum = currentBidSum.sub(sellVolumeOfIter);
+                currentBidSum = currentBidSum.sub(uncoveredBids);
                 clearingOrder = currentOrder;
             } else {
                 //[14]
