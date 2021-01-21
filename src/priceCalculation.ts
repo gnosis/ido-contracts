@@ -35,9 +35,9 @@ export const queueStartElement =
 export const queueLastElement =
   "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 
-export function reverseOrderPrice(order: Order): Order {
+export function getClearingPriceFromInitialOrder(order: Order): Order {
   return {
-    userId: order.userId,
+    userId: BigNumber.from(0),
     sellAmount: order.buyAmount,
     buyAmount: order.sellAmount,
   };
@@ -185,13 +185,13 @@ export function findClearingPrice(
   // otherwise, clearing price is initialAuctionOrder
   if (totalSellVolume.gt(initialAuctionOrder.buyAmount)) {
     return {
-      userId: initialAuctionOrder.userId,
+      userId: BigNumber.from(0),
       buyAmount: initialAuctionOrder.sellAmount,
       sellAmount: totalSellVolume,
     };
   } else {
     return {
-      userId: initialAuctionOrder.userId,
+      userId: BigNumber.from(0),
       buyAmount: initialAuctionOrder.sellAmount,
       sellAmount: initialAuctionOrder.buyAmount,
     };
@@ -280,7 +280,9 @@ export async function placeOrders(
 ): Promise<void> {
   for (const sellOrder of sellOrders) {
     await easyAuction
-      .connect(hre.waffle.provider.getWallets()[sellOrder.userId.toNumber()])
+      .connect(
+        hre.waffle.provider.getWallets()[sellOrder.userId.toNumber() - 1],
+      )
       .placeSellOrders(
         auctionId,
         [sellOrder.buyAmount],
