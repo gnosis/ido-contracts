@@ -18,7 +18,7 @@ fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum
 0 >= prevBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
 sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
 sellAmountOfIter >= currentBidSum - fullAuctionAmount _ sellAmountOfIter / buyAmountOfIter
-sellAmountOfIter >= sellVolumeOfIter
+sellAmountOfIter >= uncoveredBids
 ```
 
 Hence, we will not end up in the branch. Contradiction

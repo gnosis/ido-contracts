@@ -121,7 +121,7 @@ contract EasyAuction is Ownable {
 
     uint256 public feeNumerator = 0;
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint64 public feeReceiverUserId = 0;
+    uint64 public feeReceiverUserId = 1;
 
     function setFeeParameters(
         uint256 newFeeNumerator,
@@ -422,22 +422,22 @@ contract EasyAuction is Ownable {
         ) {
             // All considered/summed orders are sufficient to close the auction fully
             // at price between current and previous orders.
-            uint256 sellVolumeOfIter =
+            uint256 uncoveredBids =
                 currentBidSum.sub(
                     fullAuctionedAmount.mul(sellAmountOfIter).div(
                         buyAmountOfIter
                     )
                 );
 
-            if (sellAmountOfIter >= sellVolumeOfIter) {
+            if (sellAmountOfIter >= uncoveredBids) {
                 //[13]
                 // Auction fully filled via partial match of currentOrder
                 uint256 sellAmountClearingOrder =
-                    sellAmountOfIter.sub(sellVolumeOfIter);
+                    sellAmountOfIter.sub(uncoveredBids);
                 auctionData[auctionId]
                     .volumeClearingPriceOrder = sellAmountClearingOrder
                     .toUint96();
-                currentBidSum = currentBidSum.sub(sellVolumeOfIter);
+                currentBidSum = currentBidSum.sub(uncoveredBids);
                 clearingOrder = currentOrder;
             } else {
                 //[14]
@@ -589,9 +589,9 @@ contract EasyAuction is Ownable {
                 auctionData[auctionId].clearingPriceOrder.decodeOrder();
             uint256 unsettledAuctionTokens =
                 sellAmount.sub(fillVolumeOfAuctioneerOrder);
-            auctioningTokenAmount = sellAmount
-                .sub(fillVolumeOfAuctioneerOrder)
-                .add(feeAmount.mul(unsettledAuctionTokens).div(sellAmount));
+            auctioningTokenAmount = unsettledAuctionTokens.add(
+                feeAmount.mul(unsettledAuctionTokens).div(sellAmount)
+            );
             biddingTokenAmount = fillVolumeOfAuctioneerOrder
                 .mul(priceDenominator)
                 .div(priceNumerator);
@@ -632,12 +632,12 @@ contract EasyAuction is Ownable {
     }
 
     function registerUser(address user) public returns (uint64 userId) {
+        numUsers = numUsers.add(1).toUint64();
         require(
             registeredUsers.insert(numUsers, user),
             "User already registered"
         );
         userId = numUsers;
-        numUsers = numUsers.add(1).toUint64();
         emit UserRegistration(user, userId);
     }
 
