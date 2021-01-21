@@ -86,7 +86,7 @@ Transfers out occur on:
 - users claiming funds after the auction is concluded [3].
 - auction closing and sending
   - funds to the auctioneer [4]✔, [5]
-  - fees to the dedicated address [6]✔, [7], [8]
+  - fees to the dedicated address [5]✔, [7]
 
 We will assume that cancelling an order is equivalent to not having created the
 order in the first place. In terms of amounts, this is what happens with [1] and
@@ -95,15 +95,13 @@ order in the first place. In terms of amounts, this is what happens with [1] and
 If the flag `minFundingThresholdNotReached` is set, the user claiming amounts
 to withdrawing back the amount the user deposited [10]. We argue that the
 auctioneer receives back the full amount of auctioned tokens. This is done in
-[4] for the auctioned funds and in [6] for the fees: (the variables have been
+[4] for the auctioned funds and the fees: (the variables have been
 renamed to make the naming consistent between the different functions, note
 that these values are constant during the auction)
 
 ```
 in = [0] = sellAmount * (FEE_DENOMINATOR + feeNumerator) / FEE_DENOMINATOR
-out = [4] + [6]
-[4] = sellAmount
-[6] = sellAmount * feeNumerator / FEE_DENOMINATOR
+[4] out = sellAmount + sellAmount * feeNumerator / FEE_DENOMINATOR
 ```
 
 In and out amount are the same regardless of rounding.
@@ -130,7 +128,7 @@ and `currentBidSum` is the sum of all orders. No user can withdraw bid tokens:
 with the current restriction, case [17] of `claimFromParticipantOrder` is
 always triggered. This means that no overflows happens for bid tokens.
 Next, we consider auction tokens. Funds flow out when a user claims order funds
-[17], the fees are paid out with `claimFees` and the unsold auction tokens are
+[17], the fees are paid out with `processFeesAndAuctioneerFunds` and the unsold auction tokens are
 sent back to the auctioneer ([11], discussed before).
 : case [17] determines that the following amount
 of auctioned tokens is withdrawn for each order by a user:
@@ -152,11 +150,11 @@ Then:
 ```
 
 Next, we analyze the amount transferred when paying out fees. The fee retrieval
-triggers case [19], causing the following amount of tokens to be sent out:
+triggers case [11], causing the following amount of tokens to be sent out:
 
 ```
 [20]: feeAmount = sellAmount * feeNumerator / FEE_DENOMINATOR
-[19]: auctioningTokenAmount = sellAmount - volumeClearingPriceOrder
+[11]: auctioningTokenAmount = sellAmount - volumeClearingPriceOrder
       out_reimbursed_fees = feeAmount * auctioningTokenAmount / sellAmount
       out_paid_fees = feeAmount * (sellAmount - auctioningTokenAmount) / sellAmount
  =>   out = out_reimbursed_fees + out_paid_fees <= feeAmount * sellAmount / sellAmount <= feeAmount
@@ -169,7 +167,7 @@ that no more auction tokens as available are withdrawn at any point:
 ```
 [0]:  in = sellAmount * (FEE_DENOMINATOR + feeNumerator) / FEE_DENOMINATOR
 [11]: out_settle = sellAmount - currentBidSum * sellAmount / buyAmount
-[19]: out_fees <= sellAmount * feeNumerator / FEE_DENOMINATOR
+[11]: out_fees <= sellAmount * feeNumerator / FEE_DENOMINATOR
 [21]: out_all_order <= sum(out_per_order) <= currentBidSum * sellAmount / buyAmount
  =>   out <= sellAmount + sellAmount * feeNumerator / FEE_DENOMINATOR
 ```
