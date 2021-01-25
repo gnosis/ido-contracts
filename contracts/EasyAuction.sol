@@ -244,6 +244,8 @@ contract EasyAuction is Ownable {
 
         uint256 sumOfSellAmounts = 0;
         userId = getUserId(msg.sender);
+        uint256 minimumBiddingAmountPerOrder =
+            auctionData[auctionId].minimumBiddingAmountPerOrder;
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
             require(
                 _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
@@ -253,8 +255,7 @@ contract EasyAuction is Ownable {
             // orders should have a minimum bid size in order to limit the gas
             // required to compute the final price of the auction.
             require(
-                _sellAmounts[i] >
-                    auctionData[auctionId].minimumBiddingAmountPerOrder,
+                _sellAmounts[i] > minimumBiddingAmountPerOrder,
                 "order too small"
             );
             bool success =
