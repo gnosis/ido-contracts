@@ -28,9 +28,7 @@ contract EasyAuction is Ownable {
 
     modifier atStageOrderPlacementAndCancelation(uint256 auctionId) {
         require(
-            block.timestamp < auctionData[auctionId].auctionEndDate &&
-                block.timestamp <
-                auctionData[auctionId].orderCancellationEndDate,
+            block.timestamp < auctionData[auctionId].orderCancellationEndDate,
             "no longer in order placement and cancelation phase"
         );
         _;
