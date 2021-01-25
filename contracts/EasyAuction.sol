@@ -234,31 +234,28 @@ contract EasyAuction is Ownable {
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders
     ) internal returns (uint64 userId) {
-        {
-            // Run verifications of all orders
-            (
-                ,
-                uint96 buyAmountOfInitialAuctionOrder,
-                uint96 sellAmountOfInitialAuctionOrder
-            ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
-            for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
-                require(
-                    _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
-                        sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
-                    "limit price not better than mimimal offer"
-                );
-                // orders should have a minimum bid size in order to limit the gas
-                // required to compute the final price of the auction.
-                require(
-                    _sellAmounts[i] >
-                        auctionData[auctionId].minimumBiddingAmountPerOrder,
-                    "order too small"
-                );
-            }
-        }
+        (
+            ,
+            uint96 buyAmountOfInitialAuctionOrder,
+            uint96 sellAmountOfInitialAuctionOrder
+        ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
+
         uint256 sumOfSellAmounts = 0;
         userId = getUserId(msg.sender);
+        uint256 minimumBiddingAmountPerOrder =
+            auctionData[auctionId].minimumBiddingAmountPerOrder;
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
+            require(
+                _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
+                    sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
+                "limit price not better than mimimal offer"
+            );
+            // orders should have a minimum bid size in order to limit the gas
+            // required to compute the final price of the auction.
+            require(
+                _sellAmounts[i] > minimumBiddingAmountPerOrder,
+                "order too small"
+            );
             bool success =
                 sellOrders[auctionId].insert(
                     IterableOrderedOrderSet.encodeOrder(
