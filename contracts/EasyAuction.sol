@@ -39,7 +39,7 @@ contract EasyAuction is Ownable {
             uint256 auctionEndDate = auctionData[auctionId].auctionEndDate;
             require(
                 auctionEndDate != 0 &&
-                    block.timestamp > auctionEndDate &&
+                    block.timestamp >= auctionEndDate &&
                     auctionData[auctionId].clearingPriceOrder == bytes32(0),
                 "Auction not in solution submission phase"
             );
