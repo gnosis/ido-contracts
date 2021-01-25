@@ -236,7 +236,6 @@ contract EasyAuction is Ownable {
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders
     ) internal returns (uint64 userId) {
-        // Run verifications of all orders
         (
             ,
             uint96 buyAmountOfInitialAuctionOrder,
