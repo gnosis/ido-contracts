@@ -498,7 +498,7 @@ describe("EasyAuction", async () => {
     });
   });
   describe("precalculateSellAmountSum", async () => {
-    it("fails if too many orders are considered", async () => {
+    it("stops automatically if too many orders are considered", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("1"),
@@ -547,11 +547,15 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      await expect(
-        easyAuction.precalculateSellAmountSum(auctionId, 3),
-      ).to.be.revertedWith("too many orders summed up");
+      await easyAuction.precalculateSellAmountSum(auctionId, 3);
+      const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.interimSumBidAmount).to.equal(
+        sellOrders[0].sellAmount,
+      );
+
+      expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
     });
-    it("fails if queue end is reached", async () => {
+    it("stops if queue end is reached", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
         buyAmount: ethers.utils.parseEther("1"),
@@ -589,9 +593,12 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      await expect(
-        easyAuction.precalculateSellAmountSum(auctionId, 2),
-      ).to.be.revertedWith("reached end of order list");
+      await easyAuction.precalculateSellAmountSum(auctionId, 2);
+      const auctionData = await easyAuction.auctionData(auctionId);
+      expect(auctionData.interimSumBidAmount).to.equal(
+        sellOrders[0].sellAmount,
+      );
+      expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
     });
     it("verifies that interimSumBidAmount and iterOrder is set correctly", async () => {
       const initialAuctionOrder = {

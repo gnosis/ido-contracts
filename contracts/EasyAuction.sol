@@ -326,28 +326,23 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
         uint256 sumBidAmount = auctionData[auctionId].interimSumBidAmount;
         bytes32 iterOrder = auctionData[auctionId].interimOrder;
-
+        bytes32 previousOrder;
         for (uint256 i = 0; i < iterationSteps; i++) {
+            previousOrder = iterOrder;
             iterOrder = sellOrders[auctionId].next(iterOrder);
-            (, , uint96 sellAmountOfIter) = iterOrder.decodeOrder();
+            (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
+                iterOrder.decodeOrder();
             sumBidAmount = sumBidAmount.add(sellAmountOfIter);
+            if (
+                sumBidAmount.mul(buyAmountOfIter) >=
+                auctioneerSellAmount.mul(sellAmountOfIter) ||
+                iterOrder == IterableOrderedOrderSet.QUEUE_END
+            ) {
+                sumBidAmount = sumBidAmount.sub(sellAmountOfIter);
+                iterOrder = previousOrder;
+                break;
+            }
         }
-
-        require(
-            iterOrder != IterableOrderedOrderSet.QUEUE_END,
-            "reached end of order list"
-        );
-
-        // it is checked that not too many iteration steps were taken:
-        // require that the sum of SellAmounts times the price of the last order
-        // is not more than initially sold amount
-        (, uint96 buyAmountOfIter, uint96 sellAmountOfIter) =
-            iterOrder.decodeOrder();
-        require(
-            sumBidAmount.mul(buyAmountOfIter) <
-                auctioneerSellAmount.mul(sellAmountOfIter),
-            "too many orders summed up"
-        );
 
         auctionData[auctionId].interimSumBidAmount = sumBidAmount;
         auctionData[auctionId].interimOrder = iterOrder;
