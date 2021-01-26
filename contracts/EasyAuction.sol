@@ -577,7 +577,6 @@ contract EasyAuction is Ownable {
         uint96 fullAuctionedAmount
     )
         internal
-        returns (uint256 auctioningTokenAmount, uint256 biddingTokenAmount)
     {
         uint256 feeAmount =
             fullAuctionedAmount.mul(auctionData[auctionId].feeNumerator).div(
