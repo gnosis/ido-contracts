@@ -560,10 +560,7 @@ contract EasyAuction is Ownable {
     function processFeesAndAuctioneerFunds(
         uint256 auctionId,
         uint256 fillVolumeOfAuctioneerOrder
-    )
-        internal
-        returns (uint256 auctioningTokenAmount, uint256 biddingTokenAmount)
-    {
+    ) internal {
         (uint64 auctioneerId, , uint96 sellAmount) =
             auctionData[auctionId].initialAuctionOrder.decodeOrder();
         uint256 feeAmount =
@@ -584,12 +581,14 @@ contract EasyAuction is Ownable {
                 auctionData[auctionId].clearingPriceOrder.decodeOrder();
             uint256 unsettledAuctionTokens =
                 sellAmount.sub(fillVolumeOfAuctioneerOrder);
-            auctioningTokenAmount = unsettledAuctionTokens.add(
-                feeAmount.mul(unsettledAuctionTokens).div(sellAmount)
-            );
-            biddingTokenAmount = fillVolumeOfAuctioneerOrder
-                .mul(priceDenominator)
-                .div(priceNumerator);
+            uint256 auctioningTokenAmount =
+                unsettledAuctionTokens.add(
+                    feeAmount.mul(unsettledAuctionTokens).div(sellAmount)
+                );
+            uint256 biddingTokenAmount =
+                fillVolumeOfAuctioneerOrder.mul(priceDenominator).div(
+                    priceNumerator
+                );
             sendOutTokens(
                 auctionId,
                 auctioningTokenAmount,
