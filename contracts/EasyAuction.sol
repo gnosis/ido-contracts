@@ -575,9 +575,7 @@ contract EasyAuction is Ownable {
         uint256 fillVolumeOfAuctioneerOrder,
         uint64 auctioneerId,
         uint96 fullAuctionedAmount
-    )
-        internal
-    {
+    ) internal {
         uint256 feeAmount =
             fullAuctionedAmount.mul(auctionData[auctionId].feeNumerator).div(
                 FEE_DENOMINATOR
@@ -595,12 +593,16 @@ contract EasyAuction is Ownable {
                 auctionData[auctionId].clearingPriceOrder.decodeOrder();
             uint256 unsettledAuctionTokens =
                 fullAuctionedAmount.sub(fillVolumeOfAuctioneerOrder);
-            auctioningTokenAmount = unsettledAuctionTokens.add(
-                feeAmount.mul(unsettledAuctionTokens).div(fullAuctionedAmount)
-            );
-            biddingTokenAmount = fillVolumeOfAuctioneerOrder
-                .mul(priceDenominator)
-                .div(priceNumerator);
+            uint256 auctioningTokenAmount =
+                unsettledAuctionTokens.add(
+                    feeAmount.mul(unsettledAuctionTokens).div(
+                        fullAuctionedAmount
+                    )
+                );
+            uint256 biddingTokenAmount =
+                fillVolumeOfAuctioneerOrder.mul(priceDenominator).div(
+                    priceNumerator
+                );
             sendOutTokens(
                 auctionId,
                 auctioningTokenAmount,
