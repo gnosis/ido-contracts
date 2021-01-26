@@ -491,6 +491,11 @@ contract EasyAuction is Ownable {
             uint96(currentBidSum),
             clearingOrder
         );
+        // Gas refunds
+        auctionData[auctionId].initialAuctionOrder = bytes32(0);
+        auctionData[auctionId].interimOrder = bytes32(0);
+        auctionData[auctionId].interimSumBidAmount = uint256(0);
+        auctionData[auctionId].minimumBiddingAmountPerOrder = uint256(0);
     }
 
     function claimFromParticipantOrder(
@@ -587,7 +592,6 @@ contract EasyAuction is Ownable {
             ); //[4]
         } else {
             //[11]
-            auctionData[auctionId].initialAuctionOrder = bytes32(0);
             (, uint96 priceNumerator, uint96 priceDenominator) =
                 auctionData[auctionId].clearingPriceOrder.decodeOrder();
             uint256 unsettledAuctionTokens =
