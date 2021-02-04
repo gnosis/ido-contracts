@@ -61,8 +61,8 @@ Prices between biddingToken and auctioningToken are expressed by a fraction whos
 Install dependencies
 
 ```
-git clone easyAuction
-cd easyAuction
+git clone https://github.com/gnosis/ido-contracts
+cd ido-contracts
 yarn
 yarn build
 ```
