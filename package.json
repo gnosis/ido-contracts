@@ -23,14 +23,14 @@
     "argv": "^0.0.2",
     "bn.js": "^5.1.1",
     "dotenv": "^8.2.0",
-    "ethers": "^5.0.19",
+    "ethers": "^5.0.22",
     "solc": "0.6.8",
     "yargs": "^16.1.1"
   },
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.8",
     "@gnosis.pm/util-contracts": "^2.0.6",
-    "@nomiclabs/hardhat-ethers": "^2.0.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-etherscan": "^2.1.0",
     "@nomiclabs/hardhat-waffle": "^2.0.0",
     "@openeth/truffle-typings": "^0.0.5",
