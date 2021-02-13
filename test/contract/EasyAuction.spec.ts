@@ -1842,8 +1842,8 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
 
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(
-        getClearingPriceFromInitialOrder(initialAuctionOrder),
+      expect(price.toString()).to.eql(
+        getClearingPriceFromInitialOrder(initialAuctionOrder).toString(),
       );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -1899,8 +1899,8 @@ describe("EasyAuction", async () => {
       const price = await calculateClearingPrice(easyAuction, auctionId);
 
       await easyAuction.settleAuction(auctionId);
-      expect(price).to.eql(
-        getClearingPriceFromInitialOrder(initialAuctionOrder),
+      expect(price.toString()).to.eql(
+        getClearingPriceFromInitialOrder(initialAuctionOrder).toString(),
       );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.minFundingThresholdNotReached).to.equal(true);

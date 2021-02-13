@@ -2,8 +2,8 @@ pragma solidity >=0.6.8;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
-/// Idea was first mentioned in the blog:
-/// https://medium.com/@PhABC/off-chain-whitelist-with-on-chain-verification-for-ethereum-smart-contracts-1563ca4b8f11
+// Idea was first mentioned in the blog:
+// https://medium.com/@PhABC/off-chain-whitelist-with-on-chain-verification-for-ethereum-smart-contracts-1563ca4b8f11
 
 contract AllowListOffChainManaged is Ownable {
     /// @dev The EIP-712 domain type hash used for computing the domain

@@ -7,10 +7,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "./libraries/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
-contract EasyAuction is Ownable, ReentrancyGuard {
+contract EasyAuction is Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint64;
     using SafeMath for uint96;
@@ -255,7 +253,7 @@ contract EasyAuction is Ownable, ReentrancyGuard {
                 auctionDataAccessManager[auctionId].allowListManager;
             if (allowListManger != address(0)) {
                 (bool success, ) =
-                    allowListManger.call(
+                    allowListManger.staticcall(
                         abi.encodeWithSelector(
                             auctionDataAccessManager[auctionId]
                                 .allowListFunction,
@@ -391,7 +389,7 @@ contract EasyAuction is Ownable, ReentrancyGuard {
         uint96[] memory _sellAmount,
         bytes32[] memory _prevSellOrder,
         bytes memory allowListCallData
-    ) public atStageSolutionSubmission(auctionId) nonReentrant() {
+    ) public atStageSolutionSubmission(auctionId) {
         require(
             auctionData[auctionId].isAtomicClosureAllowed,
             "not allowed to settle auction atomically"
