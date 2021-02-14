@@ -49,23 +49,6 @@ describe("AccessManager", async () => {
   });
   describe("AccessManager - placing order in easyAuction with auctioneer signature", async () => {
     it("places a new order and checks that tokens were transferred - with whitelisting", async () => {
-      const auctioneerMessage = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address"],
-          [
-            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
-            user_2.address,
-          ],
-        ),
-      );
-      const auctioneerSignature = await user_1.signMessage(
-        ethers.utils.arrayify(auctioneerMessage),
-      );
-      const sig = ethers.utils.splitSignature(auctioneerSignature);
-      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
-        ["uint8", "bytes32", "bytes32"],
-        [sig.v, sig.r, sig.s],
-      );
       const {
         auctioningToken,
         biddingToken,
@@ -76,7 +59,7 @@ describe("AccessManager", async () => {
       );
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes4)",
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
         auctioningToken.address,
         biddingToken.address,
         60 * 60,
@@ -87,7 +70,25 @@ describe("AccessManager", async () => {
         0,
         false,
         allowListManager.address,
-        allowListManager.interface.getSighash("hasValidAccess(bytes,address)"),
+      );
+
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+            user_2.address,
+            auctionId,
+          ],
+        ),
+      );
+      const auctioneerSignature = await user_1.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v, sig.r, sig.s],
       );
 
       const balanceBeforeOrderPlacement = await biddingToken

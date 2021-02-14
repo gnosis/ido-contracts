@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "./libraries/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/AllowListVerifier.sol";
 
 contract EasyAuction is Ownable {
     using SafeERC20 for IERC20;
@@ -83,7 +84,8 @@ contract EasyAuction is Ownable {
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
-        uint256 minFundingThreshold
+        uint256 minFundingThreshold,
+        address allowListManager
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -111,7 +113,6 @@ contract EasyAuction is Ownable {
     }
     struct AuctionDataForAccessManager {
         address allowListManager;
-        bytes4 allowListFunction;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -159,8 +160,7 @@ contract EasyAuction is Ownable {
         uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold,
         bool isAtomicClosureAllowed,
-        address allowListManager,
-        bytes4 allowListFunction
+        address allowListManager
     ) public returns (uint256) {
         // withdraws sellAmount + fees
         _auctioningToken.safeTransferFrom(
@@ -207,8 +207,7 @@ contract EasyAuction is Ownable {
             minFundingThreshold
         );
         auctionDataAccessManager[auctionCounter] = AuctionDataForAccessManager(
-            allowListManager,
-            allowListFunction
+            allowListManager
         );
         emit NewAuction(
             auctionCounter,
@@ -219,7 +218,8 @@ contract EasyAuction is Ownable {
             _auctionedSellAmount,
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
-            minFundingThreshold
+            minFundingThreshold,
+            allowListManager
         );
         return auctionCounter;
     }
@@ -252,16 +252,14 @@ contract EasyAuction is Ownable {
             address allowListManger =
                 auctionDataAccessManager[auctionId].allowListManager;
             if (allowListManger != address(0)) {
-                (bool success, ) =
-                    allowListManger.staticcall(
-                        abi.encodeWithSelector(
-                            auctionDataAccessManager[auctionId]
-                                .allowListFunction,
-                            allowListCallData,
-                            msg.sender
-                        )
-                    );
-                require(success, "user not allowed to call function");
+                require(
+                    AllowListVerifier(allowListManger).isAllowed(
+                        msg.sender,
+                        auctionId,
+                        allowListCallData
+                    ) == AllowListVerifierHelper.MAGICVALUE,
+                    "user not allowed to call function"
+                );
             }
         }
         (
@@ -529,6 +527,7 @@ contract EasyAuction is Ownable {
             clearingOrder
         );
         // Gas refunds
+        auctionDataAccessManager[auctionId].allowListManager = address(0);
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
         auctionData[auctionId].interimOrder = bytes32(0);
         auctionData[auctionId].interimSumBidAmount = uint256(0);

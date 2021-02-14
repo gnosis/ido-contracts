@@ -1,6 +1,6 @@
 pragma solidity >=0.6.8;
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
+import "../interfaces/AllowListVerifier.sol";
 
 // Idea was first mentioned in the blog:
 // https://medium.com/@PhABC/off-chain-whitelist-with-on-chain-verification-for-ethereum-smart-contracts-1563ca4b8f11
@@ -46,32 +46,17 @@ contract AllowListOffChainManaged is Ownable {
         );
     }
 
-    function hasValidAccess(bytes calldata data, address sender) external view {
+    function isAllowed(
+        address _user,
+        uint256 auctionId,
+        bytes calldata _callData
+    ) external view returns (bytes4) {
         uint8 _v;
         bytes32 _r;
         bytes32 _s;
-        (_v, _r, _s) = abi.decode(data, (uint8, bytes32, bytes32));
-        require(isValidAccessMessage(sender, _v, _r, _s), "access denied");
-    }
-
-    /*
-     * @dev Verifies if message was signed by owner to give access to _add for this contract.
-     *      Assumes Geth signature prefix.
-     * @param _add Address of agent with access
-     * @param _v ECDSA signature parameter v.
-     * @param _r ECDSA signature parameters r.
-     * @param _s ECDSA signature parameters s.
-     * @return Validity of access message for a given address.
-     */
-    function isValidAccessMessage(
-        address _add,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) public view returns (bool) {
-        bytes32 hash = keccak256(abi.encode(domainSeparator, _add));
-        return
-            owner() ==
+        (_v, _r, _s) = abi.decode(_callData, (uint8, bytes32, bytes32));
+        bytes32 hash = keccak256(abi.encode(domainSeparator, _user, auctionId));
+        address signer =
             ecrecover(
                 keccak256(
                     abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
@@ -80,5 +65,10 @@ contract AllowListOffChainManaged is Ownable {
                 _r,
                 _s
             );
+        if (owner() == signer) {
+            return AllowListVerifierHelper.MAGICVALUE;
+        } else {
+            return bytes4(0);
+        }
     }
 }
