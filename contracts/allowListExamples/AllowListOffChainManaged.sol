@@ -47,23 +47,23 @@ contract AllowListOffChainManaged is Ownable {
     }
 
     function isAllowed(
-        address _user,
+        address user,
         uint256 auctionId,
-        bytes calldata _callData
+        bytes calldata callData
     ) external view returns (bytes4) {
-        uint8 _v;
-        bytes32 _r;
-        bytes32 _s;
-        (_v, _r, _s) = abi.decode(_callData, (uint8, bytes32, bytes32));
-        bytes32 hash = keccak256(abi.encode(domainSeparator, _user, auctionId));
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        (v, r, s) = abi.decode(callData, (uint8, bytes32, bytes32));
+        bytes32 hash = keccak256(abi.encode(domainSeparator, user, auctionId));
         address signer =
             ecrecover(
                 keccak256(
                     abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
                 ),
-                _v,
-                _r,
-                _s
+                v,
+                r,
+                s
             );
         if (owner() == signer) {
             return AllowListVerifierHelper.MAGICVALUE;

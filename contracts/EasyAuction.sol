@@ -111,13 +111,9 @@ contract EasyAuction is Ownable {
         uint256 feeNumerator;
         uint256 minFundingThreshold;
     }
-    struct AuctionDataForAccessManager {
-        address allowListManager;
-    }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
-    mapping(uint256 => AuctionDataForAccessManager)
-        public auctionDataAccessManager;
+    mapping(uint256 => address) public auctionAccessManager;
 
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
@@ -206,9 +202,7 @@ contract EasyAuction is Ownable {
             feeNumerator,
             minFundingThreshold
         );
-        auctionDataAccessManager[auctionCounter] = AuctionDataForAccessManager(
-            allowListManager
-        );
+        auctionAccessManager[auctionCounter] = allowListManager;
         emit NewAuction(
             auctionCounter,
             _auctioningToken,
@@ -249,8 +243,7 @@ contract EasyAuction is Ownable {
         bytes memory allowListCallData
     ) internal returns (uint64 userId) {
         {
-            address allowListManger =
-                auctionDataAccessManager[auctionId].allowListManager;
+            address allowListManger = auctionAccessManager[auctionId];
             if (allowListManger != address(0)) {
                 require(
                     AllowListVerifier(allowListManger).isAllowed(
@@ -258,7 +251,7 @@ contract EasyAuction is Ownable {
                         auctionId,
                         allowListCallData
                     ) == AllowListVerifierHelper.MAGICVALUE,
-                    "user not allowed to call function"
+                    "user not allowed to place order"
                 );
             }
         }
@@ -527,7 +520,7 @@ contract EasyAuction is Ownable {
             clearingOrder
         );
         // Gas refunds
-        auctionDataAccessManager[auctionId].allowListManager = address(0);
+        auctionAccessManager[auctionId] = address(0);
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
         auctionData[auctionId].interimOrder = bytes32(0);
         auctionData[auctionId].interimSumBidAmount = uint256(0);

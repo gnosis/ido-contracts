@@ -1,6 +1,8 @@
+import { deployMockContract } from "@ethereum-waffle/mock-contract";
+import V from "@openzeppelin/contracts/build/contracts/IERC20.json";
 import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
-import hre, { ethers, waffle } from "hardhat";
+import hre, { artifacts, ethers, waffle } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
 
 import {
@@ -223,7 +225,7 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1")],
           [ethers.utils.parseEther("1").add(1)],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("no longer in order placement phase");
     });
@@ -257,7 +259,7 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1")],
           [ethers.utils.parseEther("1").add(1)],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("no longer in order placement phase");
     });
@@ -290,7 +292,7 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1").add(1)],
           [ethers.utils.parseEther("1")],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
       await expect(
@@ -299,7 +301,7 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1")],
           [ethers.utils.parseEther("1")],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
     });
@@ -332,7 +334,7 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1").sub(1)],
           [ethers.utils.parseEther("1")],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.changeTokenBalances(
         biddingToken,
@@ -345,7 +347,7 @@ describe("EasyAuction", async () => {
           [ethers.utils.parseEther("1").sub(1)],
           [ethers.utils.parseEther("1")],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.changeTokenBalances(biddingToken, [user_1], [BigNumber.from(0)]);
     });
@@ -384,7 +386,7 @@ describe("EasyAuction", async () => {
         [buyAmount, buyAmount],
         [sellAmount, sellAmount.add(1)],
         [queueStartElement, queueStartElement],
-        "0x00",
+        "0x",
       );
       const transferredbiddingTokenAmount = sellAmount.add(sellAmount.add(1));
 
@@ -395,12 +397,10 @@ describe("EasyAuction", async () => {
         balanceBeforeOrderPlacement.sub(transferredbiddingTokenAmount),
       );
     });
-    it("places a new order and checks that allowListing prevents tx", async () => {
-      const AllowListManger = await ethers.getContractFactory(
-        "AllowListOffChainManaged",
-      );
-
-      const allowListManager = await AllowListManger.deploy();
+    it("order placement reverts, if order placer is not allowed", async () => {
+      const verifier = await artifacts.readArtifact("AllowListVerifier");
+      const verifierMocked = await deployMockContract(user_3, verifier.abi);
+      await verifierMocked.mock.isAllowed.returns("0x00000000");
       const {
         auctioningToken,
         biddingToken,
@@ -409,6 +409,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
+
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
         "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
@@ -421,29 +422,7 @@ describe("EasyAuction", async () => {
         1,
         0,
         false,
-        allowListManager.address,
-      );
-
-      const { chainId } = await ethers.provider.getNetwork();
-      const testDomain = domain(chainId, allowListManager.address);
-      const auctioneerMessage = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "uint256"],
-          [
-            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
-            user_2.address,
-            auctionId,
-          ],
-        ),
-      );
-      // Signature will come from a wrong user: user_2 != owner of allowListManger;
-      const auctioneerSignature = await user_2.signMessage(
-        ethers.utils.arrayify(auctioneerMessage),
-      );
-      const sig = ethers.utils.splitSignature(auctioneerSignature);
-      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
-        ["uint8", "bytes32", "bytes32"],
-        [sig.v, sig.r, sig.s],
+        verifierMocked.address,
       );
 
       const sellAmount = ethers.utils.parseEther("1").add(1);
@@ -451,12 +430,132 @@ describe("EasyAuction", async () => {
       await expect(
         easyAuction.placeSellOrders(
           auctionId,
-          [buyAmount, buyAmount],
-          [sellAmount, sellAmount.add(1)],
-          [queueStartElement, queueStartElement],
-          auctioneerSignatureEncoded,
+          [buyAmount],
+          [sellAmount],
+          [queueStartElement],
+          "0x",
         ),
-      ).to.be.revertedWith("user not allowed to call function");
+      ).to.be.revertedWith("user not allowed to place order");
+    });
+    it("order placement reverts, if allow manager is an EOA", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("1"),
+        1,
+        0,
+        false,
+        user_3.address,
+      );
+
+      const sellAmount = ethers.utils.parseEther("1").add(1);
+      const buyAmount = ethers.utils.parseEther("1");
+      await expect(
+        easyAuction.placeSellOrders(
+          auctionId,
+          [buyAmount],
+          [sellAmount],
+          [queueStartElement],
+          "0x",
+        ),
+      ).to.be.revertedWith("function call to a non-contract account");
+    });
+    it("allow manager can not mutate state", async () => {
+      const StateChangingAllowListManager = await ethers.getContractFactory(
+        "StateChangingAllowListVerifier",
+      );
+
+      const stateChangingAllowListManager = await StateChangingAllowListManager.deploy();
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("1"),
+        1,
+        0,
+        false,
+        stateChangingAllowListManager.address,
+      );
+
+      const sellAmount = ethers.utils.parseEther("1").add(1);
+      const buyAmount = ethers.utils.parseEther("1");
+      await expect(
+        easyAuction.placeSellOrders(
+          auctionId,
+          [buyAmount],
+          [sellAmount],
+          [queueStartElement],
+          "0x",
+        ),
+      ).to.be.reverted;
+    });
+
+    it("order placement works, if order placer is allowed", async () => {
+      const verifier = await artifacts.readArtifact("AllowListVerifier");
+      const verifierMocked = await deployMockContract(user_3, verifier.abi);
+      await verifierMocked.mock.isAllowed.returns("0x19a05a7e");
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("1"),
+        1,
+        0,
+        false,
+        verifierMocked.address,
+      );
+
+      const sellAmount = ethers.utils.parseEther("1").add(1);
+      const buyAmount = ethers.utils.parseEther("1");
+      await expect(
+        easyAuction.placeSellOrders(
+          auctionId,
+          [buyAmount],
+          [sellAmount],
+          [queueStartElement],
+          "0x",
+        ),
+      ).to.emit(easyAuction, "NewSellOrder");
     });
     it("an order is only placed once", async () => {
       const {
@@ -490,7 +589,7 @@ describe("EasyAuction", async () => {
         [buyAmount],
         [sellAmount],
         [queueStartElement],
-        "0x00",
+        "0x",
       );
       const allPlacedOrders = await getAllSellOrders(easyAuction, auctionId);
       expect(allPlacedOrders.length).to.be.equal(1);
@@ -538,7 +637,7 @@ describe("EasyAuction", async () => {
           sellOrders.map((buyOrder) => buyOrder.buyAmount),
           sellOrders.map((buyOrder) => buyOrder.sellAmount),
           Array(sellOrders.length).fill(queueStartElement),
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("order too small");
     });
@@ -578,7 +677,7 @@ describe("EasyAuction", async () => {
           [buyAmount, buyAmount],
           [sellAmount, sellAmount.add(1)],
           [queueStartElement, queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("ERC20: transfer amount exceeds allowance");
     });
@@ -2570,7 +2669,7 @@ describe("EasyAuction", async () => {
           [atomicSellOrders[0].sellAmount],
           [atomicSellOrders[0].buyAmount],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("not allowed to settle auction atomically");
     });
@@ -2631,7 +2730,7 @@ describe("EasyAuction", async () => {
           [atomicSellOrders[0].sellAmount, atomicSellOrders[1].sellAmount],
           [atomicSellOrders[0].buyAmount, atomicSellOrders[1].buyAmount],
           [queueStartElement, queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("Only one order can be placed atomically");
     });
@@ -2689,7 +2788,7 @@ describe("EasyAuction", async () => {
           [atomicSellOrders[0].sellAmount],
           [atomicSellOrders[0].buyAmount],
           [queueStartElement],
-          "0x00",
+          "0x",
         ),
       ).to.be.revertedWith("precalculateSellAmountSum is already too advanced");
     });
@@ -2746,7 +2845,7 @@ describe("EasyAuction", async () => {
         [atomicSellOrders[0].buyAmount],
         [atomicSellOrders[0].sellAmount],
         [queueStartElement],
-        "0x00",
+        "0x",
       );
       await claimFromAllOrders(easyAuction, auctionId, sellOrders);
       await claimFromAllOrders(easyAuction, auctionId, atomicSellOrders);
@@ -2804,7 +2903,7 @@ describe("EasyAuction", async () => {
           [atomicSellOrders[0].sellAmount],
           [atomicSellOrders[0].buyAmount],
           [queueStartElement],
-          "0x00",
+          "0x",
         );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -2870,7 +2969,7 @@ describe("EasyAuction", async () => {
             [atomicSellOrders[0].sellAmount],
             [atomicSellOrders[0].buyAmount],
             [queueStartElement],
-            "0x00",
+            "0x",
           ),
       ).to.be.revertedWith("Auction not in solution submission phase");
     });

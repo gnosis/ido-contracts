@@ -48,7 +48,7 @@ describe("AccessManager", async () => {
     });
   });
   describe("AccessManager - placing order in easyAuction with auctioneer signature", async () => {
-    it("places a new order and checks that tokens were transferred - with whitelisting", async () => {
+    it("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -116,6 +116,69 @@ describe("AccessManager", async () => {
       ).to.equal(
         balanceBeforeOrderPlacement.sub(transferredbiddingTokenAmount),
       );
+    });
+    it("integration test: places a new order and checks that allowListing prevents the tx", async () => {
+      const AllowListManager = await ethers.getContractFactory(
+        "AllowListOffChainManaged",
+      );
+
+      const allowListManager = await AllowListManager.deploy();
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("1"),
+        1,
+        0,
+        false,
+        allowListManager.address,
+      );
+
+      const { chainId } = await ethers.provider.getNetwork();
+      const testDomain = domain(chainId, allowListManager.address);
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+            user_2.address,
+            auctionId,
+          ],
+        ),
+      );
+      // Signature will come from a wrong user: user_2 != owner of allowListManger;
+      const auctioneerSignature = await user_2.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v, sig.r, sig.s],
+      );
+
+      const sellAmount = ethers.utils.parseEther("1").add(1);
+      const buyAmount = ethers.utils.parseEther("1");
+      await expect(
+        easyAuction.placeSellOrders(
+          auctionId,
+          [buyAmount, buyAmount],
+          [sellAmount, sellAmount.add(1)],
+          [queueStartElement, queueStartElement],
+          auctioneerSignatureEncoded,
+        ),
+      ).to.be.revertedWith("user not allowed to place order");
     });
   });
 });

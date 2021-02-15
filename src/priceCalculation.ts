@@ -288,7 +288,7 @@ export async function placeOrders(
         [sellOrder.buyAmount],
         [sellOrder.sellAmount],
         [queueStartElement],
-        "0x00",
+        "0x",
       );
   }
 }
