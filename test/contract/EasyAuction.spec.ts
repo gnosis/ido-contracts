@@ -30,6 +30,7 @@ import {
 describe("EasyAuction", async () => {
   const [user_1, user_2, user_3] = waffle.provider.getWallets();
   let easyAuction: Contract;
+  const MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE = "0x19a05a7e";
   beforeEach(async () => {
     const EasyAuction = await ethers.getContractFactory("EasyAuction");
 
@@ -504,6 +505,13 @@ describe("EasyAuction", async () => {
 
       const sellAmount = ethers.utils.parseEther("1").add(1);
       const buyAmount = ethers.utils.parseEther("1");
+      expect(
+        await stateChangingAllowListManager.callStatic.isAllowed(
+          user_1.address,
+          auctionId,
+          "0x",
+        ),
+      ).to.be.equal(MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE);
       await expect(
         easyAuction.placeSellOrders(
           auctionId,
@@ -512,13 +520,17 @@ describe("EasyAuction", async () => {
           [queueStartElement],
           "0x",
         ),
-      ).to.be.reverted;
+      ).to.be.revertedWith(
+        "Transaction reverted and Hardhat couldn't infer the reason. Please report this to help us improve Hardhat",
+      );
     });
 
     it("order placement works, if order placer is allowed", async () => {
       const verifier = await artifacts.readArtifact("AllowListVerifier");
       const verifierMocked = await deployMockContract(user_3, verifier.abi);
-      await verifierMocked.mock.isAllowed.returns("0x19a05a7e");
+      await verifierMocked.mock.isAllowed.returns(
+        MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE,
+      );
       const {
         auctioningToken,
         biddingToken,
