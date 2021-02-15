@@ -1,5 +1,4 @@
 import { deployMockContract } from "@ethereum-waffle/mock-contract";
-import V from "@openzeppelin/contracts/build/contracts/IERC20.json";
 import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import hre, { artifacts, ethers, waffle } from "hardhat";
@@ -16,7 +15,6 @@ import {
   getClearingPriceFromInitialOrder,
 } from "../../src/priceCalculation";
 
-import { domain } from "./AllowListManager.spec";
 import {
   sendTxAndGetReturnValue,
   closeAuction,
