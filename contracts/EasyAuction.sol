@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./libraries/IdToAddressBiMap.sol";
 import "./libraries/SafeCast.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/AllowListVerifier.sol";
 
 contract EasyAuction is Ownable {
     using SafeERC20 for IERC20;
@@ -83,7 +84,8 @@ contract EasyAuction is Ownable {
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
-        uint256 minFundingThreshold
+        uint256 minFundingThreshold,
+        address allowListManager
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -111,6 +113,8 @@ contract EasyAuction is Ownable {
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
+    mapping(uint256 => address) public auctionAccessManager;
+
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
     uint256 public auctionCounter;
@@ -151,10 +155,9 @@ contract EasyAuction is Ownable {
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold,
-        bool isAtomicClosureAllowed
+        bool isAtomicClosureAllowed,
+        address allowListManager
     ) public returns (uint256) {
-        uint64 userId = getUserId(msg.sender);
-
         // withdraws sellAmount + fees
         _auctioningToken.safeTransferFrom(
             msg.sender,
@@ -185,7 +188,7 @@ contract EasyAuction is Ownable {
             orderCancellationEndDate,
             auctionEndDate,
             IterableOrderedOrderSet.encodeOrder(
-                userId,
+                getUserId(msg.sender),
                 _minBuyAmount,
                 _auctionedSellAmount
             ),
@@ -199,6 +202,7 @@ contract EasyAuction is Ownable {
             feeNumerator,
             minFundingThreshold
         );
+        auctionAccessManager[auctionCounter] = allowListManager;
         emit NewAuction(
             auctionCounter,
             _auctioningToken,
@@ -208,7 +212,8 @@ contract EasyAuction is Ownable {
             _auctionedSellAmount,
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
-            minFundingThreshold
+            minFundingThreshold,
+            allowListManager
         );
         return auctionCounter;
     }
@@ -217,14 +222,16 @@ contract EasyAuction is Ownable {
         uint256 auctionId,
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders
+        bytes32[] memory _prevSellOrders,
+        bytes memory allowListCallData
     ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
         return
             _placeSellOrders(
                 auctionId,
                 _minBuyAmounts,
                 _sellAmounts,
-                _prevSellOrders
+                _prevSellOrders,
+                allowListCallData
             );
     }
 
@@ -232,8 +239,22 @@ contract EasyAuction is Ownable {
         uint256 auctionId,
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders
+        bytes32[] memory _prevSellOrders,
+        bytes memory allowListCallData
     ) internal returns (uint64 userId) {
+        {
+            address allowListManger = auctionAccessManager[auctionId];
+            if (allowListManger != address(0)) {
+                require(
+                    AllowListVerifier(allowListManger).isAllowed(
+                        msg.sender,
+                        auctionId,
+                        allowListCallData
+                    ) == AllowListVerifierHelper.MAGICVALUE,
+                    "user not allowed to place order"
+                );
+            }
+        }
         (
             ,
             uint96 buyAmountOfInitialAuctionOrder,
@@ -256,7 +277,7 @@ contract EasyAuction is Ownable {
                 _sellAmounts[i] > minimumBiddingAmountPerOrder,
                 "order too small"
             );
-            bool success =
+            if (
                 sellOrders[auctionId].insert(
                     IterableOrderedOrderSet.encodeOrder(
                         userId,
@@ -264,8 +285,8 @@ contract EasyAuction is Ownable {
                         _sellAmounts[i]
                     ),
                     _prevSellOrders[i]
-                );
-            if (success) {
+                )
+            ) {
                 sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
                 emit NewSellOrder(
                     auctionId,
@@ -357,7 +378,8 @@ contract EasyAuction is Ownable {
         uint256 auctionId,
         uint96[] memory _minBuyAmount,
         uint96[] memory _sellAmount,
-        bytes32[] memory _prevSellOrder
+        bytes32[] memory _prevSellOrder,
+        bytes memory allowListCallData
     ) public atStageSolutionSubmission(auctionId) {
         require(
             auctionData[auctionId].isAtomicClosureAllowed,
@@ -378,7 +400,13 @@ contract EasyAuction is Ownable {
             ),
             "precalculateSellAmountSum is already too advanced"
         );
-        _placeSellOrders(auctionId, _minBuyAmount, _sellAmount, _prevSellOrder);
+        _placeSellOrders(
+            auctionId,
+            _minBuyAmount,
+            _sellAmount,
+            _prevSellOrder,
+            allowListCallData
+        );
         settleAuction(auctionId);
     }
 
@@ -492,6 +520,7 @@ contract EasyAuction is Ownable {
             clearingOrder
         );
         // Gas refunds
+        auctionAccessManager[auctionId] = address(0);
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
         auctionData[auctionId].interimOrder = bytes32(0);
         auctionData[auctionId].interimSumBidAmount = uint256(0);
