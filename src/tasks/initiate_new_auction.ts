@@ -53,6 +53,12 @@ const initiateAuction: () => void = () => {
       false,
       types.boolean,
     )
+    .addOptionalParam(
+      "allowListManager",
+      "Contract address for a potential allowListManger contract, if allow listing is wanted for the started auction",
+      "0x0000000000000000000000000000000000000000",
+      types.string,
+    )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
       console.log("Using the account:", caller.address);
@@ -84,6 +90,19 @@ const initiateAuction: () => void = () => {
       );
 
       console.log("Using EasyAuction deployed to:", easyAuction.address);
+      if (
+        taskArgs.allowListManager !=
+        "0x0000000000000000000000000000000000000000"
+      ) {
+        const allowListManger = await hardhatRuntime.ethers.getContractAt(
+          "AllowLitVerifier",
+          taskArgs.allowListManager,
+        );
+        console.log(
+          "Using AllowList Manger deployed at:",
+          allowListManger.address,
+        );
+      }
 
       const balance = await auctioningToken.callStatic.balanceOf(
         caller.address,
@@ -118,6 +137,7 @@ const initiateAuction: () => void = () => {
           minParticipantsBuyAmount,
           minFundingThresholdInAtoms,
           taskArgs.isAtomicClosureAllowed,
+          taskArgs.allowListManager,
         );
       const txResult = await tx.wait();
       const auctionId = txResult.events
