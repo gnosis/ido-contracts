@@ -61,8 +61,8 @@ Prices between biddingToken and auctioningToken are expressed by a fraction whos
 Install dependencies
 
 ```
-git clone easyAuction
-cd easyAuction
+git clone https://github.com/gnosis/ido-contracts
+cd ido-contracts
 yarn
 yarn build
 ```
@@ -90,6 +90,10 @@ npx hardhat verify --network $NETWORK DEPLOYED_CONTRACT_ADDRESS
 Initiating a new auction like its done in this exemplary rinkeby deployment
 
 ```
-NETWORK='rinkeby'
-yarn hardhat initiateAuction --sell-token "0xc778417e063141139fce010982780140aa0cd5ab" --buy-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network $NETWORK
+export NETWORK='rinkeby'
+export GAS_PRICE_GWEI=9
+export INFURA_KEY=INFURA_KEY_HERE
+export MY_ETHERSCAN_API_KEY=ETHERSCAN_API_KEY_HERE
+export PK=PRIVATE_KEY_HERE
+yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780140aa0cd5ab" --bidding-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network $NETWORK
 ```
