@@ -14,7 +14,7 @@ First, we prove p < p(currentOrder) via contraction:
 We assume: p >= p(currentOrder)
 (In this proof all divisions are integer divisions)
 
-```bin
+```
 p >= p(currentOrder)
 fullAuctionAmount / prevBidSum >= buyAmountOfIter /sellAmountOfIter (as fractions)
 <=> fullAuctionAmount * sellAmountOfIter >= prevBidSum * buyAmountOfIter
@@ -30,7 +30,7 @@ Hence, we will not end up in the branch. Contradiction.
 Next, we prove p > p(previousOrder):
 From the while loop condition, we have:
 
-```bin
+```
 prevBidSum * (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
 <=> (buyAmountOfPrevIter) / (sellAmountOfPrevIter) < fullAuctionedAmount / prevBidSum (as Fractions)
 <=> p(previousOrder) < p
@@ -44,7 +44,7 @@ current iterOrder price and initial auction price.
 First, we prove p > p(currentOrder):
 Due to if condition, we have:
 
-```bin
+```
 currentBidSum * buyAmountOfIter < fullAuctionedAmount * sellAmountOfIter
 <=> buyAmountOfIter / sellAmountOfIter < fullAuctionedAmount / currentBidSum  (as fractions)
 <=> p(currentOrder) < p
@@ -53,10 +53,10 @@ currentBidSum * buyAmountOfIter < fullAuctionedAmount * sellAmountOfIter
 Next, we prove p < p(initialAuctionPrice).
 Since,
 
-```bin
+```
 currentBidSum > minAuctionedBuyAmount
 <=> fullAuctionedAmount / currentBidSum < fullAuctionedAmount / minAuctionedBuyAmount
- <=> p < p(initialAuctionPrice)
+<=> p < p(initialAuctionPrice)
 ```
 
 ## Rounding considerations
@@ -80,7 +80,7 @@ Transfers in occur on:
 
 - auction initiation [0], for
 
-```bin
+```
      _auctionedSellAmount * (FEE_DENOMINATOR + feeNumerator) / FEE_DENOMINATOR
 ```
 
@@ -106,7 +106,7 @@ auctioneer receives back the full amount of auctioned tokens. This is done in
 renamed to make the naming consistent between the different functions, note
 that these values are constant during the auction)
 
-```bin
+```
 in = [0] = sellAmount * (FEE_DENOMINATOR + feeNumerator) / FEE_DENOMINATOR
 [4] out = sellAmount + sellAmount * feeNumerator / FEE_DENOMINATOR
 ```
@@ -127,7 +127,7 @@ Assuming the initial auction price is used [11], then it means that the auction
 has been settled at the price determined in case [16]. Then, the auctioneer
 cannot withdraw more than `currentBidSum` bidding token:
 
-```bin
+```
 [16]: volumeClearingPriceOrder = currentBidSum * fullAuctionedAmount / minAuctionedBuyAmount
 [11]: auctioningTokenAmount = fullAuctionedAmount - volumeClearingPriceOrder
       biddingTokenAmount = volumeClearingPriceOrder * minAuctionedBuyAmount / fullAuctionedAmount
@@ -142,7 +142,7 @@ Next, we consider auction tokens. Funds flow out when a user claims order funds
 Case [17] determines that the following amount
 of auctioned tokens is withdrawn for each order by a user:
 
-```bin
+```
 [17]: out_auction_token_per_order = sellAmount * priceNumerator / priceDenominator
 ```
 
@@ -151,7 +151,7 @@ Since we assume to be in case [16], it must be that all orders
 have been summed up [18] and `currentBidSum <= minAuctionedBuyAmount` [16].
 Then:
 
-```bin
+```
  -    currentBidSum = sum(orderSellAmount) <= minAuctionedBuyAmount
  =>   sum(out_per_order) =  sum(orderSellAmount * sellAmount / buyAmount)
                          <= sum(orderSellAmount) * sellAmount / buyAmount =  currentBidSum * sellAmount / buyAmount
@@ -161,7 +161,7 @@ Then:
 Next, we analyze the amount transferred when paying out fees. The fee retrieval
 triggers case [11], causing the following amount of tokens to be sent out:
 
-```bin
+```
 [20]: feeAmount = sellAmount * feeNumerator / FEE_DENOMINATOR
 [11]: auctioningTokenAmount = sellAmount - volumeClearingPriceOrder
       out_reimbursed_fees = feeAmount * auctioningTokenAmount / sellAmount
@@ -173,7 +173,7 @@ We saw all ins/outs in case the auction settles with the initial
 auction price. We can add up all transfers involving the auction token to see
 that no more auction tokens as available are withdrawn at any point:
 
-```bin
+```
 [0]:  in = sellAmount * (FEE_DENOMINATOR + feeNumerator) / FEE_DENOMINATOR
 [11]: out_settle = sellAmount - currentBidSum * sellAmount / buyAmount
 [11]: out_fees <= sellAmount * feeNumerator / FEE_DENOMINATOR
@@ -185,7 +185,7 @@ that no more auction tokens as available are withdrawn at any point:
 
 In case [14] and [15] the price is:
 
-```bin
+```
 (priceNumerator, priceDenominator) = (fullAuctionedAmount, currentBidSum)
 ```
 
@@ -197,13 +197,13 @@ points: auctioneer claiming [11] and unmatched orders [23]. Note that no order
 is partially matched since `clearingOrder` is not an existing order
 (c.f. [Price considerations](##price-considerations).
 
-```bin
+```
 [5]: out_settle = sellAmount * priceDenominator / priceNumerator
                  = fullAuctionedAmount * currentBidSum / fullAuctionedAmount
                  = currentBidSum
 ```
 
-The function `settleAuction` is built so that `currentBidSum` is
+We assume that the `settleAuction` is built so that `currentBidSum` is
 the sum of the bids of all orders smaller (as defined in the library
 `IterableOrderedOrderSet`, meaning that the equality case is excluded) than
 `clearingOrder`. This means in particular that the sum of orders matched in the
@@ -216,7 +216,7 @@ withdrawn than deposited.
 Auction tokens are withdrawn when claiming fees [7] and by the users in
 `claimFromParticipantOrder` [17]:
 
-```bin
+```
 [7]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_order = orderSellAmount * priceNumerator / priceDenominator
                     = orderSellAmount * sellAmount / buyAmount
@@ -228,7 +228,7 @@ in branch [17]. This follows from the fact that all summed orders are smaller
 than `clearingOrder`.
 We use this to show that `sum(out_per_order) <= sellAmount`:
 
-```bin
+```
      sum(out_per_order) =  sum(orderSellAmount * sellAmount / buyAmount)
                         <= sum(orderSellAmount) * sellAmount / buyAmount = buyAmount * sellAmount / buyAmount = sellAmount
 ```
@@ -252,7 +252,7 @@ the clearing price order.
 Only auctioneer claiming [11] and clearing price order match [25] trigger a
 transfer of bid token:
 
-```bin
+```
 [5]: out_settle_auctioneer = sellAmount * priceDenominator / priceNumerator
                             = sellAmount * clearingPriceOrderSellAmount / clearingPriceOrderBuyAmount
 
@@ -268,7 +268,7 @@ Finally, we show that in case [13] no more auction tokens are withdrawn than
 deposited. Auction tokens are withdrawn when claiming fees [7] and by the users
 in `claimFromParticipantOrder` [17]:
 
-```bin
+```
 [7]:  out_fees = sellAmount * feeNumerator / FEE_DENOMINATOR
 [17]: out_per_fully_matched_order = orderSellAmount * priceNumerator / priceDenominator
                                   = orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount
@@ -280,14 +280,14 @@ in `claimFromParticipantOrder` [17]:
 Note that `currentBidSum` is the sum of all orders including the full clearing
 price order:
 
-```bin
+```
 currentBidSum = sum(orderSellAmount) + clearingPriceOrderSellAmount
 ```
 
 where the sum is taken over all orders strictly smaller than the clearing price
 order. We use this to compute the following sum:
 
-```bin
+```
 [17]: sum(out_per_fully_matched_order) =  sum(orderSellAmount * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
                                        <= sum(orderSellAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
                                        =  (currentBidSum - clearingPriceOrderSellAmount) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount)
@@ -295,7 +295,7 @@ order. We use this to compute the following sum:
 
 Then the amount of auction token withdrawn is:
 
-```bin
+```
       out =  out_fees + out_clearing_price_order + sum(out_per_fully_matched_order)
           <= sellAmount * feeNumerator / FEE_DENOMINATOR
              + (clearingPriceOrderSellAmount - currentSumBid) * clearingPriceOrderBuyAmount / clearingPriceOrderSellAmount + sellAmount
