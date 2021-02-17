@@ -2,8 +2,8 @@
 
 ## Price considerations
 
-The following considerations make some claims that are important for the security of the code.
-References in square brackets can be found in the code as `\\[*]`.
+This section argues about some aspects of the security of the code, as for example rounding issues.
+References in square brackets can be found in the code as comments of the form `\\[*]`.
 
 ### branch [14]
 
