@@ -1,11 +1,12 @@
 pragma solidity >=0.6.8;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/AllowListVerifier.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 
 // Idea was first mentioned in the blog:
 // https://medium.com/@PhABC/off-chain-whitelist-with-on-chain-verification-for-ethereum-smart-contracts-1563ca4b8f11
 
-contract AllowListOffChainManaged is Ownable {
+contract AllowListOffChainManaged is Ownable, ERC165 {
     /// @dev The EIP-712 domain type hash used for computing the domain
     /// separator.
     bytes32 private constant DOMAIN_TYPE_HASH =
@@ -18,6 +19,9 @@ contract AllowListOffChainManaged is Ownable {
 
     /// @dev The EIP-712 domain version used for computing the domain separator.
     bytes32 private constant DOMAIN_VERSION = keccak256("v1");
+
+    /// @dev EIP-165 interface id
+    bytes4 private constant INTERFACE_ID = this.isAllowed.selector;
 
     /// @dev The domain separator used for signing orders that gets mixed in
     /// making signatures for different domains incompatible. This domain
@@ -44,6 +48,7 @@ contract AllowListOffChainManaged is Ownable {
                 address(this)
             )
         );
+        _registerInterface(INTERFACE_ID);
     }
 
     function isAllowed(

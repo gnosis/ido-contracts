@@ -94,14 +94,24 @@ const initiateAuction: () => void = () => {
         taskArgs.allowListManager !=
         "0x0000000000000000000000000000000000000000"
       ) {
-        const allowListManger = await hardhatRuntime.ethers.getContractAt(
-          "AllowLitVerifier",
+        const allowListManager = await hardhatRuntime.ethers.getContractAt(
+          "AllowListVerifier",
           taskArgs.allowListManager,
         );
-        console.log(
-          "Using AllowList Manger deployed at:",
-          allowListManger.address,
-        );
+        if (
+          allowListManager.supportsInterface(
+            allowListManager.interface.getSighash(
+              "isAllowed(address,uint256,bytes)",
+            ),
+          )
+        ) {
+          console.log(
+            "You are using the allow manager from:",
+            allowListManager.address,
+          );
+        } else {
+          return new Error("Allow manager does not support right interface");
+        }
       }
 
       const balance = await auctioningToken.callStatic.balanceOf(
