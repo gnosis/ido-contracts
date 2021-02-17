@@ -125,7 +125,7 @@ We will investigate the 4 different ways the price can be set in the `settleAuct
 
 Assuming the initial auction price is used [11], then it means that the auction
 has been settled at the price determined in case [16]. Then, the auctioneer
-can not withdraw more than currentBidSum biddingToken:
+cannot withdraw more than `currentBidSum` bidding token:
 
 ```bin
 [16]: volumeClearingPriceOrder = currentBidSum * fullAuctionedAmount / minAuctionedBuyAmount
