@@ -2,6 +2,9 @@
 
 ## Price considerations
 
+This section argues about some aspects of the security of the code, as for example rounding issues.
+References in square brackets can be found in the code as comments of the form `\\[*]`.
+
 ### branch [14]
 
 Claim: In the code, in branch [14], the clearing price p will be strictly between the
@@ -12,23 +15,24 @@ We assume: p >= p(currentOrder)
 (In this proof all divisions are integer divisions)
 
 ```
-fullAuctionAmount / prevBidSum >= buyAmountOfIter /sellAmountOfIter
-fullAuctionAmount * sellAmountOfIter >= prevBidSum * buyAmountOfIter
-fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum
-0 >= prevBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
-sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
-sellAmountOfIter >= currentBidSum - fullAuctionAmount _ sellAmountOfIter / buyAmountOfIter
-sellAmountOfIter >= uncoveredBids
+p >= p(currentOrder)
+fullAuctionAmount / prevBidSum >= buyAmountOfIter /sellAmountOfIter (as fractions)
+<=> fullAuctionAmount * sellAmountOfIter >= prevBidSum * buyAmountOfIter
+<=> fullAuctionAmount * sellAmountOfIter / buyAmountOfIter >= prevBidSum (as integer)
+<=> 0 >= prevBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+<=> sellAmountOfIter >= prevBidSum + sellAmountOfIter - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+<=> sellAmountOfIter >= currentBidSum - fullAuctionAmount * sellAmountOfIter / buyAmountOfIter
+<=> sellAmountOfIter >= uncoveredBids
 ```
 
-Hence, we will not end up in the branch. Contradiction
+Hence, we will not end up in the branch. Contradiction.
 
 Next, we prove p > p(previousOrder):
 From the while loop condition, we have:
 
 ```
-prevBidSum* (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
-<=>(buyAmountOfPrevIter) / (sellAmountOfPrevIter) < fullAuctionedAmount / prevBidSum (as Fractions)
+prevBidSum * (buyAmountOfPrevIter) < fullAuctionedAmount * (sellAmountOfPrevIter)
+<=> (buyAmountOfPrevIter) / (sellAmountOfPrevIter) < fullAuctionedAmount / prevBidSum (as Fractions)
 <=> p(previousOrder) < p
 ```
 
@@ -46,16 +50,18 @@ currentBidSum * buyAmountOfIter < fullAuctionedAmount * sellAmountOfIter
 <=> p(currentOrder) < p
 ```
 
-Next, we prove p < p(initialAuctionPrice)
+Next, we prove p < p(initialAuctionPrice).
+Since,
 
 ```
-fullAuctionedAmount / currentBidSum < fullAuctionedAmount / minAuctionedBuyAmount
- <=> p < p(initialAuctionPrice)
+currentBidSum > minAuctionedBuyAmount
+<=> fullAuctionedAmount / currentBidSum < fullAuctionedAmount / minAuctionedBuyAmount
+<=> p < p(initialAuctionPrice)
 ```
 
 ## Rounding considerations
 
-(Based on the code at commit `fad89a39eab3e61e35876f3673e796e1f8a92df4`.)
+(Based on the code at commit `33b35e7e294b57ef7fcdd27672ac99f672b99336`.)
 
 Rounding issues may cause the contract to be frozen in case the total balance
 that is withdrawn from the contract is larger than the amount deposited into
@@ -92,8 +98,9 @@ We will assume that cancelling an order is equivalent to not having created the
 order in the first place. In terms of amounts, this is what happens with [1] and
 [2]. At this point, we can consider just the case with no order cancelled.
 
-If the flag `minFundingThresholdNotReached` is set, the user claiming amounts
-to withdrawing back the amount the user deposited [10]. We argue that the
+### Rounding considerations: minFundingThresholdNotReached not met
+
+If the flag `minFundingThresholdNotReached` is set and the condition is not met, the user will claim the amounts they deposited [10]. We argue that the
 auctioneer receives back the full amount of auctioned tokens. This is done in
 [4] for the auctioned funds and the fees: (the variables have been
 renamed to make the naming consistent between the different functions, note
@@ -112,25 +119,27 @@ separately the amount of auction tokens and of bid tokens.
 We argue that both bid tokens and auctioned tokens are not withdrawn beyond
 reserves in this case.
 Funds claiming by the auctioneer will be done via [11].
+We will investigate the 4 different ways the price can be set in the `settleAuction` function separately ( The cases are given by the code branches [13], [14], [15] and [16])
+
+### Rounding considerations: clearing price is determined by [16]
+
 Assuming the initial auction price is used [11], then it means that the auction
-has been settled at the price determined in case [16] (out of the four possible
-cases [13], [14], [15], [16] of `settleAuction`). Then:
+has been settled at the price determined in case [16]. Then, the auctioneer
+cannot withdraw more than `currentBidSum` bidding token:
 
 ```
 [16]: volumeClearingPriceOrder = currentBidSum * fullAuctionedAmount / minAuctionedBuyAmount
 [11]: auctioningTokenAmount = fullAuctionedAmount - volumeClearingPriceOrder
       biddingTokenAmount = volumeClearingPriceOrder * minAuctionedBuyAmount / fullAuctionedAmount
  =>   biddingTokenAmount <= currentBidSum
-//[22]
 ```
 
 and `currentBidSum` is the sum of all orders. No user can withdraw bid tokens:
 with the current restriction, case [17] of `claimFromParticipantOrder` is
 always triggered. This means that no overflows happens for bid tokens.
 Next, we consider auction tokens. Funds flow out when a user claims order funds
-[17], the fees are paid out with `processFeesAndAuctioneerFunds` and the unsold auction tokens are
-sent back to the auctioneer ([11], discussed before).
-: case [17] determines that the following amount
+[17], the fees are paid out with `processFeesAndAuctioneerFunds` and the unsold auction tokens are sent back to the auctioneer ([11], discussed before).
+Case [17] determines that the following amount
 of auctioned tokens is withdrawn for each order by a user:
 
 ```
@@ -138,7 +147,7 @@ of auctioned tokens is withdrawn for each order by a user:
 ```
 
 We argue that `sum(out_per_order) <= currentBidSum * sellAmount / buyAmount`.
-Since we must be in case [16] as discussed before, it must be that all orders
+Since we assume to be in case [16], it must be that all orders
 have been summed up [18] and `currentBidSum <= minAuctionedBuyAmount` [16].
 Then:
 
@@ -160,7 +169,7 @@ triggers case [11], causing the following amount of tokens to be sent out:
  =>   out = out_reimbursed_fees + out_paid_fees <= feeAmount * sellAmount / sellAmount <= feeAmount
 ```
 
-We saw all ins/outs un the case where the auction settles with the initial
+We saw all ins/outs in case the auction settles with the initial
 auction price. We can add up all transfers involving the auction token to see
 that no more auction tokens as available are withdrawn at any point:
 
@@ -172,15 +181,7 @@ that no more auction tokens as available are withdrawn at any point:
  =>   out <= sellAmount + sellAmount * feeNumerator / FEE_DENOMINATOR
 ```
 
-The same argument as in [22] applies to see that not too much auction tokens are
-withdrawn in this case.
-
-The final case in the case where the final auction price is higher than the
-initial auction price.
-
-We treat each case separately depending on whether the auction was settled in
-case [13] (an order was partially matched) or any of [14], [15] (no order
-partially matched, full auctioned amount sold).
+### Rounding considerations: clearing price is determined by [14], [15]
 
 In case [14] and [15] the price is:
 
@@ -202,7 +203,7 @@ is partially matched since `clearingOrder` is not an existing order
                  = currentBidSum
 ```
 
-We assume that the function `settleAuction` is built so that `currentBidSum` is
+We assume that the `settleAuction` is built so that `currentBidSum` is
 the sum of the bids of all orders smaller (as defined in the library
 `IterableOrderedOrderSet`, meaning that the equality case is excluded) than
 `clearingOrder`. This means in particular that the sum of orders matched in the
@@ -233,6 +234,8 @@ We use this to show that `sum(out_per_order) <= sellAmount`:
 ```
 
 We have shown that in cases [14] and [15] no withdrawing issue are possible.
+
+### Rounding considerations: clearing price is determined by [13]
 
 It remains to consider case [13].
 First, we argue that no more bid tokens are withdrawn than deposited. As before,
