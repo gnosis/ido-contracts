@@ -3,16 +3,16 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { contractNames } from "../ts/deploy";
 
-const deployEasyContract: DeployFunction = async function (
+const deployVerifierContract: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
 ) {
   const { deployments, getNamedAccounts } = hre;
   const { deployer } = await getNamedAccounts();
   const { deploy } = deployments;
 
-  const { easyAuction } = contractNames;
+  const { allowListOffChainManaged } = contractNames;
 
-  await deploy(easyAuction, {
+  await deploy(allowListOffChainManaged, {
     from: deployer,
     gasLimit: 8000000,
     args: [],
@@ -21,4 +21,4 @@ const deployEasyContract: DeployFunction = async function (
   });
 };
 
-export default deployEasyContract;
+export default deployVerifierContract;
