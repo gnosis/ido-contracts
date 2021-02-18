@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity >=0.6.8;
-import "@openzeppelin/contracts/introspection/IERC165.sol";
 
 library AllowListVerifierHelper {
     /// @dev Value returned by a call to `isAllowed` if the check
@@ -12,7 +11,7 @@ library AllowListVerifierHelper {
 ///
 /// @dev Standardized interface for an allowList manager for easyAuction
 /// The interface was inspired by EIP-1271
-interface AllowListVerifier is IERC165 {
+interface AllowListVerifier {
     /// @dev Should return whether the a specific user has access to an auction
     /// by returning the magic value from AllowListVerifierHelper
     function isAllowed(
