@@ -98,16 +98,20 @@ const initiateAuction: () => void = () => {
           "AllowListVerifier",
           taskArgs.allowListManager,
         );
-        if (
-          (await allowListManager.provider.getCode(allowListManager.address)) !=
-          "0x"
-        ) {
+        const interfaceSignatureOfIsAllowed = allowListManager.interface
+          .getSighash("isAllowed(address,uint256,bytes)")
+          .substring(2);
+        const cutByteCodeFromContract = (
+          await allowListManager.provider.getCode(allowListManager.address)
+        ).substring(0, 500); // Byte code is cut to 500 byte to make sure that we only search for the interface bytes at the beginning to avoid false negatives
+
+        if (cutByteCodeFromContract.includes(interfaceSignatureOfIsAllowed)) {
           console.log(
             "You are using the allow manager from:",
             allowListManager.address,
           );
         } else {
-          return new Error("Allow manager does not support right interface");
+          throw new Error("Allow manager does not support right interface");
         }
       }
 
