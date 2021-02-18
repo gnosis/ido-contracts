@@ -132,28 +132,28 @@ const initiateAuction: () => void = () => {
       }
 
       console.log("Starting Auction:");
-      // const tx = await easyAuction
-      //   .connect(caller)
-      //   .initiateAuction(
-      //     auctioningToken.address,
-      //     biddingToken.address,
-      //     taskArgs.orderCancellationPeriod,
-      //     taskArgs.duration,
-      //     sellAmountsInAtoms,
-      //     minBuyAmountInAtoms,
-      //     minParticipantsBuyAmount,
-      //     minFundingThresholdInAtoms,
-      //     taskArgs.isAtomicClosureAllowed,
-      //     taskArgs.allowListManager,
-      //   );
-      // const txResult = await tx.wait();
-      // const auctionId = txResult.events
-      //   .filter((event: any) => event.event === "NewAuction")
-      //   .map((event: any) => event.args.auctionId);
-      // console.log(
-      //   "Your auction has been schedule and has the Id:",
-      //   auctionId.toString(),
-      // );
+      const tx = await easyAuction
+        .connect(caller)
+        .initiateAuction(
+          auctioningToken.address,
+          biddingToken.address,
+          taskArgs.orderCancellationPeriod,
+          taskArgs.duration,
+          sellAmountsInAtoms,
+          minBuyAmountInAtoms,
+          minParticipantsBuyAmount,
+          minFundingThresholdInAtoms,
+          taskArgs.isAtomicClosureAllowed,
+          taskArgs.allowListManager,
+        );
+      const txResult = await tx.wait();
+      const auctionId = txResult.events
+        .filter((event: any) => event.event === "NewAuction")
+        .map((event: any) => event.args.auctionId);
+      console.log(
+        "Your auction has been schedule and has the Id:",
+        auctionId.toString(),
+      );
     });
 };
 export { initiateAuction };
