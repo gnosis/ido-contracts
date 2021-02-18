@@ -89,7 +89,7 @@ const initiateAuction: () => void = () => {
         caller.address,
       );
       if (sellAmountsInAtoms.gt(balance)) {
-        return new Error("Balance not sufficient");
+        throw new Error("Balance not sufficient");
       }
 
       const allowance = await auctioningToken.callStatic.allowance(
