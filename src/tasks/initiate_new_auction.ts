@@ -53,6 +53,12 @@ const initiateAuction: () => void = () => {
       false,
       types.boolean,
     )
+    .addOptionalParam(
+      "allowListManager",
+      "Contract address for a potential allowListManger contract, if allow listing is wanted for the started auction",
+      "0x0000000000000000000000000000000000000000",
+      types.string,
+    )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
       console.log("Using the account:", caller.address);
@@ -84,6 +90,30 @@ const initiateAuction: () => void = () => {
       );
 
       console.log("Using EasyAuction deployed to:", easyAuction.address);
+      if (
+        taskArgs.allowListManager !=
+        "0x0000000000000000000000000000000000000000"
+      ) {
+        const allowListManager = await hardhatRuntime.ethers.getContractAt(
+          "AllowListVerifier",
+          taskArgs.allowListManager,
+        );
+        const interfaceSignatureOfIsAllowed = allowListManager.interface
+          .getSighash("isAllowed(address,uint256,bytes)")
+          .substring(2);
+        const cutByteCodeFromContract = (
+          await allowListManager.provider.getCode(allowListManager.address)
+        ).substring(0, 500); // Byte code is cut to 500 byte to make sure that we only search for the interface bytes at the beginning to avoid false negatives
+
+        if (cutByteCodeFromContract.includes(interfaceSignatureOfIsAllowed)) {
+          console.log(
+            "You are using the allow manager from:",
+            allowListManager.address,
+          );
+        } else {
+          throw new Error("Allow manager does not support right interface");
+        }
+      }
 
       const balance = await auctioningToken.callStatic.balanceOf(
         caller.address,
@@ -118,6 +148,7 @@ const initiateAuction: () => void = () => {
           minParticipantsBuyAmount,
           minFundingThresholdInAtoms,
           taskArgs.isAtomicClosureAllowed,
+          taskArgs.allowListManager,
         );
       const txResult = await tx.wait();
       const auctionId = txResult.events
