@@ -100,4 +100,4 @@ yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780
 
 ## Audit
 
-The solidity code was audited by Adam Kolar. The report can be found [here](https://github.com/g0-group/Audits/blob/master/GnosisAuctionFeb2021.pdf).
+The solidity code was audited by Adam Kolar, from the G0 Group. The report can be found [here](https://github.com/g0-group/Audits/blob/master/GnosisAuctionFeb2021.pdf).
