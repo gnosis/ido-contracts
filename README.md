@@ -97,3 +97,7 @@ export MY_ETHERSCAN_API_KEY=ETHERSCAN_API_KEY_HERE
 export PK=PRIVATE_KEY_HERE
 yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780140aa0cd5ab" --bidding-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network $NETWORK
 ```
+
+## Audit
+
+The solidity code was audited by Adam Kolar. The report can be found (here)[https://github.com/g0-group/Audits/blob/master/GnosisAuctionFeb2021.pdf].
