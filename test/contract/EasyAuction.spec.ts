@@ -304,6 +304,39 @@ describe("EasyAuction", async () => {
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
     });
+    it("one can not place orders with buyAmount == 0", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+        easyAuction,
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        auctioningToken.address,
+        biddingToken.address,
+        60 * 60,
+        60 * 60,
+        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("1"),
+        1,
+        0,
+        false,
+        "0x0000000000000000000000000000000000000000",
+      );
+      await expect(
+        easyAuction.placeSellOrders(
+          auctionId,
+          [ethers.utils.parseEther("0")],
+          [ethers.utils.parseEther("1")],
+          [queueStartElement],
+          "0x",
+        ),
+      ).to.be.revertedWith("_minBuyAmounts must be greater than 0");
+    });
     it("does not withdraw funds, if orders are placed twice", async () => {
       const {
         auctioningToken,
