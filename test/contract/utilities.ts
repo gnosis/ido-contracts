@@ -12,6 +12,7 @@ export async function closeAuction(
   ).toNumber();
   await increaseTime(time_remaining + 1);
 }
+export const MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE = "0x19a05a7e";
 
 export async function claimFromAllOrders(
   easyAuction: Contract,
