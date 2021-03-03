@@ -13,3 +13,18 @@ export async function getEasyAuctionContract({
 
   return authenticator;
 }
+export async function getAllowListOffChainManagedContract({
+  ethers,
+  deployments,
+}: HardhatRuntimeEnvironment): Promise<Contract> {
+  const authenticatorDeployment = await deployments.get(
+    "AllowListOffChainManaged",
+  );
+
+  const authenticator = new Contract(
+    authenticatorDeployment.address,
+    authenticatorDeployment.abi,
+  ).connect(ethers.provider);
+
+  return authenticator;
+}

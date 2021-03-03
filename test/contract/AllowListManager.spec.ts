@@ -8,23 +8,11 @@ import {
   queueStartElement,
   createTokensAndMintAndApprove,
 } from "../../src/priceCalculation";
-import { TypedDataDomain } from "../../src/ts/ethers";
 
 import { createAuctionWithDefaults } from "./defaultContractInteractions";
+import { domain } from "./utilities";
 
-export function domain(
-  chainId: number,
-  verifyingContract: string,
-): TypedDataDomain {
-  return {
-    name: "AccessManager",
-    version: "v1",
-    chainId,
-    verifyingContract,
-  };
-}
-
-describe("AccessManager", async () => {
+describe("AccessManager - integration tests", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();
   let easyAuction: Contract;
   let allowListManager: Contract;

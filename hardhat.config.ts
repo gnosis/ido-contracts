@@ -7,6 +7,7 @@ import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
 import { clearAuction } from "./src/tasks/clear_auction";
+import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
 
 const argv = yargs
@@ -41,6 +42,7 @@ if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
 
 initiateAuction();
 clearAuction();
+generateSignatures();
 
 export default {
   paths: {
