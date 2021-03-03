@@ -6,7 +6,8 @@ import {
   placeOrders,
 } from "../../src/priceCalculation";
 
-import { sendTxAndGetReturnValue, closeAuction } from "./utilities";
+import { createAuctionWithDefaults } from "./defaultContractInteractions";
+import { closeAuction } from "./utilities";
 
 describe("EasyAuction", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();
@@ -23,20 +24,12 @@ describe("EasyAuction", async () => {
       biddingToken,
     } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
     const nrTests = 12; // increase here for better gas estimations, nrTests-2 must be a divisor of 10**18
-    const auctionId: BigNumber = await sendTxAndGetReturnValue(
-      easyAuction,
-      "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
-      auctioningToken.address,
-      biddingToken.address,
-      60 * 60,
-      60 * 60,
-      ethers.utils.parseEther("1000"),
-      ethers.utils.parseEther("1000"),
-      1,
-      0,
-      false,
-      "0x0000000000000000000000000000000000000000",
-    );
+    const auctionId: BigNumber = await createAuctionWithDefaults(easyAuction, {
+      auctioningToken,
+      biddingToken,
+      auctionedSellAmount: ethers.utils.parseEther("1000"),
+      minBuyAmount: ethers.utils.parseEther("1000"),
+    });
 
     for (let i = 2; i < nrTests; i++) {
       const sellOrder = [

@@ -10,7 +10,7 @@ import {
 } from "../../src/priceCalculation";
 import { TypedDataDomain } from "../../src/ts/ethers";
 
-import { sendTxAndGetReturnValue } from "./utilities";
+import { createAuctionWithDefaults } from "./defaultContractInteractions";
 
 export function domain(
   chainId: number,
@@ -57,19 +57,13 @@ describe("AccessManager", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+      const auctionId: BigNumber = await createAuctionWithDefaults(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("1"),
-        1,
-        0,
-        false,
-        allowListManager.address,
+        {
+          auctioningToken,
+          biddingToken,
+          allowListManager: allowListManager.address,
+        },
       );
 
       const auctioneerMessage = ethers.utils.keccak256(
@@ -131,19 +125,13 @@ describe("AccessManager", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+      const auctionId: BigNumber = await createAuctionWithDefaults(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("1"),
-        1,
-        0,
-        false,
-        allowListManager.address,
+        {
+          auctioningToken,
+          biddingToken,
+          allowListManager: allowListManager.address,
+        },
       );
 
       const { chainId } = await ethers.provider.getNetwork();
