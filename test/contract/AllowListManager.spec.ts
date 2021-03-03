@@ -48,7 +48,7 @@ describe("AccessManager", async () => {
     });
   });
   describe("AccessManager - placing order in easyAuction with auctioneer signature", async () => {
-    it("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
+    it.only("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -59,7 +59,7 @@ describe("AccessManager", async () => {
       );
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,address)",
         auctioningToken.address,
         biddingToken.address,
         60 * 60,
@@ -70,6 +70,7 @@ describe("AccessManager", async () => {
         0,
         false,
         allowListManager.address,
+        user_1.address,
       );
 
       const auctioneerMessage = ethers.utils.keccak256(
@@ -133,7 +134,7 @@ describe("AccessManager", async () => {
       );
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,address)",
         auctioningToken.address,
         biddingToken.address,
         60 * 60,
@@ -144,6 +145,7 @@ describe("AccessManager", async () => {
         0,
         false,
         allowListManager.address,
+        user_1.address,
       );
 
       const { chainId } = await ethers.provider.getNetwork();
@@ -158,7 +160,7 @@ describe("AccessManager", async () => {
           ],
         ),
       );
-      // Signature will come from a wrong user: user_2 != owner of allowListManger;
+      // Signature will come from a wrong user: user_2 != allowListSigner;
       const auctioneerSignature = await user_2.signMessage(
         ethers.utils.arrayify(auctioneerMessage),
       );
@@ -171,13 +173,15 @@ describe("AccessManager", async () => {
       const sellAmount = ethers.utils.parseEther("1").add(1);
       const buyAmount = ethers.utils.parseEther("1");
       await expect(
-        easyAuction.placeSellOrders(
-          auctionId,
-          [buyAmount, buyAmount],
-          [sellAmount, sellAmount.add(1)],
-          [queueStartElement, queueStartElement],
-          auctioneerSignatureEncoded,
-        ),
+        easyAuction
+          .connect(user_2)
+          .placeSellOrders(
+            auctionId,
+            [buyAmount, buyAmount],
+            [sellAmount, sellAmount.add(1)],
+            [queueStartElement, queueStartElement],
+            auctioneerSignatureEncoded,
+          ),
       ).to.be.revertedWith("user not allowed to place order");
     });
   });

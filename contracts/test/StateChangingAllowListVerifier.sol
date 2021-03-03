@@ -8,9 +8,12 @@ contract StateChangingAllowListVerifier {
     function isAllowed(
         address user,
         uint256 auctionId,
+        address allowListSigner,
         bytes calldata callData
     ) external returns (bytes4) {
-        test = keccak256(abi.encode(user, auctionId, callData));
+        test = keccak256(
+            abi.encode(user, auctionId, allowListSigner, callData)
+        );
         return AllowListVerifierHelper.MAGICVALUE;
     }
 }

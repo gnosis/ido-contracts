@@ -85,7 +85,8 @@ contract EasyAuction is Ownable {
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold,
-        address allowListManager
+        address allowListContract,
+        address allowListSigner
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -111,13 +112,13 @@ contract EasyAuction is Ownable {
         uint256 feeNumerator;
         uint256 minFundingThreshold;
     }
-    struct AllowListManagerData {
+    struct AllowListData {
         address allowListContract;
         address allowListSigner;
     }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
-    mapping(uint256 => AllowListManagerData) public auctionAccessManager;
+    mapping(uint256 => AllowListData) public allowListData;
 
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
@@ -207,9 +208,8 @@ contract EasyAuction is Ownable {
             feeNumerator,
             minFundingThreshold
         );
-        auctionAccessManager[auctionCounter]
-            .allowListContract = allowListContract;
-        auctionAccessManager[auctionCounter].allowListSigner = allowListSigner;
+        allowListData[auctionCounter].allowListContract = allowListContract;
+        allowListData[auctionCounter].allowListSigner = allowListSigner;
         emit NewAuction(
             auctionCounter,
             _auctioningToken,
@@ -220,7 +220,8 @@ contract EasyAuction is Ownable {
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
             minFundingThreshold,
-            allowListContract
+            allowListContract,
+            allowListSigner
         );
         return auctionCounter;
     }
@@ -251,13 +252,13 @@ contract EasyAuction is Ownable {
     ) internal returns (uint64 userId) {
         {
             address allowListManger =
-                auctionAccessManager[auctionId].allowListContract;
+                allowListData[auctionId].allowListContract;
             if (allowListManger != address(0)) {
                 require(
                     AllowListVerifier(allowListManger).isAllowed(
                         msg.sender,
                         auctionId,
-                        auctionAccessManager[auctionId].allowListSigner,
+                        allowListData[auctionId].allowListSigner,
                         allowListCallData
                     ) == AllowListVerifierHelper.MAGICVALUE,
                     "user not allowed to place order"
@@ -529,8 +530,8 @@ contract EasyAuction is Ownable {
             clearingOrder
         );
         // Gas refunds
-        auctionAccessManager[auctionId].allowListContract = address(0);
-        auctionAccessManager[auctionId].allowListSigner = address(0);
+        allowListData[auctionId].allowListContract = address(0);
+        allowListData[auctionId].allowListSigner = address(0);
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
         auctionData[auctionId].interimOrder = bytes32(0);
         auctionData[auctionId].interimSumBidAmount = uint256(0);
