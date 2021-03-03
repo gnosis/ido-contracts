@@ -8,24 +8,12 @@ import {
   queueStartElement,
   createTokensAndMintAndApprove,
 } from "../../src/priceCalculation";
-import { TypedDataDomain } from "../../src/ts/ethers";
 
 import {
   sendTxAndGetReturnValue,
   MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE,
+  domain,
 } from "./utilities";
-
-export function domain(
-  chainId: number,
-  verifyingContract: string,
-): TypedDataDomain {
-  return {
-    name: "AccessManager",
-    version: "v1",
-    chainId,
-    verifyingContract,
-  };
-}
 
 describe("AccessManager - integration tests", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();

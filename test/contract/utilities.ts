@@ -2,6 +2,19 @@ import { BigNumber, Contract } from "ethers";
 import { ethers } from "hardhat";
 
 import { encodeOrder, Order } from "../../src/priceCalculation";
+import { TypedDataDomain } from "../../src/ts/ethers";
+
+export function domain(
+  chainId: number,
+  verifyingContract: string,
+): TypedDataDomain {
+  return {
+    name: "AccessManager",
+    version: "v1",
+    chainId,
+    verifyingContract,
+  };
+}
 
 export async function closeAuction(
   instance: Contract,
