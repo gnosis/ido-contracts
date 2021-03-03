@@ -48,7 +48,7 @@ describe("AccessManager", async () => {
     });
   });
   describe("AccessManager - placing order in easyAuction with auctioneer signature", async () => {
-    it.only("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
+    it("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
       const {
         auctioningToken,
         biddingToken,
