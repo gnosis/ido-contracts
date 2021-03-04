@@ -65,8 +65,8 @@ contract AllowListOffChainManaged {
                 r,
                 s
             );
-        (, bytes memory allowListData) =
-            EasyAuction(msg.sender).allowListStruct(auctionId);
+        bytes memory allowListData =
+            EasyAuction(msg.sender).auctionAccessData(auctionId);
         if (abi.decode(allowListData, (address)) == signer) {
             return AllowListVerifierHelper.MAGICVALUE;
         } else {

@@ -112,13 +112,10 @@ contract EasyAuction is Ownable {
         uint256 feeNumerator;
         uint256 minFundingThreshold;
     }
-    struct AllowListStruct {
-        address allowListContract;
-        bytes allowListData;
-    }
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
-    mapping(uint256 => AllowListStruct) public allowListStruct;
+    mapping(uint256 => address) public auctionAccessManager;
+    mapping(uint256 => bytes) public auctionAccessData;
 
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
@@ -161,8 +158,8 @@ contract EasyAuction is Ownable {
         uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold,
         bool isAtomicClosureAllowed,
-        address allowListContract,
-        bytes memory allowListData
+        address accessManagerContract,
+        bytes memory accessManagerContractData
     ) public returns (uint256) {
         // withdraws sellAmount + fees
         _auctioningToken.safeTransferFrom(
@@ -208,8 +205,8 @@ contract EasyAuction is Ownable {
             feeNumerator,
             minFundingThreshold
         );
-        allowListStruct[auctionCounter].allowListContract = allowListContract;
-        allowListStruct[auctionCounter].allowListData = allowListData;
+        auctionAccessManager[auctionCounter] = accessManagerContract;
+        auctionAccessData[auctionCounter] = accessManagerContractData;
         emit NewAuction(
             auctionCounter,
             _auctioningToken,
@@ -220,8 +217,8 @@ contract EasyAuction is Ownable {
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
             minFundingThreshold,
-            allowListContract,
-            allowListData
+            accessManagerContract,
+            accessManagerContractData
         );
         return auctionCounter;
     }
@@ -251,11 +248,10 @@ contract EasyAuction is Ownable {
         bytes memory allowListCallData
     ) internal returns (uint64 userId) {
         {
-            address allowListManger =
-                allowListStruct[auctionId].allowListContract;
-            if (allowListManger != address(0)) {
+            address allowListVerifier = auctionAccessManager[auctionId];
+            if (allowListVerifier != address(0)) {
                 require(
-                    AllowListVerifier(allowListManger).isAllowed(
+                    AllowListVerifier(allowListVerifier).isAllowed(
                         msg.sender,
                         auctionId,
                         allowListCallData
@@ -533,8 +529,8 @@ contract EasyAuction is Ownable {
             clearingOrder
         );
         // Gas refunds
-        allowListStruct[auctionId].allowListContract = address(0);
-        delete allowListStruct[auctionId].allowListData;
+        auctionAccessManager[auctionId] = address(0);
+        delete auctionAccessData[auctionId];
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
         auctionData[auctionId].interimOrder = bytes32(0);
         auctionData[auctionId].interimSumBidAmount = uint256(0);
