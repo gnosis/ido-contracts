@@ -299,7 +299,7 @@ describe("EasyAuction", async () => {
       );
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,address)",
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
         auctioningToken.address,
         biddingToken.address,
         60 * 60,
@@ -310,7 +310,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       await expect(
         easyAuction.placeSellOrders(
@@ -495,7 +495,6 @@ describe("EasyAuction", async () => {
         await stateChangingAllowListManager.callStatic.isAllowed(
           user_1.address,
           auctionId,
-          "0x0000000000000000000000000000000000000000",
           "0x",
         ),
       ).to.be.equal(MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE);

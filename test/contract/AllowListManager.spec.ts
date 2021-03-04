@@ -63,7 +63,10 @@ describe("AccessManager", async () => {
           auctioningToken,
           biddingToken,
           allowListManager: allowListManager.address,
-          allowListSigner: user_1.address,
+          allowListData: ethers.utils.defaultAbiCoder.encode(
+            ["address"],
+            [user_1.address],
+          ),
         },
       );
 
@@ -132,6 +135,10 @@ describe("AccessManager", async () => {
           auctioningToken,
           biddingToken,
           allowListManager: allowListManager.address,
+          allowListData: ethers.utils.defaultAbiCoder.encode(
+            ["address"],
+            [user_1.address],
+          ),
         },
       );
 

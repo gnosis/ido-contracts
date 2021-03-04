@@ -12,7 +12,7 @@ export async function createAuctionWithDefaults(
 ): Promise<BigNumber> {
   return sendTxAndGetReturnValue(
     easyAuction,
-    "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,address)",
+    "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
     parameters.auctioningToken.address,
     parameters.biddingToken.address,
     parameters.orderCancelationPeriodDuration ?? 60 * 60,
@@ -23,6 +23,6 @@ export async function createAuctionWithDefaults(
     parameters.minFundingThreshold ?? 0,
     parameters.isAtomicClosureAllowed ?? false,
     parameters.allowListManager ?? "0x0000000000000000000000000000000000000000",
-    parameters.allowListSigner ?? "0x0000000000000000000000000000000000000000",
+    parameters.allowListData ?? "0x",
   );
 }

@@ -1,5 +1,6 @@
 pragma solidity >=0.6.8;
 import "../interfaces/AllowListVerifier.sol";
+import "../EasyAuction.sol";
 
 // Idea was first mentioned in the blog:
 // https://medium.com/@PhABC/off-chain-whitelist-with-on-chain-verification-for-ethereum-smart-contracts-1563ca4b8f11
@@ -48,7 +49,6 @@ contract AllowListOffChainManaged {
     function isAllowed(
         address user,
         uint256 auctionId,
-        address allowListSigner,
         bytes calldata callData
     ) external view returns (bytes4) {
         uint8 v;
@@ -65,7 +65,9 @@ contract AllowListOffChainManaged {
                 r,
                 s
             );
-        if (allowListSigner == signer) {
+        (, bytes memory allowListData) =
+            EasyAuction(msg.sender).allowListStruct(auctionId);
+        if (abi.decode(allowListData, (address)) == signer) {
             return AllowListVerifierHelper.MAGICVALUE;
         } else {
             return bytes4(0);

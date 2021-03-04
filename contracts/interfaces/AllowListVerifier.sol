@@ -17,7 +17,6 @@ interface AllowListVerifier {
     function isAllowed(
         address user,
         uint256 auctionId,
-        address allowListSigner,
         bytes calldata callData
     ) external view returns (bytes4);
 }
