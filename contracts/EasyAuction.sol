@@ -248,10 +248,10 @@ contract EasyAuction is Ownable {
         bytes memory allowListCallData
     ) internal returns (uint64 userId) {
         {
-            address allowListVerifier = auctionAccessManager[auctionId];
-            if (allowListVerifier != address(0)) {
+            address allowListManger = auctionAccessManager[auctionId];
+            if (allowListManger != address(0)) {
                 require(
-                    AllowListVerifier(allowListVerifier).isAllowed(
+                    AllowListVerifier(allowListManger).isAllowed(
                         msg.sender,
                         auctionId,
                         allowListCallData
