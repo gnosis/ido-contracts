@@ -60,7 +60,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
-          "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith(
         "minimumBiddingAmountPerOrder is not allowed to be zero",
@@ -88,7 +88,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
-          "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith("cannot auction zero tokens");
     });
@@ -114,7 +114,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
-          "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith("tokens cannot be auctioned for free");
     });
@@ -140,7 +140,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
-          "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
