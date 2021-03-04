@@ -277,6 +277,10 @@ contract EasyAuction is Ownable {
             auctionData[auctionId].minimumBiddingAmountPerOrder;
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
             require(
+                _minBuyAmounts[i] > 0,
+                "_minBuyAmounts must be greater than 0"
+            );
+            require(
                 _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
                     sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
                 "limit price not better than mimimal offer"
