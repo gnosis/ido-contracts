@@ -361,7 +361,7 @@ describe("EasyAuction", async () => {
         ),
       ).to.changeTokenBalances(biddingToken, [user_1], [BigNumber.from(0)]);
     });
-    it.only("places a new order and checks that tokens were transferred", async () => {
+    it("places a new order and checks that tokens were transferred", async () => {
       const {
         auctioningToken,
         biddingToken,

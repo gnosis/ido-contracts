@@ -63,6 +63,7 @@ describe("AccessManager", async () => {
           auctioningToken,
           biddingToken,
           allowListManager: allowListManager.address,
+          allowListSigner: user_1.address,
         },
       );
 
