@@ -21,6 +21,7 @@ import {
   closeAuction,
   increaseTime,
   claimFromAllOrders,
+  MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE,
 } from "./utilities";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +32,6 @@ import {
 describe("EasyAuction", async () => {
   const [user_1, user_2, user_3] = waffle.provider.getWallets();
   let easyAuction: Contract;
-  const MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE = "0x19a05a7e";
   beforeEach(async () => {
     const EasyAuction = await ethers.getContractFactory("EasyAuction");
 

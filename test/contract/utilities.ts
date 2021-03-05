@@ -3,6 +3,8 @@ import { ethers } from "hardhat";
 
 import { encodeOrder, Order } from "../../src/priceCalculation";
 
+export const MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE = "0x19a05a7e";
+
 export async function closeAuction(
   instance: Contract,
   auctionId: BigNumber,
