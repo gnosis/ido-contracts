@@ -118,6 +118,29 @@ describe("EasyAuction", async () => {
         }),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
+    it("throws if auction end is zero", async () => {
+      // Why this check: if the auction end is zero, then the check at
+      // `atStageSolutionSubmission` would always fail, possibly leading to
+      // locked funds in the contract.
+
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+
+      await expect(
+        createAuctionWithDefaults(easyAuction, {
+          auctioningToken,
+          biddingToken,
+          orderCancellationEndDate: 0,
+          auctionEndDate: 0,
+        }),
+      ).to.be.revertedWith("auction end date cannot be zero");
+    });
     it("initiateAuction stores the parameters correctly", async () => {
       const {
         auctioningToken,

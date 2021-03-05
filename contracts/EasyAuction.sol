@@ -179,6 +179,7 @@ contract EasyAuction is Ownable {
             orderCancellationEndDate <= auctionEndDate,
             "time periods are not configured correctly"
         );
+        require(auctionEndDate != 0, "auction end date cannot be zero");
         auctionCounter++;
         sellOrders[auctionCounter].initializeEmptyList();
 
