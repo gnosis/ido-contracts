@@ -4,20 +4,7 @@ import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 import { task } from "hardhat/config";
 
-import { TypedDataDomain } from "../../src/ts/ethers";
-
-export function domain(
-  chainId: number,
-  verifyingContract: string,
-): TypedDataDomain {
-  return {
-    name: "AccessManager",
-    version: "v1",
-    chainId,
-    verifyingContract,
-  };
-}
-import { getAllowListOffChainManagedContract } from "./utils";
+import { domain, getAllowListOffChainManagedContract } from "./utils";
 
 const generateSignatures: () => void = () => {
   task(
@@ -44,7 +31,7 @@ const generateSignatures: () => void = () => {
       const contractDomain = domain(chainId, allowListContract.address);
 
       const file = fs.readFileSync(taskArgs.fileWithAddress, "utf8");
-      const addresses = file.split(",");
+      const addresses = file.split(",").map((address) => address.trim());
       const signatures = [];
       for (const address of addresses) {
         const auctioneerMessage = hardhatRuntime.ethers.utils.keccak256(

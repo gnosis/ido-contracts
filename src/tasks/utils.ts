@@ -1,5 +1,20 @@
 import { Contract } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+
+import { TypedDataDomain } from "../ts/ethers";
+
+export function domain(
+  chainId: number,
+  verifyingContract: string,
+): TypedDataDomain {
+  return {
+    name: "AccessManager",
+    version: "v1",
+    chainId,
+    verifyingContract,
+  };
+}
+
 export async function getEasyAuctionContract({
   ethers,
   deployments,

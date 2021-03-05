@@ -2,21 +2,8 @@ import { BigNumber, Contract } from "ethers";
 import { ethers } from "hardhat";
 
 import { encodeOrder, Order } from "../../src/priceCalculation";
-import { TypedDataDomain } from "../../src/ts/ethers";
 
 export const MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE = "0x19a05a7e";
-
-export function domain(
-  chainId: number,
-  verifyingContract: string,
-): TypedDataDomain {
-  return {
-    name: "AccessManager",
-    version: "v1",
-    chainId,
-    verifyingContract,
-  };
-}
 
 export async function closeAuction(
   instance: Contract,

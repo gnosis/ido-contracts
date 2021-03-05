@@ -8,9 +8,9 @@ import {
   queueStartElement,
   createTokensAndMintAndApprove,
 } from "../../src/priceCalculation";
+import { domain } from "../../src/tasks/utils";
 
 import { createAuctionWithDefaults } from "./defaultContractInteractions";
-import { domain } from "./utilities";
 
 describe("AccessManager - integration tests", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();
