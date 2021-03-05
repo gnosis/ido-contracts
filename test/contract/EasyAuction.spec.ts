@@ -108,12 +108,13 @@ describe("EasyAuction", async () => {
         hre,
       );
 
+      const now = (await ethers.provider.getBlock("latest")).timestamp;
       await expect(
         createAuctionWithDefaults(easyAuction, {
           auctioningToken,
           biddingToken,
-          orderCancelationPeriodDuration: 60 * 60 + 1,
-          duration: 60 * 60,
+          orderCancellationEndDate: now + 60 * 60 + 1,
+          auctionEndDate: now + 60 * 60,
         }),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
@@ -127,26 +128,35 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const timestampForMining = 2000000000;
-      ethers.provider.send("evm_setNextBlockTimestamp", [timestampForMining]);
+      const now = (await ethers.provider.getBlock("latest")).timestamp;
+      const orderCancellationEndDate = now + 42;
+      const auctionEndDate = now + 1337;
+      const initialAuctionOrder = {
+        sellAmount: ethers.utils.parseEther("1"),
+        buyAmount: ethers.utils.parseEther("1"),
+        userId: BigNumber.from(1),
+      };
       const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
           biddingToken,
+          auctionedSellAmount: initialAuctionOrder.sellAmount,
+          minBuyAmount: initialAuctionOrder.buyAmount,
+          orderCancellationEndDate,
+          auctionEndDate,
         },
       );
       const auctionData = await easyAuction.auctionData(auctionId);
       expect(auctionData.auctioningToken).to.equal(auctioningToken.address);
       expect(auctionData.biddingToken).to.equal(biddingToken.address);
       expect(auctionData.initialAuctionOrder).to.equal(
-        encodeOrder({
-          userId: BigNumber.from(1),
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1"),
-        }),
+        encodeOrder(initialAuctionOrder),
       );
-      expect(auctionData.auctionEndDate).to.be.equal(timestampForMining + 3600);
+      expect(auctionData.auctionEndDate).to.be.equal(auctionEndDate);
+      expect(auctionData.orderCancellationEndDate).to.be.equal(
+        orderCancellationEndDate,
+      );
       await expect(auctionData.clearingPriceOrder).to.equal(
         encodeOrder({
           userId: BigNumber.from(0),
@@ -2793,6 +2803,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
+      const now = (await ethers.provider.getBlock("latest")).timestamp;
       const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
@@ -2800,8 +2811,8 @@ describe("EasyAuction", async () => {
           biddingToken,
           auctionedSellAmount: initialAuctionOrder.sellAmount,
           minBuyAmount: initialAuctionOrder.buyAmount,
-          orderCancelationPeriodDuration: 60 * 60,
-          duration: 60 * 60 * 60,
+          orderCancellationEndDate: now + 60 * 60,
+          auctionEndDate: now + 60 * 60 * 60,
         },
       );
       await placeOrders(easyAuction, sellOrders, auctionId, hre);

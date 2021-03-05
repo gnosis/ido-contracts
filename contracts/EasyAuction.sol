@@ -151,8 +151,8 @@ contract EasyAuction is Ownable {
     function initiateAuction(
         IERC20 _auctioningToken,
         IERC20 _biddingToken,
-        uint256 orderCancelationPeriodDuration,
-        uint256 duration,
+        uint256 orderCancellationEndDate,
+        uint256 auctionEndDate,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
@@ -176,15 +176,12 @@ contract EasyAuction is Ownable {
             "minimumBiddingAmountPerOrder is not allowed to be zero"
         );
         require(
-            orderCancelationPeriodDuration <= duration,
+            orderCancellationEndDate <= auctionEndDate,
             "time periods are not configured correctly"
         );
         auctionCounter++;
         sellOrders[auctionCounter].initializeEmptyList();
 
-        uint256 orderCancellationEndDate =
-            block.timestamp + orderCancelationPeriodDuration;
-        uint256 auctionEndDate = block.timestamp + duration;
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,

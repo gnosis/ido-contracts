@@ -3,8 +3,8 @@ import { BigNumberish, BytesLike, Contract } from "ethers";
 export interface InitiateAuctionInput {
   auctioningToken: Contract;
   biddingToken: Contract;
-  orderCancelationPeriodDuration: BigNumberish;
-  duration: BigNumberish;
+  orderCancellationEndDate: BigNumberish;
+  auctionEndDate: BigNumberish;
   auctionedSellAmount: BigNumberish;
   minBuyAmount: BigNumberish;
   minimumBiddingAmountPerOrder: BigNumberish;
