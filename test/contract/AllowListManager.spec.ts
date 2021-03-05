@@ -51,6 +51,10 @@ describe("AccessManager - integration tests", async () => {
           auctioningToken,
           biddingToken,
           allowListManager: allowListManager.address,
+          allowListData: ethers.utils.defaultAbiCoder.encode(
+            ["address"],
+            [user_1.address],
+          ),
         },
       );
 
@@ -119,6 +123,10 @@ describe("AccessManager - integration tests", async () => {
           auctioningToken,
           biddingToken,
           allowListManager: allowListManager.address,
+          allowListData: ethers.utils.defaultAbiCoder.encode(
+            ["address"],
+            [user_1.address],
+          ),
         },
       );
 
@@ -134,7 +142,7 @@ describe("AccessManager - integration tests", async () => {
           ],
         ),
       );
-      // Signature will come from a wrong user: user_2 != owner of allowListManger;
+      // Signature will come from a wrong user: user_2 != allowListSigner;
       const auctioneerSignature = await user_2.signMessage(
         ethers.utils.arrayify(auctioneerMessage),
       );
@@ -147,13 +155,15 @@ describe("AccessManager - integration tests", async () => {
       const sellAmount = ethers.utils.parseEther("1").add(1);
       const buyAmount = ethers.utils.parseEther("1");
       await expect(
-        easyAuction.placeSellOrders(
-          auctionId,
-          [buyAmount, buyAmount],
-          [sellAmount, sellAmount.add(1)],
-          [queueStartElement, queueStartElement],
-          auctioneerSignatureEncoded,
-        ),
+        easyAuction
+          .connect(user_2)
+          .placeSellOrders(
+            auctionId,
+            [buyAmount, buyAmount],
+            [sellAmount, sellAmount.add(1)],
+            [queueStartElement, queueStartElement],
+            auctioneerSignatureEncoded,
+          ),
       ).to.be.revertedWith("user not allowed to place order");
     });
   });

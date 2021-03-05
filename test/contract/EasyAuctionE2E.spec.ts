@@ -30,7 +30,6 @@ describe("EasyAuction", async () => {
       auctionedSellAmount: ethers.utils.parseEther("1000"),
       minBuyAmount: ethers.utils.parseEther("1000"),
     });
-
     for (let i = 2; i < nrTests; i++) {
       const sellOrder = [
         {

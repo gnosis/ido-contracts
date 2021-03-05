@@ -1,11 +1,11 @@
 pragma solidity >=0.6.8;
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/AllowListVerifier.sol";
+import "../EasyAuction.sol";
 
 // Idea was first mentioned in the blog:
 // https://medium.com/@PhABC/off-chain-whitelist-with-on-chain-verification-for-ethereum-smart-contracts-1563ca4b8f11
 
-contract AllowListOffChainManaged is Ownable {
+contract AllowListOffChainManaged {
     /// @dev The EIP-712 domain type hash used for computing the domain
     /// separator.
     bytes32 private constant DOMAIN_TYPE_HASH =
@@ -26,7 +26,7 @@ contract AllowListOffChainManaged is Ownable {
     /// GPv2 contracts.
     bytes32 public immutable domainSeparator;
 
-    constructor() public Ownable() {
+    constructor() public {
         // NOTE: Currently, the only way to get the chain ID in solidity is
         // using assembly.
         uint256 chainId;
@@ -65,7 +65,9 @@ contract AllowListOffChainManaged is Ownable {
                 r,
                 s
             );
-        if (owner() == signer) {
+        bytes memory allowListData =
+            EasyAuction(msg.sender).auctionAccessData(auctionId);
+        if (abi.decode(allowListData, (address)) == signer) {
             return AllowListVerifierHelper.MAGICVALUE;
         } else {
             return bytes4(0);

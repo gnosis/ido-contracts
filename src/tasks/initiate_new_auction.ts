@@ -59,6 +59,12 @@ const initiateAuction: () => void = () => {
       "0x0000000000000000000000000000000000000000",
       types.string,
     )
+    .addOptionalParam(
+      "allowListData",
+      "provide data that is needed for the allowListManager",
+      "0x",
+      types.string,
+    )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
       console.log("Using the account:", caller.address);
@@ -149,6 +155,7 @@ const initiateAuction: () => void = () => {
           minFundingThresholdInAtoms,
           taskArgs.isAtomicClosureAllowed,
           taskArgs.allowListManager,
+          taskArgs.allowListData,
         );
       const txResult = await tx.wait();
       const auctionId = txResult.events

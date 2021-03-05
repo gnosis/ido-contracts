@@ -85,7 +85,8 @@ contract EasyAuction is Ownable {
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold,
-        address allowListManager
+        address allowListContract,
+        bytes allowListData
     );
     event AuctionCleared(
         uint256 indexed auctionId,
@@ -114,6 +115,7 @@ contract EasyAuction is Ownable {
     mapping(uint256 => IterableOrderedOrderSet.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
     mapping(uint256 => address) public auctionAccessManager;
+    mapping(uint256 => bytes) public auctionAccessData;
 
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
@@ -156,7 +158,8 @@ contract EasyAuction is Ownable {
         uint256 minimumBiddingAmountPerOrder,
         uint256 minFundingThreshold,
         bool isAtomicClosureAllowed,
-        address allowListManager
+        address accessManagerContract,
+        bytes memory accessManagerContractData
     ) public returns (uint256) {
         // withdraws sellAmount + fees
         _auctioningToken.safeTransferFrom(
@@ -202,7 +205,8 @@ contract EasyAuction is Ownable {
             feeNumerator,
             minFundingThreshold
         );
-        auctionAccessManager[auctionCounter] = allowListManager;
+        auctionAccessManager[auctionCounter] = accessManagerContract;
+        auctionAccessData[auctionCounter] = accessManagerContractData;
         emit NewAuction(
             auctionCounter,
             _auctioningToken,
@@ -213,7 +217,8 @@ contract EasyAuction is Ownable {
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
             minFundingThreshold,
-            allowListManager
+            accessManagerContract,
+            accessManagerContractData
         );
         return auctionCounter;
     }
@@ -525,6 +530,7 @@ contract EasyAuction is Ownable {
         );
         // Gas refunds
         auctionAccessManager[auctionId] = address(0);
+        delete auctionAccessData[auctionId];
         auctionData[auctionId].initialAuctionOrder = bytes32(0);
         auctionData[auctionId].interimOrder = bytes32(0);
         auctionData[auctionId].interimSumBidAmount = uint256(0);

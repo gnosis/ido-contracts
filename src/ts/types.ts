@@ -11,4 +11,5 @@ export interface InitiateAuctionInput {
   minFundingThreshold: BigNumberish;
   isAtomicClosureAllowed: boolean;
   allowListManager: BytesLike;
+  allowListData: BytesLike;
 }

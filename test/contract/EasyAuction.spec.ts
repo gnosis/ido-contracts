@@ -60,6 +60,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith(
         "minimumBiddingAmountPerOrder is not allowed to be zero",
@@ -87,6 +88,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith("cannot auction zero tokens");
     });
@@ -112,6 +114,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith("tokens cannot be auctioned for free");
     });
@@ -137,6 +140,7 @@ describe("EasyAuction", async () => {
           0,
           false,
           "0x0000000000000000000000000000000000000000",
+          "0x",
         ),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
@@ -295,7 +299,7 @@ describe("EasyAuction", async () => {
       );
       const auctionId: BigNumber = await sendTxAndGetReturnValue(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address)",
+        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
         auctioningToken.address,
         biddingToken.address,
         60 * 60,
@@ -306,6 +310,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       await expect(
         easyAuction.placeSellOrders(
@@ -887,6 +892,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
@@ -938,6 +944,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
@@ -1000,6 +1007,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
@@ -1058,6 +1066,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
@@ -1119,6 +1128,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
@@ -1173,6 +1183,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
@@ -1218,6 +1229,7 @@ describe("EasyAuction", async () => {
         0,
         false,
         "0x0000000000000000000000000000000000000000",
+        "0x",
       );
       const auctionId = BigNumber.from(1);
 
