@@ -30,15 +30,15 @@ const initiateAuction: () => void = () => {
       types.string,
     )
     .addOptionalParam(
-      "orderCancellationPeriod",
-      "Describes how long the auction should allow to cancel orders in seconds",
-      "0",
+      "orderCancellationEndDate",
+      "The timestamp (in seconds) until which orders can be canceled",
+      undefined,
       types.string,
     )
     .addOptionalParam(
-      "duration",
-      "Describes how long the auction should last in seconds",
-      "360000",
+      "auctionEndDate",
+      "The timestamp (in seconds) marking the end of the auction",
+      undefined,
       types.string,
     )
     .addOptionalParam(
@@ -142,13 +142,14 @@ const initiateAuction: () => void = () => {
       }
 
       console.log("Starting Auction:");
+      const now = Math.floor(Date.now() / 1000);
       const tx = await easyAuction
         .connect(caller)
         .initiateAuction(
           auctioningToken.address,
           biddingToken.address,
-          taskArgs.orderCancellationPeriod,
-          taskArgs.duration,
+          taskArgs.orderCancellationEndDate ?? 0,
+          taskArgs.auctionEndDate ?? now + 360000,
           sellAmountsInAtoms,
           minBuyAmountInAtoms,
           minParticipantsBuyAmount,
