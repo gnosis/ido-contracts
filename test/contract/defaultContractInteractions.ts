@@ -5,18 +5,17 @@ import { InitiateAuctionInput } from "../../src/ts/types";
 
 import { sendTxAndGetReturnValue } from "./utilities";
 
-export async function createAuctionWithDefaults(
-  easyAuction: Contract,
-  parameters: Partial<InitiateAuctionInput> &
-    Pick<InitiateAuctionInput, "auctioningToken" | "biddingToken">,
-): Promise<BigNumber> {
-  return sendTxAndGetReturnValue(
-    easyAuction,
-    "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
+type PartialAuctionInput = Partial<InitiateAuctionInput> &
+  Pick<InitiateAuctionInput, "auctioningToken" | "biddingToken">;
+
+function createAuctionInputWithDefaults(
+  parameters: PartialAuctionInput,
+): unknown[] {
+  return [
     parameters.auctioningToken.address,
     parameters.biddingToken.address,
-    parameters.orderCancelationPeriodDuration ?? 60 * 60,
-    parameters.duration ?? 60 * 60,
+    parameters.orderCancelationPeriodDuration ?? 3600,
+    parameters.duration ?? 3600,
     parameters.auctionedSellAmount ?? ethers.utils.parseEther("1"),
     parameters.minBuyAmount ?? ethers.utils.parseEther("1"),
     parameters.minimumBiddingAmountPerOrder ?? 1,
@@ -24,5 +23,25 @@ export async function createAuctionWithDefaults(
     parameters.isAtomicClosureAllowed ?? false,
     parameters.allowListManager ?? "0x0000000000000000000000000000000000000000",
     parameters.allowListData ?? "0x",
+  ];
+}
+
+export async function createAuctionWithDefaults(
+  easyAuction: Contract,
+  parameters: PartialAuctionInput,
+): Promise<unknown> {
+  return easyAuction.initiateAuction(
+    ...(await createAuctionInputWithDefaults(parameters)),
+  );
+}
+
+export async function createAuctionWithDefaultsAndReturnId(
+  easyAuction: Contract,
+  parameters: PartialAuctionInput,
+): Promise<BigNumber> {
+  return sendTxAndGetReturnValue(
+    easyAuction,
+    "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
+    ...(await createAuctionInputWithDefaults(parameters)),
   );
 }
