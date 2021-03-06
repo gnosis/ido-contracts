@@ -15,7 +15,10 @@ import {
   getClearingPriceFromInitialOrder,
 } from "../../src/priceCalculation";
 
-import { createAuctionWithDefaults } from "./defaultContractInteractions";
+import {
+  createAuctionWithDefaults,
+  createAuctionWithDefaultsAndReturnId,
+} from "./defaultContractInteractions";
 import {
   sendTxAndGetReturnValue,
   closeAuction,
@@ -49,19 +52,12 @@ describe("EasyAuction", async () => {
       );
 
       await expect(
-        easyAuction.initiateAuction(
-          auctioningToken.address,
-          biddingToken.address,
-          60 * 60,
-          60 * 60,
-          ethers.utils.parseEther("1"),
-          ethers.utils.parseEther("1"),
-          0,
-          0,
-          false,
-          "0x0000000000000000000000000000000000000000",
-          "0x",
-        ),
+        createAuctionWithDefaults(easyAuction, {
+          auctioningToken,
+          biddingToken,
+          minimumBiddingAmountPerOrder: 0,
+          minFundingThreshold: 0,
+        }),
       ).to.be.revertedWith(
         "minimumBiddingAmountPerOrder is not allowed to be zero",
       );
@@ -77,19 +73,11 @@ describe("EasyAuction", async () => {
       );
 
       await expect(
-        easyAuction.initiateAuction(
-          auctioningToken.address,
-          biddingToken.address,
-          60 * 60,
-          60 * 60,
-          0,
-          ethers.utils.parseEther("1"),
-          1,
-          0,
-          false,
-          "0x0000000000000000000000000000000000000000",
-          "0x",
-        ),
+        createAuctionWithDefaults(easyAuction, {
+          auctioningToken,
+          biddingToken,
+          auctionedSellAmount: 0,
+        }),
       ).to.be.revertedWith("cannot auction zero tokens");
     });
     it("throws if auction is a giveaway", async () => {
@@ -103,19 +91,11 @@ describe("EasyAuction", async () => {
       );
 
       await expect(
-        easyAuction.initiateAuction(
-          auctioningToken.address,
-          biddingToken.address,
-          60 * 60,
-          60 * 60,
-          ethers.utils.parseEther("1"),
-          0,
-          1,
-          0,
-          false,
-          "0x0000000000000000000000000000000000000000",
-          "0x",
-        ),
+        createAuctionWithDefaults(easyAuction, {
+          auctioningToken,
+          biddingToken,
+          minBuyAmount: 0,
+        }),
       ).to.be.revertedWith("tokens cannot be auctioned for free");
     });
     it("throws if auction periods do not make sense", async () => {
@@ -129,19 +109,12 @@ describe("EasyAuction", async () => {
       );
 
       await expect(
-        easyAuction.initiateAuction(
-          auctioningToken.address,
-          biddingToken.address,
-          60 * 60 + 1,
-          60 * 60,
-          ethers.utils.parseEther("1"),
-          ethers.utils.parseEther("1"),
-          1,
-          0,
-          false,
-          "0x0000000000000000000000000000000000000000",
-          "0x",
-        ),
+        createAuctionWithDefaults(easyAuction, {
+          auctioningToken,
+          biddingToken,
+          orderCancelationPeriodDuration: 60 * 60 + 1,
+          duration: 60 * 60,
+        }),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
     it("initiateAuction stores the parameters correctly", async () => {
@@ -156,7 +129,7 @@ describe("EasyAuction", async () => {
 
       const timestampForMining = 2000000000;
       ethers.provider.send("evm_setNextBlockTimestamp", [timestampForMining]);
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -235,7 +208,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -262,7 +235,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -297,20 +270,12 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await sendTxAndGetReturnValue(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
-        "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        ethers.utils.parseEther("1"),
-        ethers.utils.parseEther("1"),
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
+        {
+          auctioningToken,
+          biddingToken,
+        },
       );
       await expect(
         easyAuction.placeSellOrders(
@@ -331,7 +296,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -370,7 +335,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -413,7 +378,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -444,7 +409,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -480,7 +445,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -526,7 +491,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -556,7 +521,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -600,7 +565,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -629,7 +594,7 @@ describe("EasyAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -688,7 +653,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -726,7 +691,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -775,7 +740,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -834,7 +799,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -881,19 +846,13 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
+
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
@@ -933,19 +892,12 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
@@ -996,19 +948,12 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
@@ -1055,19 +1000,12 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
@@ -1117,19 +1055,12 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
@@ -1172,19 +1103,12 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
       const auctionId = BigNumber.from(1);
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
@@ -1218,19 +1142,12 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      await easyAuction.initiateAuction(
-        auctioningToken.address,
-        biddingToken.address,
-        60 * 60,
-        60 * 60,
-        initialAuctionOrder.sellAmount,
-        initialAuctionOrder.buyAmount,
-        1,
-        0,
-        false,
-        "0x0000000000000000000000000000000000000000",
-        "0x",
-      );
+      await createAuctionWithDefaults(easyAuction, {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      });
       const auctionId = BigNumber.from(1);
 
       await closeAuction(easyAuction, auctionId);
@@ -1269,7 +1186,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1315,7 +1232,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1366,7 +1283,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1435,7 +1352,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1513,7 +1430,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1594,7 +1511,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1645,7 +1562,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1703,7 +1620,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1764,7 +1681,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1821,7 +1738,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1872,7 +1789,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1930,7 +1847,7 @@ describe("EasyAuction", async () => {
       await easyAuction
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -1971,7 +1888,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2017,7 +1934,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2075,7 +1992,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2122,7 +2039,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2174,7 +2091,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2244,7 +2161,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2293,7 +2210,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2345,7 +2262,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2391,12 +2308,15 @@ describe("EasyAuction", async () => {
       biddingToken,
     } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
 
-    const auctionId: BigNumber = await createAuctionWithDefaults(easyAuction, {
-      auctioningToken,
-      biddingToken,
-      auctionedSellAmount: initialAuctionOrder.sellAmount,
-      minBuyAmount: initialAuctionOrder.buyAmount,
-    });
+    const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      easyAuction,
+      {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      },
+    );
     await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
     await closeAuction(easyAuction, auctionId);
@@ -2431,12 +2351,15 @@ describe("EasyAuction", async () => {
       biddingToken,
     } = await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
 
-    const auctionId: BigNumber = await createAuctionWithDefaults(easyAuction, {
-      auctioningToken,
-      biddingToken,
-      auctionedSellAmount: initialAuctionOrder.sellAmount,
-      minBuyAmount: initialAuctionOrder.buyAmount,
-    });
+    const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      easyAuction,
+      {
+        auctioningToken,
+        biddingToken,
+        auctionedSellAmount: initialAuctionOrder.sellAmount,
+        minBuyAmount: initialAuctionOrder.buyAmount,
+      },
+    );
     await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
     await closeAuction(easyAuction, auctionId);
@@ -2492,7 +2415,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2549,7 +2472,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2601,7 +2524,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2655,7 +2578,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2709,7 +2632,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2771,7 +2694,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2827,7 +2750,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2870,13 +2793,14 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
           biddingToken,
           auctionedSellAmount: initialAuctionOrder.sellAmount,
           minBuyAmount: initialAuctionOrder.buyAmount,
+          orderCancelationPeriodDuration: 60 * 60,
           duration: 60 * 60 * 60,
         },
       );
@@ -2917,7 +2841,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2959,7 +2883,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -2999,7 +2923,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -3035,7 +2959,7 @@ describe("EasyAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -3084,7 +3008,7 @@ describe("EasyAuction", async () => {
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -3145,7 +3069,7 @@ describe("EasyAuction", async () => {
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -3204,7 +3128,7 @@ describe("EasyAuction", async () => {
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
 
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,

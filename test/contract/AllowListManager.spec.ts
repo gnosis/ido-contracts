@@ -10,7 +10,7 @@ import {
 } from "../../src/priceCalculation";
 import { domain } from "../../src/tasks/utils";
 
-import { createAuctionWithDefaults } from "./defaultContractInteractions";
+import { createAuctionWithDefaultsAndReturnId } from "./defaultContractInteractions";
 
 describe("AccessManager - integration tests", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();
@@ -45,7 +45,7 @@ describe("AccessManager - integration tests", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
@@ -117,7 +117,7 @@ describe("AccessManager - integration tests", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaults(
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
