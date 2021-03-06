@@ -8,14 +8,15 @@ import { sendTxAndGetReturnValue } from "./utilities";
 type PartialAuctionInput = Partial<InitiateAuctionInput> &
   Pick<InitiateAuctionInput, "auctioningToken" | "biddingToken">;
 
-function createAuctionInputWithDefaults(
+async function createAuctionInputWithDefaults(
   parameters: PartialAuctionInput,
-): unknown[] {
+): Promise<unknown[]> {
+  const now = (await ethers.provider.getBlock("latest")).timestamp;
   return [
     parameters.auctioningToken.address,
     parameters.biddingToken.address,
-    parameters.orderCancelationPeriodDuration ?? 3600,
-    parameters.duration ?? 3600,
+    parameters.orderCancellationEndDate ?? now + 3600,
+    parameters.auctionEndDate ?? now + 3600,
     parameters.auctionedSellAmount ?? ethers.utils.parseEther("1"),
     parameters.minBuyAmount ?? ethers.utils.parseEther("1"),
     parameters.minimumBiddingAmountPerOrder ?? 1,
