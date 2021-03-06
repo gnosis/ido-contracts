@@ -1,7 +1,7 @@
 /// This file does not represent extensive unit tests, but rather just demonstrates an example
 import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
-import hre, { ethers, waffle } from "hardhat";
+import hre, { artifacts, ethers, waffle } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
 
 import {
@@ -11,6 +11,9 @@ import {
 import { domain } from "../../src/tasks/utils";
 
 import { createAuctionWithDefaultsAndReturnId } from "./defaultContractInteractions";
+import { MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE } from "./utilities";
+
+import { deployMockContract } from "ethereum-waffle";
 
 describe("AccessManager - integration tests", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();
@@ -27,13 +30,6 @@ describe("AccessManager - integration tests", async () => {
     allowListManager = await AllowListManger.deploy();
     const { chainId } = await ethers.provider.getNetwork();
     testDomain = domain(chainId, allowListManager.address);
-  });
-  describe("domainSeparator", () => {
-    it("should have an EIP-712 domain separator", async () => {
-      expect(await allowListManager.domainSeparator()).to.equal(
-        ethers.utils._TypedDataEncoder.hashDomain(testDomain),
-      );
-    });
   });
   describe("AccessManager - placing order in easyAuction with auctioneer signature", async () => {
     it("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
@@ -165,6 +161,209 @@ describe("AccessManager - integration tests", async () => {
             auctioneerSignatureEncoded,
           ),
       ).to.be.revertedWith("user not allowed to place order");
+    });
+  });
+});
+
+describe("AccessManager - unit tests", async () => {
+  const [user_1, user_2] = waffle.provider.getWallets();
+  let allowListManager: Contract;
+  let testDomain: any;
+  beforeEach(async () => {
+    const AllowListManger = await ethers.getContractFactory(
+      "AllowListOffChainManaged",
+    );
+    allowListManager = await AllowListManger.deploy();
+    const { chainId } = await ethers.provider.getNetwork();
+    testDomain = domain(chainId, allowListManager.address);
+  });
+  describe("domainSeparator", () => {
+    it("should have an EIP-712 domain separator", async () => {
+      expect(await allowListManager.domainSeparator()).to.equal(
+        ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+      );
+    });
+  });
+  describe("AccessManager", () => {
+    it("should return 0, if auctionId is incorrect", async () => {
+      const signer = user_1;
+      const easyAuction = await artifacts.readArtifact("EasyAuction");
+      const mockContract = await deployMockContract(user_1, easyAuction.abi);
+      await mockContract.mock.auctionAccessData.returns(
+        ethers.utils.defaultAbiCoder.encode(["address"], [signer.address]),
+      );
+      const auctionId = 1;
+      const wrongAuctionId = 2;
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+            user_2.address,
+            wrongAuctionId,
+          ],
+        ),
+      );
+      const auctioneerSignature = await signer.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v, sig.r, sig.s],
+      );
+      expect(
+        await allowListManager.isAllowedBy(
+          user_2.address,
+          auctionId,
+          mockContract.address,
+          auctioneerSignatureEncoded,
+        ),
+      ).to.equal("0x00000000");
+    });
+    it("should return 0, if allowListSigner is incorrect", async () => {
+      const easyAuction = await artifacts.readArtifact("EasyAuction");
+      const signer = user_2;
+      const mockContract = await deployMockContract(user_1, easyAuction.abi);
+      await mockContract.mock.auctionAccessData.returns(
+        ethers.utils.defaultAbiCoder.encode(["address"], [signer.address]),
+      );
+      const auctionId = 1;
+      const wrongSigner = user_1;
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+            user_2.address,
+            auctionId,
+          ],
+        ),
+      );
+      const auctioneerSignature = await wrongSigner.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v, sig.r, sig.s],
+      );
+      expect(
+        await allowListManager.isAllowedBy(
+          user_2.address,
+          auctionId,
+          mockContract.address,
+          auctioneerSignatureEncoded,
+        ),
+      ).to.equal("0x00000000");
+    });
+    it("should return 0, if domain separator is incorrect", async () => {
+      const signer = user_2;
+      const easyAuction = await artifacts.readArtifact("EasyAuction");
+      const mockContract = await deployMockContract(user_1, easyAuction.abi);
+      await mockContract.mock.auctionAccessData.returns(
+        ethers.utils.defaultAbiCoder.encode(["address"], [signer.address]),
+      );
+      const auctionId = 1;
+      const wrongSigner = user_1;
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(
+              domain(0, allowListManager.address),
+            ),
+            user_2.address,
+            auctionId,
+          ],
+        ),
+      );
+      const auctioneerSignature = await wrongSigner.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v, sig.r, sig.s],
+      );
+      expect(
+        await allowListManager.isAllowedBy(
+          user_2.address,
+          auctionId,
+          mockContract.address,
+          auctioneerSignatureEncoded,
+        ),
+      ).to.equal("0x00000000");
+    });
+    it("should return 0, if signature is incorrect", async () => {
+      const signer = user_2;
+      const easyAuction = await artifacts.readArtifact("EasyAuction");
+      const mockContract = await deployMockContract(user_1, easyAuction.abi);
+      await mockContract.mock.auctionAccessData.returns(
+        ethers.utils.defaultAbiCoder.encode(["address"], [signer.address]),
+      );
+      const auctionId = 1;
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+            user_2.address,
+            auctionId,
+          ],
+        ),
+      );
+      const auctioneerSignature = await signer.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v + 1, sig.r, sig.s], // < error in signature
+      );
+      expect(
+        await allowListManager.isAllowedBy(
+          user_2.address,
+          auctionId,
+          mockContract.address,
+          auctioneerSignatureEncoded,
+        ),
+      ).to.equal("0x00000000");
+    });
+    it("should return magic value, if everything is valid", async () => {
+      const signer = user_2;
+      const easyAuction = await artifacts.readArtifact("EasyAuction");
+      const mockContract = await deployMockContract(user_1, easyAuction.abi);
+      await mockContract.mock.auctionAccessData.returns(
+        ethers.utils.defaultAbiCoder.encode(["address"], [signer.address]),
+      );
+      const auctionId = 1;
+      const auctioneerMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "uint256"],
+          [
+            ethers.utils._TypedDataEncoder.hashDomain(testDomain),
+            user_2.address,
+            auctionId,
+          ],
+        ),
+      );
+      const auctioneerSignature = await signer.signMessage(
+        ethers.utils.arrayify(auctioneerMessage),
+      );
+      const sig = ethers.utils.splitSignature(auctioneerSignature);
+      const auctioneerSignatureEncoded = ethers.utils.defaultAbiCoder.encode(
+        ["uint8", "bytes32", "bytes32"],
+        [sig.v, sig.r, sig.s],
+      );
+      expect(
+        await allowListManager.isAllowedBy(
+          user_2.address,
+          auctionId,
+          mockContract.address,
+          auctioneerSignatureEncoded,
+        ),
+      ).to.equal(MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE);
     });
   });
 });
