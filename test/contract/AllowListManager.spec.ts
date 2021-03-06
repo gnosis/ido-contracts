@@ -1,5 +1,6 @@
 /// This file does not represent extensive unit tests, but rather just demonstrates an example
 import { expect } from "chai";
+import { deployMockContract } from "ethereum-waffle";
 import { Contract, BigNumber } from "ethers";
 import hre, { artifacts, ethers, waffle } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
@@ -12,8 +13,6 @@ import { domain } from "../../src/tasks/utils";
 
 import { createAuctionWithDefaultsAndReturnId } from "./defaultContractInteractions";
 import { MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE } from "./utilities";
-
-import { deployMockContract } from "ethereum-waffle";
 
 describe("AccessManager - integration tests", async () => {
   const [user_1, user_2] = waffle.provider.getWallets();
