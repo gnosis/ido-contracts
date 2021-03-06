@@ -242,7 +242,7 @@ contract EasyAuction is Ownable {
             );
     }
 
-    function placeSellOrdersOnBehalve(
+    function placeSellOrdersOnBehalf(
         uint256 auctionId,
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
