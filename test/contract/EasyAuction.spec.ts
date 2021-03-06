@@ -118,9 +118,9 @@ describe("EasyAuction", async () => {
         }),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
-    it("throws if auction end is zero", async () => {
-      // Why this check: if the auction end is zero, then the check at
-      // `atStageSolutionSubmission` would always fail, possibly leading to
+    it("throws if auction end is zero or in the past", async () => {
+      // Important: if the auction end is zero, then the check at
+      // `atStageSolutionSubmission` would always fail, leading to
       // locked funds in the contract.
 
       const {
@@ -139,7 +139,7 @@ describe("EasyAuction", async () => {
           orderCancellationEndDate: 0,
           auctionEndDate: 0,
         }),
-      ).to.be.revertedWith("auction end date cannot be zero");
+      ).to.be.revertedWith("auction end date must be in the future");
     });
     it("initiateAuction stores the parameters correctly", async () => {
       const {
