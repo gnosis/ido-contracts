@@ -56,21 +56,18 @@ const generateSignatures: () => void = () => {
           ["uint8", "bytes32", "bytes32"],
           [sig.v, sig.r, sig.s],
         );
-        signatures.push(
-          JSON.stringify({
-            address: address,
-            signature: auctioneerSignatureEncoded,
-          }),
-        );
+        signatures.push({
+          address: address,
+          signature: auctioneerSignatureEncoded,
+        });
       }
-      console.log(
-        JSON.stringify({
-          auctionId: taskArgs.auctionId,
-          chainId: chainId,
-          allowListContract: allowListContract.address,
-          signatures: signatures,
-        }),
-      );
+      const json = JSON.stringify({
+        auctionId: Number(taskArgs.auctionId),
+        chainId: chainId,
+        allowListContract: allowListContract.address,
+        signatures: signatures,
+      });
+      fs.writeFileSync("signatures.json", json, "utf8");
     });
 };
 export { generateSignatures };
