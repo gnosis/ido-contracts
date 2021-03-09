@@ -2,7 +2,8 @@ import fs from "fs";
 
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
-import { task } from "hardhat/config";
+import axios from "axios";
+import { task, types } from "hardhat/config";
 
 import { domain, getAllowListOffChainManagedContract } from "./utils";
 
@@ -15,6 +16,12 @@ const generateSignatures: () => void = () => {
     .addParam(
       "fileWithAddress",
       "File with comma separated addresses that should be allow-listed",
+    )
+    .addOptionalParam(
+      "postToAPI",
+      "File with comma separated addresses that should be allow-listed",
+      "false",
+      types.boolean,
     )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
@@ -57,7 +64,7 @@ const generateSignatures: () => void = () => {
           [sig.v, sig.r, sig.s],
         );
         signatures.push({
-          address: address,
+          user: address,
           signature: auctioneerSignatureEncoded,
         });
       }
@@ -68,6 +75,18 @@ const generateSignatures: () => void = () => {
         signatures: signatures,
       });
       fs.writeFileSync("signatures.json", json, "utf8");
+      if (taskArgs.postToAPI) {
+        const apiResult = await axios.post(
+          "http://127.0.0.1:8080/api/v1/provide_signature",
+          json,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        console.log("Api returned: ", apiResult);
+      }
     });
 };
 export { generateSignatures };
