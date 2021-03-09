@@ -81,6 +81,7 @@ contract EasyAuction is Ownable {
         IERC20 indexed _biddingToken,
         uint256 orderCancellationEndDate,
         uint256 auctionEndDate,
+        uint64 userId,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
@@ -183,16 +184,16 @@ contract EasyAuction is Ownable {
             auctionEndDate > block.timestamp,
             "auction end date must be in the future"
         );
-        auctionCounter++;
+        auctionCounter = auctionCounter.add(1);
         sellOrders[auctionCounter].initializeEmptyList();
-
+        uint64 userId = getUserId(msg.sender);
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,
             orderCancellationEndDate,
             auctionEndDate,
             IterableOrderedOrderSet.encodeOrder(
-                getUserId(msg.sender),
+                userId,
                 _minBuyAmount,
                 _auctionedSellAmount
             ),
@@ -214,6 +215,7 @@ contract EasyAuction is Ownable {
             _biddingToken,
             orderCancellationEndDate,
             auctionEndDate,
+            userId,
             _auctionedSellAmount,
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
