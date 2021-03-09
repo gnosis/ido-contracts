@@ -52,7 +52,14 @@ export default {
     sources: "contracts",
   },
   solidity: {
-    version: "0.6.12",
+    compilers: [
+      {
+        version: "0.5.5",
+      },
+      {
+        version: "0.6.12",
+      },
+    ],
     settings: {
       optimizer: {
         enabled: true,
