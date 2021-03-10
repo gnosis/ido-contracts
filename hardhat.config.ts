@@ -54,6 +54,7 @@ export default {
   solidity: {
     compilers: [
       {
+        // used to compile WETH9.sol
         version: "0.5.5",
       },
       {

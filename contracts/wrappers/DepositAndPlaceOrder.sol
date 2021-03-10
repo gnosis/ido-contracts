@@ -4,13 +4,18 @@ import "../EasyAuction.sol";
 import "../interfaces/IWETH.sol";
 
 contract DepositAndPlaceOrder {
-    constructor(address easyAuctionAddress, address nativeTokenWrapper) public {
-        IERC20(nativeTokenWrapper).approve(easyAuctionAddress, uint256(-1));
+    EasyAuction public immutable easyAuction;
+    IWETH public immutable nativeTokenWrapper;
+
+    constructor(address easyAuctionAddress, address _nativeTokenWrapper)
+        public
+    {
+        nativeTokenWrapper = IWETH(_nativeTokenWrapper);
+        easyAuction = EasyAuction(easyAuctionAddress);
+        IERC20(_nativeTokenWrapper).approve(easyAuctionAddress, uint256(-1));
     }
 
     function depositAndPlaceOrder(
-        address easyAuctionAddress,
-        address nativeTokenWrapper,
         uint256 auctionId,
         uint96[] memory _minBuyAmounts,
         bytes32[] memory _prevSellOrders,
@@ -18,10 +23,10 @@ contract DepositAndPlaceOrder {
     ) external payable returns (uint64 userId) {
         uint96[] memory sellAmounts = new uint96[](1);
         require(msg.value < 2**96, "too much value sent");
-        IWETH(nativeTokenWrapper).deposit.value(msg.value)();
+        nativeTokenWrapper.deposit{value: msg.value}();
         sellAmounts[0] = uint96(msg.value);
         return
-            EasyAuction(easyAuctionAddress).placeSellOrdersOnBehalf(
+            easyAuction.placeSellOrdersOnBehalf(
                 auctionId,
                 _minBuyAmounts,
                 sellAmounts,

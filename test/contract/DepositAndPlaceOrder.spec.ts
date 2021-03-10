@@ -39,14 +39,11 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
         hre,
       );
       const biddingToken = weth9;
-      const now = (await ethers.provider.getBlock("latest")).timestamp;
       const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
           biddingToken,
-          orderCancellationEndDate: now + 3600,
-          auctionEndDate: now + 3600,
         },
       );
 
@@ -55,8 +52,6 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
       await depositAndPlaceOrder
         .connect(user_2)
         .depositAndPlaceOrder(
-          easyAuction.address,
-          weth9.address,
           auctionId,
           [BigNumber.from(10).pow(15)],
           [queueStartElement],
@@ -67,6 +62,9 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
       expect(
         await biddingToken.connect(user_2).balanceOf(easyAuction.address),
       ).to.equal(biddingAmount);
+      const balanceBeforeOrderPlacementOfUser2 = await biddingToken.balanceOf(
+        user_2.address,
+      );
       await expect(
         easyAuction.connect(user_2).cancelSellOrders(auctionId, [
           encodeOrder({
@@ -78,6 +76,9 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
       )
         .to.emit(biddingToken, "Transfer")
         .withArgs(easyAuction.address, user_2.address, biddingAmount);
+      expect(await biddingToken.balanceOf(user_2.address)).to.equal(
+        balanceBeforeOrderPlacementOfUser2.add(biddingAmount),
+      );
     });
     it("unit test: throws, if sellAmount is too big", async () => {
       const { auctioningToken } = await createTokensAndMintAndApprove(
@@ -86,14 +87,11 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
         hre,
       );
       const biddingToken = weth9;
-      const now = (await ethers.provider.getBlock("latest")).timestamp;
       const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
           auctioningToken,
           biddingToken,
-          orderCancellationEndDate: now + 3600,
-          auctionEndDate: now + 3600,
         },
       );
 
@@ -103,8 +101,6 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
         depositAndPlaceOrder
           .connect(user_2)
           .depositAndPlaceOrder(
-            easyAuction.address,
-            weth9.address,
             auctionId,
             [BigNumber.from(10).pow(15)],
             [queueStartElement],
@@ -112,6 +108,48 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
             { value: biddingAmount },
           ),
       ).to.revertedWith("too much value sent");
+    });
+    it("unit test: throws, if nativeToken is not supporting deposit", async () => {
+      const DepositAndPlaceOrder = await ethers.getContractFactory(
+        "DepositAndPlaceOrder",
+      );
+
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+      depositAndPlaceOrder = await DepositAndPlaceOrder.deploy(
+        easyAuction.address,
+        biddingToken.address, //<-- introduces the error
+      );
+      const biddingTokenCorrect = weth9;
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+        easyAuction,
+        {
+          auctioningToken,
+          biddingToken: biddingTokenCorrect,
+        },
+      );
+
+      const biddingAmount = BigNumber.from(10).pow(18);
+
+      await expect(
+        depositAndPlaceOrder
+          .connect(user_2)
+          .depositAndPlaceOrder(
+            auctionId,
+            [BigNumber.from(10).pow(15)],
+            [queueStartElement],
+            "0x",
+            { value: biddingAmount },
+          ),
+      ).to.revertedWith(
+        "function selector was not recognized and there's no fallback function",
+      );
     });
   });
 });
