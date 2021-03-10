@@ -68,6 +68,11 @@ export default {
     },
   },
   networks: {
+    hardhat: {
+      accounts: {
+        accountsBalance: "1000000000000000000000000000000",
+      },
+    },
     mainnet: {
       ...sharedNetworkConfig,
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,

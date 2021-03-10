@@ -1,5 +1,5 @@
 import { deployMockContract } from "@ethereum-waffle/mock-contract";
-import { expect } from "chai";
+import { expect, use } from "chai";
 import { Contract, BigNumber } from "ethers";
 import hre, { artifacts, ethers, waffle } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
@@ -220,6 +220,71 @@ describe("EasyAuction", async () => {
       ).to.equal(1);
     });
   });
+  describe("placeOrdersOnBehalf", async () => {
+    it("places a new order and checks that tokens were transferred", async () => {
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        easyAuction,
+        [user_1, user_2],
+        hre,
+      );
+      const now = (await ethers.provider.getBlock("latest")).timestamp;
+      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+        easyAuction,
+        {
+          auctioningToken,
+          biddingToken,
+          orderCancellationEndDate: now + 3600,
+          auctionEndDate: now + 3600,
+        },
+      );
+
+      const balanceBeforeOrderPlacement = await biddingToken.balanceOf(
+        user_1.address,
+      );
+      const balanceBeforeOrderPlacementOfUser2 = await biddingToken.balanceOf(
+        user_2.address,
+      );
+      const sellAmount = ethers.utils.parseEther("1").add(1);
+      const buyAmount = ethers.utils.parseEther("1");
+
+      await easyAuction
+        .connect(user_1)
+        .placeSellOrdersOnBehalf(
+          auctionId,
+          [buyAmount],
+          [sellAmount],
+          [queueStartElement],
+          "0x",
+          user_2.address,
+        );
+
+      expect(await biddingToken.balanceOf(easyAuction.address)).to.equal(
+        sellAmount,
+      );
+      expect(await biddingToken.balanceOf(user_1.address)).to.equal(
+        balanceBeforeOrderPlacement.sub(sellAmount),
+      );
+      expect(await biddingToken.balanceOf(user_2.address)).to.equal(
+        balanceBeforeOrderPlacementOfUser2,
+      );
+      const userId = BigNumber.from(
+        await easyAuction.callStatic.getUserId(user_2.address),
+      );
+      await easyAuction
+        .connect(user_2)
+        .cancelSellOrders(auctionId, [
+          encodeOrder({ sellAmount, buyAmount, userId }),
+        ]);
+      expect(await biddingToken.balanceOf(easyAuction.address)).to.equal("0");
+      expect(await biddingToken.balanceOf(user_2.address)).to.equal(
+        balanceBeforeOrderPlacementOfUser2.add(sellAmount),
+      );
+    });
+  });
+
   describe("placeOrders", async () => {
     it("one can not place orders, if auction is not yet initiated", async () => {
       await expect(
