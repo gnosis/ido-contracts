@@ -1,5 +1,5 @@
 import { deployMockContract } from "@ethereum-waffle/mock-contract";
-import { expect, use } from "chai";
+import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import hre, { artifacts, ethers, waffle } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
