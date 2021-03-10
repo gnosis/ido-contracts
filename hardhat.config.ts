@@ -52,7 +52,15 @@ export default {
     sources: "contracts",
   },
   solidity: {
-    version: "0.6.12",
+    compilers: [
+      {
+        // used to compile WETH9.sol
+        version: "0.5.5",
+      },
+      {
+        version: "0.6.12",
+      },
+    ],
     settings: {
       optimizer: {
         enabled: true,
@@ -61,6 +69,11 @@ export default {
     },
   },
   networks: {
+    hardhat: {
+      accounts: {
+        accountsBalance: "1000000000000000000000000000000",
+      },
+    },
     mainnet: {
       ...sharedNetworkConfig,
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
