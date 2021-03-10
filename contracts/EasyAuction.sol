@@ -226,11 +226,11 @@ contract EasyAuction is Ownable {
 
     function placeSellOrders(
         uint256 auctionId,
-        uint96[] calldata _minBuyAmounts,
-        uint96[] calldata _sellAmounts,
-        bytes32[] calldata _prevSellOrders,
+        uint96[] memory _minBuyAmounts,
+        uint96[] memory _sellAmounts,
+        bytes32[] memory _prevSellOrders,
         bytes calldata allowListCallData
-    ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
+    ) external atStageOrderPlacement(auctionId) returns (uint64 userId) {
         return
             _placeSellOrders(
                 auctionId,
@@ -249,7 +249,7 @@ contract EasyAuction is Ownable {
         bytes32[] memory _prevSellOrders,
         bytes calldata allowListCallData,
         address orderSubmitter
-    ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
+    ) external atStageOrderPlacement(auctionId) returns (uint64 userId) {
         return
             _placeSellOrders(
                 auctionId,
