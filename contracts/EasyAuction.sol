@@ -104,12 +104,12 @@ contract EasyAuction is Ownable {
         uint256 auctionEndDate;
         bytes32 initialAuctionOrder;
         uint256 minimumBiddingAmountPerOrder;
+        uint256 maximumBiddingAmountPerAccount;
         uint256 interimSumBidAmount;
         bytes32 interimOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
         bool minFundingThresholdNotReached;
-        bool isAtomicClosureAllowed;
         uint256 feeNumerator;
         uint256 minFundingThreshold;
     }
@@ -117,6 +117,7 @@ contract EasyAuction is Ownable {
     mapping(uint256 => AuctionData) public auctionData;
     mapping(uint256 => address) public auctionAccessManager;
     mapping(uint256 => bytes) public auctionAccessData;
+    mapping(uint256 => mapping(address => uint256)) public biddingAmountPerUser;
 
     IdToAddressBiMap.Data private registeredUsers;
     uint64 public numUsers;
@@ -157,8 +158,8 @@ contract EasyAuction is Ownable {
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
+        uint256 maximumBiddingAmountPerAccount,
         uint256 minFundingThreshold,
-        bool isAtomicClosureAllowed,
         address accessManagerContract,
         bytes memory accessManagerContractData
     ) public returns (uint256) {
@@ -198,12 +199,12 @@ contract EasyAuction is Ownable {
                 _auctionedSellAmount
             ),
             minimumBiddingAmountPerOrder,
+            maximumBiddingAmountPerAccount,
             0,
             IterableOrderedOrderSet.QUEUE_START,
             bytes32(0),
             0,
             false,
-            isAtomicClosureAllowed,
             feeNumerator,
             minFundingThreshold
         );
@@ -332,6 +333,18 @@ contract EasyAuction is Ownable {
                 );
             }
         }
+        uint256 maxBiddingAmount =
+            auctionData[auctionId].maximumBiddingAmountPerAccount;
+        if (maxBiddingAmount > 0) {
+            maxBiddingAmount[auctionId][orderSubmitter] = maxBiddingAmount[
+                auctionId
+            ][orderSubmitter]
+                .add(sumOfSellAmounts);
+            require(
+                maxBiddingAmount[auctionId][orderSubmitter] < maxBiddingAmount,
+                "Bids exceed max bidding amount"
+            );
+        }
         auctionData[auctionId].biddingToken.safeTransferFrom(
             msg.sender,
             address(this),
@@ -408,43 +421,6 @@ contract EasyAuction is Ownable {
 
         auctionData[auctionId].interimSumBidAmount = sumBidAmount;
         auctionData[auctionId].interimOrder = iterOrder;
-    }
-
-    function settleAuctionAtomically(
-        uint256 auctionId,
-        uint96[] memory _minBuyAmount,
-        uint96[] memory _sellAmount,
-        bytes32[] memory _prevSellOrder,
-        bytes calldata allowListCallData
-    ) public atStageSolutionSubmission(auctionId) {
-        require(
-            auctionData[auctionId].isAtomicClosureAllowed,
-            "not allowed to settle auction atomically"
-        );
-        require(
-            _minBuyAmount.length == 1 && _sellAmount.length == 1,
-            "Only one order can be placed atomically"
-        );
-        uint64 userId = getUserId(msg.sender);
-        require(
-            auctionData[auctionId].interimOrder.smallerThan(
-                IterableOrderedOrderSet.encodeOrder(
-                    userId,
-                    _minBuyAmount[0],
-                    _sellAmount[0]
-                )
-            ),
-            "precalculateSellAmountSum is already too advanced"
-        );
-        _placeSellOrders(
-            auctionId,
-            _minBuyAmount,
-            _sellAmount,
-            _prevSellOrder,
-            allowListCallData,
-            msg.sender
-        );
-        settleAuction(auctionId);
     }
 
     // @dev function settling the auction and calculating the price
