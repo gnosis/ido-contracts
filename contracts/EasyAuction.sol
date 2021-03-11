@@ -301,47 +301,51 @@ contract EasyAuction is Ownable {
         }
         uint256 sumOfSellAmounts = 0;
         userId = getUserId(orderSubmitter);
-        uint256 minimumBiddingAmountPerOrder =
-            auctionData[auctionId].minimumBiddingAmountPerOrder;
-        for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
-            require(
-                _minBuyAmounts[i] > 0,
-                "_minBuyAmounts must be greater than 0"
-            );
-            // orders should have a minimum bid size in order to limit the gas
-            // required to compute the final price of the auction.
-            require(
-                _sellAmounts[i] > minimumBiddingAmountPerOrder,
-                "order too small"
-            );
-            if (
-                sellOrders[auctionId].insert(
-                    IterableOrderedOrderSet.encodeOrder(
+        {
+            uint256 minimumBiddingAmountPerOrder =
+                auctionData[auctionId].minimumBiddingAmountPerOrder;
+            for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
+                require(
+                    _minBuyAmounts[i] > 0,
+                    "_minBuyAmounts must be greater than 0"
+                );
+                // orders should have a minimum bid size in order to limit the gas
+                // required to compute the final price of the auction.
+                require(
+                    _sellAmounts[i] > minimumBiddingAmountPerOrder,
+                    "order too small"
+                );
+                if (
+                    sellOrders[auctionId].insert(
+                        IterableOrderedOrderSet.encodeOrder(
+                            userId,
+                            _minBuyAmounts[i],
+                            _sellAmounts[i]
+                        ),
+                        _prevSellOrders[i]
+                    )
+                ) {
+                    sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
+                    emit NewSellOrder(
+                        auctionId,
                         userId,
                         _minBuyAmounts[i],
                         _sellAmounts[i]
-                    ),
-                    _prevSellOrders[i]
-                )
-            ) {
-                sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
-                emit NewSellOrder(
-                    auctionId,
-                    userId,
-                    _minBuyAmounts[i],
-                    _sellAmounts[i]
-                );
+                    );
+                }
             }
         }
         uint256 maxBiddingAmount =
             auctionData[auctionId].maximumBiddingAmountPerAccount;
         if (maxBiddingAmount > 0) {
-            maxBiddingAmount[auctionId][orderSubmitter] = maxBiddingAmount[
-                auctionId
-            ][orderSubmitter]
-                .add(sumOfSellAmounts);
+            biddingAmountPerUser[auctionId][
+                orderSubmitter
+            ] = biddingAmountPerUser[auctionId][orderSubmitter].add(
+                sumOfSellAmounts
+            );
             require(
-                maxBiddingAmount[auctionId][orderSubmitter] < maxBiddingAmount,
+                biddingAmountPerUser[auctionId][orderSubmitter] <
+                    maxBiddingAmount,
                 "Bids exceed max bidding amount"
             );
         }
