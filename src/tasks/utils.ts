@@ -43,3 +43,19 @@ export async function getAllowListOffChainManagedContract({
 
   return authenticator;
 }
+
+export async function getDepositAndPlaceOrderContract({
+  ethers,
+  deployments,
+}: HardhatRuntimeEnvironment): Promise<Contract> {
+  const depositAndPlaceOrderDeployment = await deployments.get(
+    "DepositAndPlaceOrder",
+  );
+
+  const authenticator = new Contract(
+    depositAndPlaceOrderDeployment.address,
+    depositAndPlaceOrderDeployment.abi,
+  ).connect(ethers.provider);
+
+  return authenticator;
+}

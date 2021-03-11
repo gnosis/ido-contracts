@@ -6,6 +6,7 @@ export const contractNames = {
   easyAuction: "EasyAuction",
   multiCall: "MultiCall",
   allowListOffChainManaged: "AllowListOffChainManaged",
+  depositAndPlaceOrder: "DepositAndPlaceOrder",
 };
 
 /**
