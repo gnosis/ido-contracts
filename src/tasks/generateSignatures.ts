@@ -90,7 +90,7 @@ const generateSignatures: () => void = () => {
             },
           },
         );
-        console.log("Api returned: ", apiResult);
+        console.log("Api returned: ", apiResult.data);
       }
     });
 };
