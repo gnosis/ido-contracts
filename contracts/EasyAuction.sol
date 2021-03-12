@@ -81,6 +81,7 @@ contract EasyAuction is Ownable {
         IERC20 indexed _biddingToken,
         uint256 orderCancellationEndDate,
         uint256 auctionEndDate,
+        uint64 userId,
         uint96 _auctionedSellAmount,
         uint96 _minBuyAmount,
         uint256 minimumBiddingAmountPerOrder,
@@ -183,16 +184,16 @@ contract EasyAuction is Ownable {
             auctionEndDate > block.timestamp,
             "auction end date must be in the future"
         );
-        auctionCounter++;
+        auctionCounter = auctionCounter.add(1);
         sellOrders[auctionCounter].initializeEmptyList();
-
+        uint64 userId = getUserId(msg.sender);
         auctionData[auctionCounter] = AuctionData(
             _auctioningToken,
             _biddingToken,
             orderCancellationEndDate,
             auctionEndDate,
             IterableOrderedOrderSet.encodeOrder(
-                getUserId(msg.sender),
+                userId,
                 _minBuyAmount,
                 _auctionedSellAmount
             ),
@@ -214,6 +215,7 @@ contract EasyAuction is Ownable {
             _biddingToken,
             orderCancellationEndDate,
             auctionEndDate,
+            userId,
             _auctionedSellAmount,
             _minBuyAmount,
             minimumBiddingAmountPerOrder,
@@ -229,15 +231,35 @@ contract EasyAuction is Ownable {
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders,
-        bytes memory allowListCallData
-    ) public atStageOrderPlacement(auctionId) returns (uint64 userId) {
+        bytes calldata allowListCallData
+    ) external atStageOrderPlacement(auctionId) returns (uint64 userId) {
         return
             _placeSellOrders(
                 auctionId,
                 _minBuyAmounts,
                 _sellAmounts,
                 _prevSellOrders,
-                allowListCallData
+                allowListCallData,
+                msg.sender
+            );
+    }
+
+    function placeSellOrdersOnBehalf(
+        uint256 auctionId,
+        uint96[] memory _minBuyAmounts,
+        uint96[] memory _sellAmounts,
+        bytes32[] memory _prevSellOrders,
+        bytes calldata allowListCallData,
+        address orderSubmitter
+    ) external atStageOrderPlacement(auctionId) returns (uint64 userId) {
+        return
+            _placeSellOrders(
+                auctionId,
+                _minBuyAmounts,
+                _sellAmounts,
+                _prevSellOrders,
+                allowListCallData,
+                orderSubmitter
             );
     }
 
@@ -246,14 +268,15 @@ contract EasyAuction is Ownable {
         uint96[] memory _minBuyAmounts,
         uint96[] memory _sellAmounts,
         bytes32[] memory _prevSellOrders,
-        bytes memory allowListCallData
+        bytes calldata allowListCallData,
+        address orderSubmitter
     ) internal returns (uint64 userId) {
         {
             address allowListManger = auctionAccessManager[auctionId];
             if (allowListManger != address(0)) {
                 require(
                     AllowListVerifier(allowListManger).isAllowed(
-                        msg.sender,
+                        orderSubmitter,
                         auctionId,
                         allowListCallData
                     ) == AllowListVerifierHelper.MAGICVALUE,
@@ -261,25 +284,28 @@ contract EasyAuction is Ownable {
                 );
             }
         }
-        (
-            ,
-            uint96 buyAmountOfInitialAuctionOrder,
-            uint96 sellAmountOfInitialAuctionOrder
-        ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
-
+        {
+            (
+                ,
+                uint96 buyAmountOfInitialAuctionOrder,
+                uint96 sellAmountOfInitialAuctionOrder
+            ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
+            for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
+                require(
+                    _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
+                        sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
+                    "limit price not better than mimimal offer"
+                );
+            }
+        }
         uint256 sumOfSellAmounts = 0;
-        userId = getUserId(msg.sender);
+        userId = getUserId(orderSubmitter);
         uint256 minimumBiddingAmountPerOrder =
             auctionData[auctionId].minimumBiddingAmountPerOrder;
         for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
             require(
                 _minBuyAmounts[i] > 0,
                 "_minBuyAmounts must be greater than 0"
-            );
-            require(
-                _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
-                    sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
-                "limit price not better than mimimal offer"
             );
             // orders should have a minimum bid size in order to limit the gas
             // required to compute the final price of the auction.
@@ -389,7 +415,7 @@ contract EasyAuction is Ownable {
         uint96[] memory _minBuyAmount,
         uint96[] memory _sellAmount,
         bytes32[] memory _prevSellOrder,
-        bytes memory allowListCallData
+        bytes calldata allowListCallData
     ) public atStageSolutionSubmission(auctionId) {
         require(
             auctionData[auctionId].isAtomicClosureAllowed,
@@ -415,7 +441,8 @@ contract EasyAuction is Ownable {
             _minBuyAmount,
             _sellAmount,
             _prevSellOrder,
-            allowListCallData
+            allowListCallData,
+            msg.sender
         );
         settleAuction(auctionId);
     }

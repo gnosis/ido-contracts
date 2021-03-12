@@ -51,6 +51,15 @@ contract AllowListOffChainManaged {
         uint256 auctionId,
         bytes calldata callData
     ) external view returns (bytes4) {
+        return isAllowedBy(user, auctionId, msg.sender, callData);
+    }
+
+    function isAllowedBy(
+        address user,
+        uint256 auctionId,
+        address allower,
+        bytes calldata callData
+    ) public view returns (bytes4) {
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -66,7 +75,7 @@ contract AllowListOffChainManaged {
                 s
             );
         bytes memory allowListData =
-            EasyAuction(msg.sender).auctionAccessData(auctionId);
+            EasyAuction(allower).auctionAccessData(auctionId);
         if (abi.decode(allowListData, (address)) == signer) {
             return AllowListVerifierHelper.MAGICVALUE;
         } else {
