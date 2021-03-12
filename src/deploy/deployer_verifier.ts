@@ -17,7 +17,7 @@ const deployVerifierContract: DeployFunction = async function (
     gasLimit: 8000000,
     args: [],
     log: true,
-    deterministicDeployment: false,
+    deterministicDeployment: true,
   });
 };
 
