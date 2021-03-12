@@ -23,7 +23,6 @@ const deployEasyContract: DeployFunction = async function (
     deterministicDeployment: false,
   });
   const easyAuctionDeployed = await get(easyAuction);
-
   const weth9Address = await getWETH9Address(hre);
 
   await deploy(depositAndPlaceOrder, {
