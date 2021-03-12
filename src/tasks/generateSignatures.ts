@@ -18,7 +18,7 @@ const generateSignatures: () => void = () => {
       "File with comma separated addresses that should be allow-listed",
     )
     .addOptionalParam(
-      "postToAPI",
+      "postToApi",
       "File with comma separated addresses that should be allow-listed",
       "false",
       types.boolean,
@@ -75,9 +75,11 @@ const generateSignatures: () => void = () => {
         signatures: signatures,
       });
       fs.writeFileSync("signatures.json", json, "utf8");
-      if (taskArgs.postToAPI) {
+      if (taskArgs.postToApi) {
+        const networkName = (await hardhatRuntime.ethers.provider.getNetwork())
+          .name;
         const apiResult = await axios.post(
-          "http://127.0.0.1:8080/api/v1/provide_signature",
+          `https://ido-v1-api-${networkName}.dev.gnosisdev.com/api/v1/provide_signature`,
           json,
           {
             headers: {
