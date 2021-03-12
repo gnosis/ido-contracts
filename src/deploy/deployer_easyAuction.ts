@@ -1,7 +1,7 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import weth9Networks from "../../node_modules/canonical-weth/networks.json";
+import { getWETH9Address } from "../tasks/utils";
 import { contractNames } from "../ts/deploy";
 
 const deployEasyContract: DeployFunction = async function (
@@ -23,15 +23,7 @@ const deployEasyContract: DeployFunction = async function (
     deterministicDeployment: false,
   });
   const easyAuctionDeployed = await get(easyAuction);
-  let weth9Address;
-  const chainId = (await hre.ethers.provider.getNetwork()).chainId;
-  if (chainId == 4) {
-    weth9Address = weth9Networks.WETH9["4"]["address"];
-  } else if (chainId == 1) {
-    weth9Address = weth9Networks.WETH9["1"]["address"];
-  } else if (chainId == 100) {
-    weth9Address = "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d";
-  }
+  const weth9Address = getWETH9Address(hre);
 
   await deploy(depositAndPlaceOrder, {
     from: deployer,
