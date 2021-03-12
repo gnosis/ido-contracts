@@ -82,7 +82,7 @@ yarn deploy --network $NETWORK
 Verify on etherscan:
 
 ```
-yarn hardhat verifyContracts --network $NETWORK
+npx hardhat etherscan-verify --license None --network rinkeby
 ```
 
 ### Running scripts
