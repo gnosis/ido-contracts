@@ -76,8 +76,11 @@ const generateSignatures: () => void = () => {
       });
       fs.writeFileSync("signatures.json", json, "utf8");
       if (taskArgs.postToApi) {
-        const networkName = (await hardhatRuntime.ethers.provider.getNetwork())
-          .name;
+        const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
+        let networkName = networkInfo.name;
+        if (networkInfo.chainId == 100) {
+          networkName = "xdai";
+        }
         const apiResult = await axios.post(
           `https://ido-v1-api-${networkName}.dev.gnosisdev.com/api/v1/provide_signature`,
           json,
