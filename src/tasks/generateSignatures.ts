@@ -19,9 +19,7 @@ const generateSignatures: () => void = () => {
     )
     .addOptionalParam(
       "postToApi",
-      "File with comma separated addresses that should be allow-listed",
-      false,
-      types.boolean,
+      "Flag that indicates whether the signatures should be sent directly to the api",
     )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();

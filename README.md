@@ -116,8 +116,10 @@ Signatures for an auction with participation restriction can be created like tha
 export NETWORK='your network'
 export INFURA_KEY=INFURA_KEY_HERE
 export PK=PRIVATE_KEY_FOR_SIGNING
-yarn hardhat generateSignatures --auction-id "Your auctionId" --file-with-address "./your_address_inputs.txt" --post-to-api true  --network $NETWORK
+yarn hardhat generateSignatures --auction-id "Your auctionId" --file-with-address "./your_address_inputs.txt" --network $NETWORK
 ```
+
+The generated signatures can be directly uploaded to the backend by adding the flag `--post-to-api` to the previous command. Uploading signatures allows all authorized users to create orders from the web interface without the extra friction of managing a signature.
 
 ## Audit
 
