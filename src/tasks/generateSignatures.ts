@@ -20,7 +20,7 @@ const generateSignatures: () => void = () => {
     .addOptionalParam(
       "postToApi",
       "File with comma separated addresses that should be allow-listed",
-      "false",
+      false,
       types.boolean,
     )
     .setAction(async (taskArgs, hardhatRuntime) => {
