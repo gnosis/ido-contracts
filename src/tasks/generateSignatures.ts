@@ -2,6 +2,7 @@ import fs from "fs";
 
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
+import axios from "axios";
 import { task } from "hardhat/config";
 
 import { domain, getAllowListOffChainManagedContract } from "./utils";
@@ -15,6 +16,10 @@ const generateSignatures: () => void = () => {
     .addParam(
       "fileWithAddress",
       "File with comma separated addresses that should be allow-listed",
+    )
+    .addOptionalParam(
+      "postToApi",
+      "Flag that indicates whether the signatures should be sent directly to the api",
     )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
@@ -57,7 +62,7 @@ const generateSignatures: () => void = () => {
           [sig.v, sig.r, sig.s],
         );
         signatures.push({
-          address: address,
+          user: address,
           signature: auctioneerSignatureEncoded,
         });
       }
@@ -68,6 +73,23 @@ const generateSignatures: () => void = () => {
         signatures: signatures,
       });
       fs.writeFileSync("signatures.json", json, "utf8");
+      if (taskArgs.postToApi) {
+        const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
+        let networkName = networkInfo.name;
+        if (networkInfo.chainId == 100) {
+          networkName = "xdai";
+        }
+        const apiResult = await axios.post(
+          `https://ido-v1-api-${networkName}.dev.gnosisdev.com/api/v1/provide_signature`,
+          json,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        console.log("Api returned: ", apiResult.data);
+      }
     });
 };
 export { generateSignatures };

@@ -98,6 +98,12 @@ export PK=PRIVATE_KEY_HERE
 yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780140aa0cd5ab" --bidding-token "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa" --sell-amount 0.1 --min-buy-amount 50 --network $NETWORK
 ```
 
+a more complex example is:
+
+```
+yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780140aa0cd5ab" --bidding-token "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea" --sell-amount 0.5 --min-buy-amount 800 --auction-end-date 1619195139 --order-cancellation-end-date 1619195139 --allow-list-manager "0x80b8AcA4689EC911F048c4E0976892cCDE14031E" --allow-list-data "0x000000000000000000000000740a98f8f4fae0986fb3264fe4aacf94ac1ee96f"  --network $NETWORK
+```
+
 ### Generating signatures
 
 Signatures for an auction with participation restriction can be created like that:
@@ -112,6 +118,8 @@ export INFURA_KEY=INFURA_KEY_HERE
 export PK=PRIVATE_KEY_FOR_SIGNING
 yarn hardhat generateSignatures --auction-id "Your auctionId" --file-with-address "./your_address_inputs.txt" --network $NETWORK
 ```
+
+The generated signatures can be directly uploaded to the backend by adding the flag `--post-to-api` to the previous command. Uploading signatures allows all authorized users to create orders from the web interface without the extra friction of managing a signature.
 
 ## Audit
 
