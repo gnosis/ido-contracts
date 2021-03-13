@@ -3,7 +3,7 @@ import fs from "fs";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 import axios from "axios";
-import { task, types } from "hardhat/config";
+import { task } from "hardhat/config";
 
 import { domain, getAllowListOffChainManagedContract } from "./utils";
 
