@@ -116,9 +116,9 @@ Auctions can be settled with the clearAuction script permissionlessly by any acc
 ```
 export NETWORK=<Your Network>
 export GAS_PRICE_GWEI=<Your gas price>
-export INFURA_KEY=INFURA_KEY_HERE
-export MY_ETHERSCAN_API_KEY=ETHERSCAN_API_KEY_HERE
-export PK=PRIVATE_KEY_HERE
+export INFURA_KEY=<Your infura key>
+export MY_ETHERSCAN_API_KEY=<Your etherscan API key>
+export PK=<Your private key>
 yarn hardhat clearAuction --auction-id <Your auction ID> --network $NETWORK
 ```
 
