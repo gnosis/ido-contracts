@@ -103,7 +103,7 @@ yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780
 
 Please look in the hardhat script `/src/tasks/initiate_new_auction` to better understand all parameters.
 
-One more complex example for starting an auction would look like this:
+A more complex example for starting an auction would look like this:
 
 ```
 yarn hardhat initiateAuction --auctioning-token "0xc778417e063141139fce010982780140aa0cd5ab" --bidding-token "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea" --sell-amount 0.5 --min-buy-amount 800 --auction-end-date 1619195139 --order-cancellation-end-date 1619195139 --allow-list-manager "0x80b8AcA4689EC911F048c4E0976892cCDE14031E" --allow-list-data "0x000000000000000000000000740a98f8f4fae0986fb3264fe4aacf94ac1ee96f"  --network $NETWORK
