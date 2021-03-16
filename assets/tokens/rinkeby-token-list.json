@@ -12,7 +12,7 @@
     "trusted"
   ],
   "logoURI": "https://avatars.githubusercontent.com/u/24954468?s=200&v=4",
-  "timestamp": "2021-03-15T11:27:16.709Z",
+  "timestamp": "2021-03-16T17:16:00.000Z",
   "tokens": [
     {
       "name": "Gnosis",
@@ -89,7 +89,7 @@
     {
       "name": "DAI",
       "chainId": 4,
-      "symbol": "WETH",
+      "symbol": "DAI",
       "decimals": 18,
       "address": "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa",
       "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png"
@@ -97,18 +97,10 @@
     {
       "name": "WBTC",
       "chainId": 4,
-      "symbol": "WETH",
+      "symbol": "WBTC",
       "decimals": 18,
       "address": "0x577d296678535e4903d59a4c929b718e1d575e0a",
       "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png"
-    },
-    {
-      "name": "WBTC",
-      "chainId": 4,
-      "symbol": "WETH",
-      "decimals": 18,
-      "address": "0xd0dab4e640d95e9e8a47545598c33e31bdb53c7c",
-      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6810e776880C02933D47DB1b9fc05908e5386b96/logo.png"
     }
   ]
 }
