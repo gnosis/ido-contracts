@@ -3,3 +3,5 @@ build
 env/*
 coverage/*
 coverage.json
+your_address_inputs.txt
+signatures.json
