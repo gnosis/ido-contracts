@@ -129,9 +129,9 @@ Signatures for an auction with participation restriction can be created like tha
 3. Run the following script:
 
 ```
-export NETWORK='your network'
-export INFURA_KEY=INFURA_KEY_HERE
-export PK=PRIVATE_KEY_FOR_SIGNING
+export NETWORK=<Your Network>
+export INFURA_KEY=<Your infura key>
+export PK=<Your private key _for the signing address_. The address for this key should not hold any ETH>
 yarn hardhat generateSignatures --auction-id "Your auctionId" --file-with-address "./your_address_inputs.txt" --network $NETWORK
 ```
 

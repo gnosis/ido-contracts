@@ -17,7 +17,7 @@ const generateSignatures: () => void = () => {
       "fileWithAddress",
       "File with comma separated addresses that should be allow-listed",
     )
-    .addOptionalParam(
+    .addFlag(
       "postToApi",
       "Flag that indicates whether the signatures should be sent directly to the api",
     )
