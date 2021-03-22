@@ -23,6 +23,12 @@ const initiateAuction: () => void = () => {
       "minBuyAmount",
       "The amount of biddingToken to be bought at least for selling sellAmount in atoms",
     )
+    .addParam(
+      "auctionEndDate",
+      "The timestamp (in seconds) marking the end of the auction",
+      undefined,
+      types.string,
+    )
     .addOptionalParam(
       "minFundingThreshold",
       "The minimal funding threshold for executing the settlement. If funding is not reached, everyone will get back their investment",
@@ -32,12 +38,6 @@ const initiateAuction: () => void = () => {
     .addOptionalParam(
       "orderCancellationEndDate",
       "The timestamp (in seconds) until which orders can be canceled",
-      undefined,
-      types.string,
-    )
-    .addOptionalParam(
-      "auctionEndDate",
-      "The timestamp (in seconds) marking the end of the auction",
       undefined,
       types.string,
     )
