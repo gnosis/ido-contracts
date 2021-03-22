@@ -28,67 +28,91 @@ const generateSignatures: () => void = () => {
         caller.address,
         " to generate signatures",
       );
+
+      // Loading dependencies
       const allowListContract = await getAllowListOffChainManagedContract(
         hardhatRuntime,
       );
       const { chainId } = await hardhatRuntime.ethers.provider.getNetwork();
-
       const contractDomain = domain(chainId, allowListContract.address);
 
-      const file = fs.readFileSync(taskArgs.fileWithAddress, "utf8");
-      const addresses = file.split(",").map((address) => address.trim());
-      const signatures = [];
-      for (const address of addresses) {
-        const auctioneerMessage = hardhatRuntime.ethers.utils.keccak256(
-          hardhatRuntime.ethers.utils.defaultAbiCoder.encode(
-            ["bytes32", "address", "uint256"],
-            [
-              hardhatRuntime.ethers.utils._TypedDataEncoder.hashDomain(
-                contractDomain,
-              ),
-              address,
-              taskArgs.auctionId,
-            ],
-          ),
-        );
-        const auctioneerSignature = await caller.signMessage(
-          hardhatRuntime.ethers.utils.arrayify(auctioneerMessage),
-        );
-        const sig = hardhatRuntime.ethers.utils.splitSignature(
-          auctioneerSignature,
-        );
-        const auctioneerSignatureEncoded = hardhatRuntime.ethers.utils.defaultAbiCoder.encode(
-          ["uint8", "bytes32", "bytes32"],
-          [sig.v, sig.r, sig.s],
-        );
-        signatures.push({
-          user: address,
-          signature: auctioneerSignatureEncoded,
+      // Creating signatures folder to store signatures:
+      const dir = "./signatures";
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, {
+          recursive: true,
         });
       }
-      const json = JSON.stringify({
-        auctionId: Number(taskArgs.auctionId),
-        chainId: chainId,
-        allowListContract: allowListContract.address,
-        signatures: signatures,
-      });
-      fs.writeFileSync("signatures.json", json, "utf8");
-      if (taskArgs.postToApi) {
-        const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
-        let networkName = networkInfo.name;
-        if (networkInfo.chainId == 100) {
-          networkName = "xdai";
+
+      // Read signatures from provided file
+      const file = fs.readFileSync(taskArgs.fileWithAddress, "utf8");
+      const addresses = file.split(",").map((address) => address.trim());
+
+      // Post signatures in packages of `signaturePackageSize` to the api and write
+      // them into the file `signatures-ith.json`
+      const signaturePackageSize = 50;
+      for (let i = 0; i <= addresses.length / signaturePackageSize; i++) {
+        const signatures = [];
+        console.log("Creating signatures for the ", i, "-th package");
+        for (const address of addresses.slice(
+          i * signaturePackageSize,
+          (i + 1) * signaturePackageSize,
+        )) {
+          const auctioneerMessage = hardhatRuntime.ethers.utils.keccak256(
+            hardhatRuntime.ethers.utils.defaultAbiCoder.encode(
+              ["bytes32", "address", "uint256"],
+              [
+                hardhatRuntime.ethers.utils._TypedDataEncoder.hashDomain(
+                  contractDomain,
+                ),
+                address,
+                taskArgs.auctionId,
+              ],
+            ),
+          );
+          const auctioneerSignature = await caller.signMessage(
+            hardhatRuntime.ethers.utils.arrayify(auctioneerMessage),
+          );
+          const sig = hardhatRuntime.ethers.utils.splitSignature(
+            auctioneerSignature,
+          );
+          const auctioneerSignatureEncoded = hardhatRuntime.ethers.utils.defaultAbiCoder.encode(
+            ["uint8", "bytes32", "bytes32"],
+            [sig.v, sig.r, sig.s],
+          );
+          signatures.push({
+            user: address,
+            signature: auctioneerSignatureEncoded,
+          });
         }
-        const apiResult = await axios.post(
-          `https://ido-v1-api-${networkName}.dev.gnosisdev.com/api/v1/provide_signature`,
-          json,
-          {
-            headers: {
-              "Content-Type": "application/json",
+        const json = JSON.stringify({
+          auctionId: Number(taskArgs.auctionId),
+          chainId: chainId,
+          allowListContract: allowListContract.address,
+          signatures: signatures,
+        });
+
+        // Writing signatures into file
+        fs.writeFileSync(`signatures/signatures-${i}.json`, json, "utf8");
+
+        // Posting to the API endpoint
+        if (taskArgs.postToApi) {
+          const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
+          let networkName = networkInfo.name;
+          if (networkInfo.chainId == 100) {
+            networkName = "xdai";
+          }
+          const apiResult = await axios.post(
+            `https://ido-v1-api-${networkName}.dev.gnosisdev.com/api/v1/provide_signature`,
+            json,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
             },
-          },
-        );
-        console.log("Api returned: ", apiResult.data);
+          );
+          console.log("Api returned: ", apiResult.data);
+        }
       }
     });
 };
