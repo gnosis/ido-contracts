@@ -143,8 +143,9 @@ library IterableOrderedOrderSet {
     }
 
     // @dev orders are ordered by
-    // 1. their price - buyAmount/sellAmount and
-    // 2. their userId,
+    // 1. their price - buyAmount/sellAmount
+    // 2. by the sellAmount
+    // 3. their userId,
     function smallerThan(bytes32 orderLeft, bytes32 orderRight)
         internal
         pure
@@ -170,6 +171,8 @@ library IterableOrderedOrderSet {
             priceNumeratorRight.mul(priceDenominatorLeft)
         ) return false;
 
+        if (priceNumeratorLeft < priceNumeratorRight) return true;
+        if (priceNumeratorLeft > priceNumeratorRight) return false;
         require(
             userIdLeft != userIdRight,
             "user is not allowed to place same order twice"
