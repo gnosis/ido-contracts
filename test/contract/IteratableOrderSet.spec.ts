@@ -17,18 +17,23 @@ const BYTES32_ZERO = encodeOrder({
 });
 const BYTES32_ONE = encodeOrder({
   userId: BigNumber.from(2),
-  sellAmount: BigNumber.from(1),
-  buyAmount: BigNumber.from(1),
+  sellAmount: BigNumber.from(2),
+  buyAmount: BigNumber.from(2),
 });
 const BYTES32_ONE_DIFFERENT = encodeOrder({
   userId: BigNumber.from(2),
-  sellAmount: BigNumber.from(2),
-  buyAmount: BigNumber.from(2),
+  sellAmount: BigNumber.from(3),
+  buyAmount: BigNumber.from(3),
 });
 const BYTES32_ONE_BEST_USER = encodeOrder({
   userId: BigNumber.from(1),
   sellAmount: BigNumber.from(2),
   buyAmount: BigNumber.from(2),
+});
+const BYTES32_ONE_BEST_AMOUNT = encodeOrder({
+  userId: BigNumber.from(2),
+  sellAmount: BigNumber.from(1),
+  buyAmount: BigNumber.from(1),
 });
 const BYTES32_TWO = encodeOrder({
   userId: BigNumber.from(2),
@@ -100,25 +105,52 @@ describe("IterableOrderedOrderSet", function () {
     expect(await set.first()).to.equal(BYTES32_ONE);
   });
 
-  it("should allow to iterate over content", async () => {
+  it("should allow to iterate over content and check order - part 1", async () => {
     await set.insert(BYTES32_ONE);
     await set.insert(BYTES32_TWO);
     await set.insert(BYTES32_THREE);
     await set.insert(BYTES32_ONE_BEST_USER);
+    await set.insert(BYTES32_ONE_BEST_AMOUNT);
 
     const first = await set.first();
     const second = await set.next(first);
     const third = await set.next(second);
     const fourth = await set.next(third);
+    const fifth = await set.next(fourth);
 
-    expect(first).to.equal(BYTES32_ONE_BEST_USER);
-    expect(second).to.equal(BYTES32_ONE);
-    expect(third).to.equal(BYTES32_TWO);
-    expect(fourth).to.equal(BYTES32_THREE);
+    expect(first).to.equal(BYTES32_ONE_BEST_AMOUNT);
+    expect(second).to.equal(BYTES32_ONE_BEST_USER);
+    expect(third).to.equal(BYTES32_ONE);
+    expect(fourth).to.equal(BYTES32_TWO);
+    expect(fifth).to.equal(BYTES32_THREE);
   });
-  it("should not allow to insert same limit price with same user", async () => {
+  it("should allow to iterate over content and check order - part 2", async () => {
     await set.insert(BYTES32_ONE);
-    await expect(set.insert(BYTES32_ONE_DIFFERENT)).to.be.revertedWith(
+    await set.insert(BYTES32_ONE_BEST_AMOUNT);
+    await set.insert(BYTES32_ONE_BEST_USER);
+    await set.insert(BYTES32_TWO);
+    await set.insert(BYTES32_THREE);
+
+    const first = await set.first();
+    const second = await set.next(first);
+    const third = await set.next(second);
+    const fourth = await set.next(third);
+    const fifth = await set.next(fourth);
+
+    expect(first).to.equal(BYTES32_ONE_BEST_AMOUNT);
+    expect(second).to.equal(BYTES32_ONE_BEST_USER);
+    expect(third).to.equal(BYTES32_ONE);
+    expect(fourth).to.equal(BYTES32_TWO);
+    expect(fifth).to.equal(BYTES32_THREE);
+  });
+  it("should allow to insert same limit price with different amount with same user", async () => {
+    await set.insert(BYTES32_ONE);
+    expect(await set.callStatic.insert(BYTES32_ONE_DIFFERENT)).to.equal(true);
+    await set.insert(BYTES32_ONE_DIFFERENT);
+    expect(await set.callStatic.insert(BYTES32_ONE_DIFFERENT)).to.equal(false);
+  });
+  it("should throw if the same orders are compared with smallerThan", async () => {
+    await expect(set.smallerThan(BYTES32_ONE, BYTES32_ONE)).to.be.revertedWith(
       "user is not allowed to place same order twice",
     );
   });
