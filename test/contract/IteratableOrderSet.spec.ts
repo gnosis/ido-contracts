@@ -124,7 +124,7 @@ describe("IterableOrderedOrderSet", function () {
     expect(fourth).to.equal(BYTES32_TWO);
     expect(fifth).to.equal(BYTES32_THREE);
   });
-  it("should allow to iterate over content and check order - part 1", async () => {
+  it("should allow to iterate over content and check order - part 2", async () => {
     await set.insert(BYTES32_ONE);
     await set.insert(BYTES32_ONE_BEST_AMOUNT);
     await set.insert(BYTES32_ONE_BEST_USER);
