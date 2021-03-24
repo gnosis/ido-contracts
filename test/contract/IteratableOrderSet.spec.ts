@@ -21,9 +21,9 @@ const BYTES32_ONE = encodeOrder({
   buyAmount: BigNumber.from(2),
 });
 const BYTES32_ONE_DIFFERENT = encodeOrder({
-  userId: BigNumber.from(3),
-  sellAmount: BigNumber.from(2),
-  buyAmount: BigNumber.from(2),
+  userId: BigNumber.from(2),
+  sellAmount: BigNumber.from(3),
+  buyAmount: BigNumber.from(3),
 });
 const BYTES32_ONE_BEST_USER = encodeOrder({
   userId: BigNumber.from(1),
@@ -31,7 +31,7 @@ const BYTES32_ONE_BEST_USER = encodeOrder({
   buyAmount: BigNumber.from(2),
 });
 const BYTES32_ONE_BEST_AMOUNT = encodeOrder({
-  userId: BigNumber.from(3),
+  userId: BigNumber.from(2),
   sellAmount: BigNumber.from(1),
   buyAmount: BigNumber.from(1),
 });
@@ -150,9 +150,9 @@ describe("IterableOrderedOrderSet", function () {
     expect(await set.callStatic.insert(BYTES32_ONE_DIFFERENT)).to.equal(false);
   });
   it("should throw if the same orders are compared with smallerThan", async () => {
-    await expect(
-      set.smallerThan(BYTES32_ONE_DIFFERENT, BYTES32_ONE_DIFFERENT),
-    ).to.be.revertedWith("user is not allowed to place same order twice");
+    await expect(set.smallerThan(BYTES32_ONE, BYTES32_ONE)).to.be.revertedWith(
+      "user is not allowed to place same order twice",
+    );
   });
 
   it("should allow to insert element at certain element", async () => {
