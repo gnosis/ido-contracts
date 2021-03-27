@@ -8,6 +8,7 @@ import yargs from "yargs";
 import { clearAuction } from "./src/tasks/clear_auction";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
+import { placeManyOrders } from "./src/tasks/placeManyOrders";
 
 const argv = yargs
   .option("network", {
@@ -42,6 +43,7 @@ if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
 initiateAuction();
 clearAuction();
 generateSignatures();
+placeManyOrders();
 
 export default {
   paths: {

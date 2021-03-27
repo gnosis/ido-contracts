@@ -956,7 +956,10 @@ describe("EasyAuction", async () => {
 
       await closeAuction(easyAuction, auctionId);
 
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
       await expect(easyAuction.settleAuction(auctionId))
         .to.emit(easyAuction, "AuctionCleared")
         .withArgs(
@@ -1001,7 +1004,10 @@ describe("EasyAuction", async () => {
 
       await closeAuction(easyAuction, auctionId);
 
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
       await expect(easyAuction.settleAuction(auctionId))
         .to.emit(easyAuction, "AuctionCleared")
         .withArgs(
@@ -1056,7 +1062,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
       await expect(easyAuction.settleAuction(auctionId))
         .to.emit(easyAuction, "AuctionCleared")
         .withArgs(
@@ -1848,7 +1857,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
 
       await easyAuction.settleAuction(auctionId);
       expect(price.toString()).to.eql(
@@ -1900,7 +1912,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
 
       await easyAuction.settleAuction(auctionId);
       expect(price.toString()).to.eql(
@@ -1998,7 +2013,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
       const callPromise = easyAuction.settleAuction(auctionId);
       // auctioneer reward check:
       await expect(() => callPromise).to.changeTokenBalances(
@@ -2201,7 +2219,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
       await easyAuction.settleAuction(auctionId);
 
       const receivedAmounts = toReceivedFunds(
@@ -2320,7 +2341,10 @@ describe("EasyAuction", async () => {
       await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
       await closeAuction(easyAuction, auctionId);
-      const price = await calculateClearingPrice(easyAuction, auctionId);
+      const { clearingOrder: price } = await calculateClearingPrice(
+        easyAuction,
+        auctionId,
+      );
       await easyAuction.settleAuction(auctionId);
 
       const receivedAmounts = toReceivedFunds(
@@ -2461,7 +2485,10 @@ describe("EasyAuction", async () => {
     await placeOrders(easyAuction, sellOrders, auctionId, hre);
 
     await closeAuction(easyAuction, auctionId);
-    const price = await calculateClearingPrice(easyAuction, auctionId);
+    const { clearingOrder: price } = await calculateClearingPrice(
+      easyAuction,
+      auctionId,
+    );
     await easyAuction.settleAuction(auctionId);
 
     const receivedAmounts = toReceivedFunds(
