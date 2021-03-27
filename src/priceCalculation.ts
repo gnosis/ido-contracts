@@ -74,6 +74,22 @@ export async function getInitialOrder(
   return decodeOrder(auctionDataStruct.initialAuctionOrder);
 }
 
+export async function getInterimOrder(
+  easyAuction: Contract,
+  auctionId: BigNumber,
+): Promise<Order> {
+  const auctionDataStruct = await easyAuction.auctionData(auctionId);
+  return decodeOrder(auctionDataStruct.interimOrder);
+}
+
+export async function getAuctionEndTimeStamp(
+  easyAuction: Contract,
+  auctionId: BigNumber,
+): Promise<BigNumber> {
+  const auctionDataStruct = await easyAuction.auctionData(auctionId);
+  return auctionDataStruct.auctionEndDate;
+}
+
 export function hasLowerClearingPrice(order1: Order, order2: Order): number {
   if (
     order1.buyAmount
@@ -81,6 +97,7 @@ export function hasLowerClearingPrice(order1: Order, order2: Order): number {
       .lt(order2.buyAmount.mul(order1.sellAmount))
   )
     return -1;
+  if (order1.buyAmount.lt(order2.buyAmount)) return -1;
   if (
     order1.buyAmount
       .mul(order2.sellAmount)
@@ -95,8 +112,7 @@ export async function calculateClearingPrice(
   easyAuction: Contract,
   auctionId: BigNumber,
   debug = false,
-): Promise<Order> {
-  const log = debug ? (...a: any) => console.log(...a) : () => {};
+): Promise<{ clearingOrder: Order; numberOfOrdersToClear: number }> {
   const initialOrder = await getInitialOrder(easyAuction, auctionId);
   const sellOrders = await getAllSellOrders(easyAuction, auctionId);
   sellOrders.sort(function (a: Order, b: Order) {
@@ -106,9 +122,33 @@ export async function calculateClearingPrice(
   printOrders(sellOrders, false, debug);
   printOrders([initialOrder], true, debug);
   const clearingPriceOrder = findClearingPrice(sellOrders, initialOrder);
-  log("clearing price order:");
   printOrders([clearingPriceOrder], false, debug);
-  return clearingPriceOrder;
+  const interimOrder = await getInterimOrder(easyAuction, auctionId);
+  printOrders([interimOrder], false, debug);
+  let numberOfOrdersToClear;
+  if (
+    interimOrder ===
+    {
+      userId: BigNumber.from(0),
+      sellAmount: BigNumber.from(0),
+      buyAmount: BigNumber.from(0),
+    }
+  ) {
+    numberOfOrdersToClear = sellOrders.filter((order) =>
+      hasLowerClearingPrice(order, clearingPriceOrder),
+    ).length;
+  } else {
+    numberOfOrdersToClear = sellOrders.filter(
+      (order) =>
+        hasLowerClearingPrice(order, clearingPriceOrder) &&
+        hasLowerClearingPrice(interimOrder, order),
+    ).length;
+  }
+
+  return {
+    clearingOrder: clearingPriceOrder,
+    numberOfOrdersToClear,
+  };
 }
 
 function printOrders(orders: Order[], isInitialOrder: boolean, debug = false) {
