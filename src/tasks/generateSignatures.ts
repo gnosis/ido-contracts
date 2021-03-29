@@ -4,6 +4,7 @@ import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 import axios from "axios";
 import { task } from "hardhat/config";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { domain, getAllowListOffChainManagedContract } from "./utils";
 
@@ -20,6 +21,10 @@ const generateSignatures: () => void = () => {
     .addFlag(
       "postToApi",
       "Flag that indicates whether the signatures should be sent directly to the api",
+    )
+    .addFlag(
+      "postToDevApi",
+      "Flag that indicates whether the signatures should be sent directly to the api in development environment",
     )
     .setAction(async (taskArgs, hardhatRuntime) => {
       const [caller] = await hardhatRuntime.ethers.getSigners();
@@ -97,13 +102,10 @@ const generateSignatures: () => void = () => {
 
         // Posting to the API endpoint
         if (taskArgs.postToApi) {
-          const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
-          let networkName = networkInfo.name;
-          if (networkInfo.chainId == 100) {
-            networkName = "xdai";
-          }
           const apiResult = await axios.post(
-            `https://ido-v1-api-${networkName}.dev.gnosisdev.com/api/v1/provide_signature`,
+            `https://ido-v1-api-${await getNetworkName(
+              hardhatRuntime,
+            )}.dev.gnosisdev.com/api/v1/provide_signature`,
             json,
             {
               headers: {
@@ -113,7 +115,33 @@ const generateSignatures: () => void = () => {
           );
           console.log("Api returned: ", apiResult.data);
         }
+        // Posting to the DEV-API endpoint
+        if (taskArgs.postToDevApi) {
+          const apiResult = await axios.post(
+            `https://ido-api-${await getNetworkName(
+              hardhatRuntime,
+            )}.gnosis.io/api/v1/provide_signature`,
+            json,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+          console.log("Dev-Api returned: ", apiResult.data);
+        }
       }
     });
 };
+
+async function getNetworkName(
+  hardhatRuntime: HardhatRuntimeEnvironment,
+): Promise<string> {
+  const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
+  let networkName = networkInfo.name;
+  if (networkInfo.chainId == 100) {
+    networkName = "xdai";
+  }
+  return networkName;
+}
 export { generateSignatures };
