@@ -139,4 +139,4 @@ The generated signatures can be directly uploaded to the backend by adding the f
 
 ## Audit
 
-The solidity code was audited by Adam Kolar, from the G0 Group. The report can be found [here](https://github.com/g0-group/Audits/blob/master/GnosisAuctionFeb2021.pdf).
+The solidity code was audited by Adam Kolar, from the G0 Group. The report can be found [here](https://github.com/g0-group/Audits/blob/master/GnosisAuctionFeb2021.pdf) and [here](https://github.com/g0-group/Audits/blob/master/GnosisAuctionMar2021.pdf).
