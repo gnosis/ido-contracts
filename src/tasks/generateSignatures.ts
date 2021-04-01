@@ -100,8 +100,8 @@ const generateSignatures: () => void = () => {
         // Writing signatures into file
         fs.writeFileSync(`signatures/signatures-${i}.json`, json, "utf8");
 
-        // Posting to the API endpoint
-        if (taskArgs.postToApi) {
+        // Posting to the Dev-API endpoint
+        if (taskArgs.postToDevApi) {
           const apiResult = await axios.post(
             `https://ido-v1-api-${await getNetworkName(
               hardhatRuntime,
@@ -115,8 +115,8 @@ const generateSignatures: () => void = () => {
           );
           console.log("Api returned: ", apiResult.data);
         }
-        // Posting to the DEV-API endpoint
-        if (taskArgs.postToDevApi) {
+        // Posting to the API endpoint
+        if (taskArgs.postToApi) {
           const apiResult = await axios.post(
             `https://ido-api-${await getNetworkName(
               hardhatRuntime,
