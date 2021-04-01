@@ -109,6 +109,14 @@
       "decimals": 18,
       "address": "0xd0dab4e640d95e9e8a47545598c33e31bdb53c7c",
       "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6810e776880C02933D47DB1b9fc05908e5386b96/logo.png"
+    },
+    {
+      "name": "BOSONX",
+      "chainId": 4,
+      "symbol": "BOS",
+      "decimals": 18,
+      "address": "0x350AeeF292Ff3C7396235CA76d709Acfdbe6d8d1",
+      "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/8827.png"
     }
   ]
 }
