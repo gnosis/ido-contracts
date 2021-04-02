@@ -272,10 +272,10 @@ contract EasyAuction is Ownable {
         address orderSubmitter
     ) internal returns (uint64 userId) {
         {
-            address allowListManger = auctionAccessManager[auctionId];
-            if (allowListManger != address(0)) {
+            address allowListManager = auctionAccessManager[auctionId];
+            if (allowListManager != address(0)) {
                 require(
-                    AllowListVerifier(allowListManger).isAllowed(
+                    AllowListVerifier(allowListManager).isAllowed(
                         orderSubmitter,
                         auctionId,
                         allowListCallData
