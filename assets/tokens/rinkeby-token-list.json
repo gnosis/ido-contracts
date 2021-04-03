@@ -117,6 +117,14 @@
       "decimals": 18,
       "address": "0x350AeeF292Ff3C7396235CA76d709Acfdbe6d8d1",
       "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/8827.png"
+    },
+    {
+      "name": "Boson",
+      "chainId": 1,
+      "symbol": "BOSON",
+      "decimals": 18,
+      "address": "0xC477D038d5420C6A9e0b031712f61c5120090de9",
+      "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/8827.png"
     }
   ]
 }
