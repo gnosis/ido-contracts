@@ -139,8 +139,11 @@ async function getNetworkName(
 ): Promise<string> {
   const networkInfo = await hardhatRuntime.ethers.provider.getNetwork();
   let networkName = networkInfo.name;
-  if (networkInfo.chainId == 100) {
+  if (networkInfo.chainId === 100) {
     networkName = "xdai";
+  }
+  if (networkInfo.chainId === 1) {
+    networkName = "mainnet";
   }
   return networkName;
 }
