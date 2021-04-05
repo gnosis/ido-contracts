@@ -2,6 +2,7 @@ import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-deploy";
 import dotenv from "dotenv";
+import { utils } from "ethers";
 import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
@@ -20,7 +21,13 @@ const argv = yargs
 
 // Load environment variables.
 dotenv.config();
-const { INFURA_KEY, MNEMONIC, MY_ETHERSCAN_API_KEY, PK } = process.env;
+const {
+  GAS_PRICE_GWEI,
+  INFURA_KEY,
+  MNEMONIC,
+  MY_ETHERSCAN_API_KEY,
+  PK,
+} = process.env;
 
 const DEFAULT_MNEMONIC =
   "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
@@ -78,14 +85,29 @@ export default {
     mainnet: {
       ...sharedNetworkConfig,
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
     },
     rinkeby: {
       ...sharedNetworkConfig,
       url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
     },
     xdai: {
       ...sharedNetworkConfig,
       url: "https://xdai.poanetwork.dev",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
     },
   },
   namedAccounts: {
