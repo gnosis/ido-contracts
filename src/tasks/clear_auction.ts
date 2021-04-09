@@ -26,14 +26,15 @@ const clearAuction: () => void = () => {
       if (auctionEndDate.gt(BigNumber.from(Math.floor(+new Date() / 1000)))) {
         throw new Error("Auction not yet ended");
       }
-      const {
-        clearingOrder: price,
-        numberOfOrdersToClear,
-      } = await calculateClearingPrice(
-        easyAuction,
-        BigNumber.from(taskArgs.auctionId),
-      );
-      console.log("Clearing price will be:", price);
+      // const {
+      //   clearingOrder: price,
+      //   numberOfOrdersToClear,
+      // } = await calculateClearingPrice(
+      //   easyAuction,
+      //   BigNumber.from(taskArgs.auctionId),
+      // );
+      const numberOfOrdersToClear = 3000;
+      // console.log("Clearing price will be:", price);
       console.log(
         "And in total ",
         numberOfOrdersToClear,
