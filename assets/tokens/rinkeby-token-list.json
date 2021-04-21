@@ -125,6 +125,14 @@
       "decimals": 18,
       "address": "0xC477D038d5420C6A9e0b031712f61c5120090de9",
       "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/8827.png"
+    },
+    {
+      "name": "k21.kanon.art",
+      "chainId": 1,
+      "symbol": "K21",
+      "decimals": 18,
+      "address": "0xB9d99C33eA2d86EC5eC6b8A4dD816EBBA64404AF",
+      "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/9205.png"
     }
   ]
 }
