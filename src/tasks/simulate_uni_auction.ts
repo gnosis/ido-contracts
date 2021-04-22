@@ -3,35 +3,37 @@ import "@nomiclabs/hardhat-ethers";
 import { BigNumber, Contract } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { number } from "yargs";
 
-import {
-  calculateClearingPrice,
-  getAuctionEndTimeStamp,
-} from "../priceCalculation";
-
-import { getEasyAuctionContract } from "./utils";
+import { queueStartElement } from "../priceCalculation";
 
 const simulateUniAuction: () => void = () => {
   task(
     "simulateUniAuction",
-    "Simulates the uniswap goverance selling uni on gnosis auction",
+    "Simulates selling uni on gnosis auction via governance mechanism",
   ).setAction(async (taskArgs, hardhatRuntime) => {
+    ////////////////////////////////////////////////////////////////////////////////
     // 0th: Get contracts to be used
+    ////////////////////////////////////////////////////////////////////////////////
+
     const easyAuction = await getGnosisAuction(hardhatRuntime);
     const uniTimeLock = await getUniswapTimeLockContract(hardhatRuntime);
     const uniGovernance = await getUniswapGovernanceContract(hardhatRuntime);
     const uniToken = await getUniToken(hardhatRuntime);
     const daiToken = await getDAIToken(hardhatRuntime);
-    const proposalId = 4;
-    // 1st: Propose Selling
-    const formerPropose = "0x7e4A8391C728fEd9069B2962699AB416628B19Fa";
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // 1st: Propose Selling of UNI to treasury
+    ////////////////////////////////////////////////////////////////////////////////
+
+    const proposalId =
+      Number((await uniGovernance.proposalCount()).toString()) + 1;
+    const formerProposerAccount = "0x7e4A8391C728fEd9069B2962699AB416628B19Fa";
     await hardhatRuntime.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [formerPropose],
+      params: [formerProposerAccount],
     });
     const proposer = await hardhatRuntime.ethers.provider.getSigner(
-      formerPropose,
+      formerProposerAccount,
     );
     let now = (await hardhatRuntime.ethers.provider.getBlock("latest"))
       .timestamp;
@@ -41,14 +43,8 @@ const simulateUniAuction: () => void = () => {
     const targets = [uniToken.address, easyAuction.address];
     const values = [0, 0];
     const signatures = [
-      uniToken.interface.getSighash(
-        uniToken.interface.functions["approve(address,uint256)"],
-      ),
-      uniGovernance.interface.getSighash(
-        uniGovernance.interface.functions[
-          "propose(address[],uint256[],string[],bytes[],string)"
-        ],
-      ),
+      "approve(address,uint256)",
+      "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
     ];
     const timeLockDelay = Number((await uniTimeLock.delay()).toString());
     const votingDelay =
@@ -57,23 +53,25 @@ const simulateUniAuction: () => void = () => {
       20;
     const _auctioningToken = uniToken.address;
     const _biddingToken = daiToken.address;
-    const orderCancellationEndDate = now + timeLockDelay + votingDelay + 36000; //Later, these values should be set explicitly
-    const auctionEndDate = now + timeLockDelay + votingDelay + 36000; // Later, these values should be set explicitly
-    const _auctionedSellAmount = 100;
-    const _minBuyAmount = _auctionedSellAmount * 20;
+    //Later, these time values should be set explicitly
+    const orderCancellationEndDate = now + timeLockDelay + votingDelay + 3600;
+    const auctionEndDate = now + timeLockDelay + votingDelay + 3600;
+    const auctionedSellAmount = hardhatRuntime.ethers.utils.parseEther(
+      "1000000",
+    );
+    const minBuyAmount = auctionedSellAmount.mul(20);
     const minimumBiddingAmountPerOrder = 1000;
     const minFundingThreshold = 0;
     const isAtomicClosureAllowed = true;
     const accessManagerContract = "0x0000000000000000000000000000000000000000";
     const accessManagerContractData = "0x";
-    console.log(signatures);
 
     const calldatas = [
       "0x" +
         uniToken.interface
           .encodeFunctionData("approve", [
             easyAuction.address,
-            _auctionedSellAmount,
+            auctionedSellAmount,
           ])
           .substring(10),
       "0x" +
@@ -83,8 +81,8 @@ const simulateUniAuction: () => void = () => {
             _biddingToken,
             orderCancellationEndDate,
             auctionEndDate,
-            _auctionedSellAmount,
-            _minBuyAmount,
+            auctionedSellAmount,
+            minBuyAmount,
             minimumBiddingAmountPerOrder,
             minFundingThreshold,
             isAtomicClosureAllowed,
@@ -93,19 +91,15 @@ const simulateUniAuction: () => void = () => {
           ])
           .substring(10),
     ];
-    console.log(calldatas);
     const description = "Selling uni token on Gnosis Auction";
     await uniGovernance
       .connect(proposer)
       .propose(targets, values, signatures, calldatas, description);
 
+    ////////////////////////////////////////////////////////////////////////////////
     // 2nd: Voting from several accounts to majority
+    ////////////////////////////////////////////////////////////////////////////////
     let proposalInfo = await uniGovernance.callStatic.proposals(proposalId);
-    console.log(proposalInfo);
-    const proposalInfo_prev = await uniGovernance.callStatic.proposals(
-      proposalId,
-    );
-    console.log(proposalInfo_prev);
 
     const startBlock = proposalInfo.startBlock;
     for (let i = 0; i < startBlock - currentBlock + 2; i++) {
@@ -127,7 +121,7 @@ const simulateUniAuction: () => void = () => {
 
     await hardhatRuntime.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
-      params: [formerPropose],
+      params: [formerProposerAccount],
     });
     const votingAccounts = [
       "0x47173B170C64d16393a52e6C480b3Ad8c302ba1e",
@@ -145,7 +139,6 @@ const simulateUniAuction: () => void = () => {
       "0xbbf3f1421D886E9b2c5D716B5192aC998af2012c",
     ];
     for (const voter of votingAccounts) {
-      console.log(voter);
       await hardhatRuntime.network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [voter],
@@ -159,8 +152,9 @@ const simulateUniAuction: () => void = () => {
         params: [voter],
       });
     }
-
-    // 4th: Schedule Proposal
+    ////////////////////////////////////////////////////////////////////////////////
+    // 4th: Queue Proposal
+    ////////////////////////////////////////////////////////////////////////////////
     const newCurrentBlock = (
       await hardhatRuntime.ethers.provider.getBlock("latest")
     ).number;
@@ -170,37 +164,70 @@ const simulateUniAuction: () => void = () => {
     }
     await hardhatRuntime.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [formerPropose],
+      params: [formerProposerAccount],
     });
-    console.log(await uniGovernance.connect(proposer).state(proposalId));
     await uniGovernance.connect(proposer).queue(proposalId);
     await hardhatRuntime.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
-      params: [formerPropose],
+      params: [formerProposerAccount],
     });
+    ////////////////////////////////////////////////////////////////////////////////
     // 5th: Execute Proposal
+    ////////////////////////////////////////////////////////////////////////////////
     proposalInfo = await uniGovernance.proposals(proposalId);
     const eta = proposalInfo.eta;
     now = (await hardhatRuntime.ethers.provider.getBlock("latest")).timestamp;
     await hardhatRuntime.ethers.provider.send("evm_increaseTime", [eta - now]);
     await hardhatRuntime.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [formerPropose],
+      params: [formerProposerAccount],
     });
-    console.log("trying to execute");
     await uniGovernance.connect(proposer).execute(proposalId);
     await hardhatRuntime.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
-      params: [formerPropose],
+      params: [formerProposerAccount],
     });
+    ////////////////////////////////////////////////////////////////////////////////
     // 6th: Participate in auction
-    const auctionId = easyAuction.auctionCounter();
-    const auctionDetails = easyAuction.auctionData(auctionId);
-    console.log(auctionDetails);
+    ////////////////////////////////////////////////////////////////////////////////
+    const auctionId = await easyAuction.auctionCounter();
+    const daiBidder = "0xD624790fC3E318Ce86f509Ecf69DF440B3fc328D";
+    await hardhatRuntime.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [daiBidder],
+    });
+    const bidder = await hardhatRuntime.ethers.provider.getSigner(daiBidder);
+    const biddingAmount = hardhatRuntime.ethers.utils.parseEther("35000000");
+    await daiToken.connect(bidder).approve(easyAuction.address, biddingAmount);
+    await easyAuction
+      .connect(bidder)
+      .placeSellOrders(
+        auctionId,
+        [biddingAmount.div(BigNumber.from(30))],
+        [biddingAmount],
+        [queueStartElement],
+        "0x",
+      );
 
-    // 7th: Clear auction
+    now = (await hardhatRuntime.ethers.provider.getBlock("latest")).timestamp;
+    await hardhatRuntime.ethers.provider.send("evm_increaseTime", [
+      auctionEndDate - now,
+    ]);
+    await easyAuction.connect(bidder).settleAuction(auctionId);
 
+    ////////////////////////////////////////////////////////////////////////////////
     // 8th: Observe sell proceeds in the DAO multisig
+    ////////////////////////////////////////////////////////////////////////////////
+    const boughtDAI = await daiToken.balanceOf(uniTimeLock.address);
+    console.log(
+      "Uniswap treasury bought: ",
+      boughtDAI.div(hardhatRuntime.ethers.utils.parseEther("1")).toString(),
+      " DAI for ",
+      auctionedSellAmount
+        .div(hardhatRuntime.ethers.utils.parseEther("1"))
+        .toString(),
+      " UNI",
+    );
   });
 };
 
