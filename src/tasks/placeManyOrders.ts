@@ -25,7 +25,7 @@ const placeManyOrders: () => void = () => {
       console.log("Using the account:", caller.address);
 
       const easyAuction = await getEasyAuctionContract(hardhatRuntime);
-      if (easyAuction.address != "0x307C1384EFeF241d6CBBFb1F85a04C54307Ac9F6") {
+      if (easyAuction.address != "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7") {
         throw new Error("Use the script only on rinkeby");
       }
       const auctionData = await easyAuction.callStatic.auctionData(
