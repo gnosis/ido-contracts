@@ -141,6 +141,14 @@
       "decimals": 18,
       "address": "0xDd1Ad9A21Ce722C151A836373baBe42c868cE9a4",
       "logoURI": "https://ipfs.kleros.io/ipfs/QmPe3qwcZEUxywsu5fTzyUD3R5QivmETGu7QooM5yfsbRh/UBI"
+    },
+    {
+      "name": "SNAFU",
+      "chainId": 100,
+      "symbol": "SNAFU",
+      "decimals": 18,
+      "address": "0x27B9C2Bd4BaEa18ABdF49169054c1C1c12af9862",
+      "logoURI": "https://gateway.ipfs.io/ipfs/QmaEPqRKrJDN8iNKVSFj19rbHzZSyWENdj241oek3EJYn7"
     }
   ]
 }
