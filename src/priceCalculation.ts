@@ -283,7 +283,7 @@ export async function getAllSellOrders(
 }
 
 export async function createTokensAndMintAndApprove(
-  easyAuction: Contract,
+  auctionContract: Contract,
   users: Wallet[],
   hre: HardhatRuntimeEnvironment,
 ): Promise<{ auctioningToken: Contract; biddingToken: Contract }> {
@@ -295,12 +295,12 @@ export async function createTokensAndMintAndApprove(
     await biddingToken.mint(user.address, BigNumber.from(10).pow(30));
     await biddingToken
       .connect(user)
-      .approve(easyAuction.address, BigNumber.from(10).pow(30));
+      .approve(auctionContract.address, BigNumber.from(10).pow(30));
 
     await auctioningToken.mint(user.address, BigNumber.from(10).pow(30));
     await auctioningToken
       .connect(user)
-      .approve(easyAuction.address, BigNumber.from(10).pow(30));
+      .approve(auctionContract.address, BigNumber.from(10).pow(30));
   }
   return { auctioningToken: auctioningToken, biddingToken: biddingToken };
 }
