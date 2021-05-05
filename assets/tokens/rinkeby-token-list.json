@@ -149,6 +149,14 @@
       "decimals": 18,
       "address": "0x27B9C2Bd4BaEa18ABdF49169054c1C1c12af9862",
       "logoURI": "https://gateway.ipfs.io/ipfs/QmaEPqRKrJDN8iNKVSFj19rbHzZSyWENdj241oek3EJYn7"
+    },
+    {
+      "name": "Lever Token",
+      "chainId": 1,
+      "symbol": "LEV",
+      "decimals": 18,
+      "address": "0xbc194e6f748a222754C3E8b9946922c09E7d4e91",
+      "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/9505.png"
     }
   ]
 }
