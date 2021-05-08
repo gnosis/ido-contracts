@@ -102,7 +102,7 @@ export default {
     },
     xdai: {
       ...sharedNetworkConfig,
-      url: "https://xdai.poanetwork.dev",
+      url: "https://xdai.1hive.org",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
