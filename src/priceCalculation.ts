@@ -163,7 +163,9 @@ function printOrders(orders: Order[], isInitialOrder: boolean, debug = false) {
         " for ",
         order.buyAmount.toString(),
         " at price of",
-        order.sellAmount.div(order.buyAmount).toString(),
+        order.buyAmount.gt(BigNumber.from("0"))
+          ? order.sellAmount.div(order.buyAmount).toString()
+          : "infinity",
       );
     });
   } else {
@@ -175,7 +177,9 @@ function printOrders(orders: Order[], isInitialOrder: boolean, debug = false) {
         " for ",
         order.buyAmount.toString(),
         " at price of",
-        order.buyAmount.div(order.sellAmount).toString(),
+        order.buyAmount.gt(BigNumber.from("0"))
+          ? order.sellAmount.div(order.buyAmount).toString()
+          : "infinity",
       );
     });
   }
@@ -260,6 +264,10 @@ export async function getAllSellOrders(
   });
 
   const filterOrderCancellations = easyAuction.filters.CancellationSellOrder;
+  if (filterOrderCancellations == undefined) {
+    // For ChannelAuctions, there are no cancellations and hence, we return all sell orders
+    return sellOrders;
+  }
   const logsForCancellations = await easyAuction.queryFilter(
     filterOrderCancellations(),
     0,
@@ -283,7 +291,7 @@ export async function getAllSellOrders(
 }
 
 export async function createTokensAndMintAndApprove(
-  easyAuction: Contract,
+  auctionContract: Contract,
   users: Wallet[],
   hre: HardhatRuntimeEnvironment,
 ): Promise<{ auctioningToken: Contract; biddingToken: Contract }> {
@@ -292,15 +300,15 @@ export async function createTokensAndMintAndApprove(
   const auctioningToken = await ERC20.deploy("BT", "BT");
 
   for (const user of users) {
-    await biddingToken.mint(user.address, BigNumber.from(10).pow(30));
+    await biddingToken.mint(user.address, BigNumber.from(10).pow(32));
     await biddingToken
       .connect(user)
-      .approve(easyAuction.address, BigNumber.from(10).pow(30));
+      .approve(auctionContract.address, BigNumber.from(10).pow(32));
 
-    await auctioningToken.mint(user.address, BigNumber.from(10).pow(30));
+    await auctioningToken.mint(user.address, BigNumber.from(10).pow(32));
     await auctioningToken
       .connect(user)
-      .approve(easyAuction.address, BigNumber.from(10).pow(30));
+      .approve(auctionContract.address, BigNumber.from(10).pow(32));
   }
   return { auctioningToken: auctioningToken, biddingToken: biddingToken };
 }
@@ -331,4 +339,31 @@ export async function placeOrders(
         "0x",
       );
   }
+}
+export async function placeOrdersForChannelAuction(
+  easyAuction: Contract,
+  sellOrders: Order[],
+  auctionId: BigNumber,
+  hre: HardhatRuntimeEnvironment,
+): Promise<Order[]> {
+  const newSellOrders = [];
+  for (const sellOrder of sellOrders) {
+    const tx = await easyAuction
+      .connect(
+        await hre.waffle.provider.getWallets()[sellOrder.userId.toNumber() - 1],
+      )
+      .placeSellOrders(
+        auctionId,
+        sellOrder.buyAmount,
+        sellOrder.sellAmount,
+        queueStartElement,
+      );
+    const newSellOrderEventData = (await tx.wait()).events.pop();
+    newSellOrders.push({
+      sellAmount: newSellOrderEventData.args.sellAmount,
+      buyAmount: newSellOrderEventData.args.buyAmount,
+      userId: newSellOrderEventData.args.userId,
+    });
+  }
+  return newSellOrders;
 }
