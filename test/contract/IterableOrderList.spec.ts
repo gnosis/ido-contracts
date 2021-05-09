@@ -8,8 +8,6 @@ import {
   encodeOrder,
 } from "../../src/priceCalculation";
 
-const QUEUE_END =
-  "0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001";
 const BYTES32_ZERO = encodeOrder({
   userId: BigNumber.from(1),
   sellAmount: BigNumber.from(0),
@@ -43,16 +41,6 @@ const BYTES32_TWO = encodeOrder({
 const BYTES32_THREE = encodeOrder({
   userId: BigNumber.from(2),
   buyAmount: BigNumber.from(6),
-  sellAmount: BigNumber.from(2),
-});
-const BYTES32_FOUR = encodeOrder({
-  userId: BigNumber.from(2),
-  buyAmount: BigNumber.from(8),
-  sellAmount: BigNumber.from(2),
-});
-const BYTES32_FIVE = encodeOrder({
-  userId: BigNumber.from(2),
-  buyAmount: BigNumber.from(10),
   sellAmount: BigNumber.from(2),
 });
 
