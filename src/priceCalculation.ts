@@ -300,15 +300,15 @@ export async function createTokensAndMintAndApprove(
   const auctioningToken = await ERC20.deploy("BT", "BT");
 
   for (const user of users) {
-    await biddingToken.mint(user.address, BigNumber.from(10).pow(30));
+    await biddingToken.mint(user.address, BigNumber.from(10).pow(32));
     await biddingToken
       .connect(user)
-      .approve(auctionContract.address, BigNumber.from(10).pow(30));
+      .approve(auctionContract.address, BigNumber.from(10).pow(32));
 
-    await auctioningToken.mint(user.address, BigNumber.from(10).pow(30));
+    await auctioningToken.mint(user.address, BigNumber.from(10).pow(32));
     await auctioningToken
       .connect(user)
-      .approve(auctionContract.address, BigNumber.from(10).pow(30));
+      .approve(auctionContract.address, BigNumber.from(10).pow(32));
   }
   return { auctioningToken: auctioningToken, biddingToken: biddingToken };
 }

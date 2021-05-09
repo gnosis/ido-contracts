@@ -153,7 +153,7 @@ contract ChannelAuction is Ownable {
         if (feeNumerator > 0) {
             _auctioningToken.safeTransferFrom(
                 msg.sender,
-                address(this),
+                registeredUsers.getAddressAt(feeReceiverUserId),
                 _auctionedSellAmount.mul(feeNumerator).div(FEE_DENOMINATOR) //[1]
             );
         }
