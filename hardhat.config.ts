@@ -109,6 +109,24 @@ export default {
           )
         : "auto",
     },
+    polygon: {
+      ...sharedNetworkConfig,
+      url: "https://rpc-mainnet.maticvigil.com/",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
+    binancesmartchain: {
+      ...sharedNetworkConfig,
+      url: "https://bsc-dataseed1.binance.org/",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
   },
   namedAccounts: {
     deployer: 0,

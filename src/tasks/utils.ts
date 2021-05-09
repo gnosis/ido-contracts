@@ -71,6 +71,10 @@ export async function getWETH9Address(
     weth9Address = weth9Networks.WETH9["4"]["address"];
   } else if (chainId == 1) {
     weth9Address = weth9Networks.WETH9["1"]["address"];
+  } else if (chainId == 137) {
+    weth9Address = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+  } else if (chainId == 56) {
+    weth9Address = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
   } else if (chainId == 100) {
     weth9Address = "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d";
   }
