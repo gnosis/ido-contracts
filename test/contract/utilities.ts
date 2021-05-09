@@ -14,6 +14,26 @@ export async function closeAuction(
   ).toNumber();
   await increaseTime(time_remaining + 1);
 }
+export async function closeChannelAuction(
+  instance: Contract,
+  auctionId: BigNumber,
+): Promise<void> {
+  const time_remaining = (
+    await instance.callStatic.getSecondsRemainingUntilLastPossibleClose(
+      auctionId,
+    )
+  ).toNumber();
+  await increaseTime(time_remaining + 1);
+}
+
+export async function startChannelAuction(
+  instance: Contract,
+  auctionId: BigNumber,
+): Promise<void> {
+  const now = (await ethers.provider.getBlock("latest")).timestamp;
+  const startTime = (await instance.auctionData(auctionId)).auctionStartDate;
+  await increaseTime(startTime - now);
+}
 
 export async function claimFromAllOrders(
   easyAuction: Contract,

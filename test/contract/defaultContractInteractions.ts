@@ -67,12 +67,12 @@ export async function createChannelAuctionWithDefaults(
 
 export async function createChannelAuctionWithDefaultsAndReturnId(
   channelAuction: Contract,
-  parameters: PartialAuctionInput,
+  parameters: PartialChannelAuctionInput,
 ): Promise<BigNumber> {
   return sendTxAndGetReturnValue(
     channelAuction,
-    "initiateAuction(address,address,uint256,uint256,uint96,uint96,uint256,uint256,bool,address,bytes)",
-    ...(await createAuctionInputWithDefaults(parameters)),
+    "initiateAuction(address,address,uint96,uint96,uint96,uint96,uint96,uint96)",
+    ...(await createChannelAuctionInputWithDefaults(parameters)),
   );
 }
 

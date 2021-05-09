@@ -9,7 +9,7 @@ import {
   encodeOrder,
   queueStartElement,
   createTokensAndMintAndApprove,
-  placeOrders,
+  placeOrdersForChannelAuction,
   calculateClearingPrice,
   getAllSellOrders,
   getClearingPriceFromInitialOrder,
@@ -17,15 +17,16 @@ import {
 
 import {
   createAuctionWithDefaults,
-  createAuctionWithDefaultsAndReturnId,
   createChannelAuctionWithDefaults,
+  createChannelAuctionWithDefaultsAndReturnId,
 } from "./defaultContractInteractions";
 import {
   sendTxAndGetReturnValue,
-  closeAuction,
+  closeChannelAuction,
   increaseTime,
   claimFromAllOrders,
   MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE,
+  startChannelAuction,
 } from "./utilities";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,7 +35,7 @@ import {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 describe("ChannelAuction", async () => {
-  const [user_1, user_2, user_3] = waffle.provider.getWallets();
+  const [user_1, user_2, user_3, user_4] = await waffle.provider.getWallets();
   let channelAuction: Contract;
   beforeEach(async () => {
     const ChannelAuction = await ethers.getContractFactory("ChannelAuction");
@@ -61,7 +62,7 @@ describe("ChannelAuction", async () => {
         "minimumBiddingAmountPerOrder is not allowed to be zero",
       );
     });
-    it.only("throws if auctioned amount is zero", async () => {
+    it("throws if auctioned amount is zero", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -79,7 +80,7 @@ describe("ChannelAuction", async () => {
         }),
       ).to.be.revertedWith("cannot auction zero tokens");
     });
-    it.only("throws if auction is a giveaway", async () => {
+    it("throws if auction is a giveaway", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -97,7 +98,7 @@ describe("ChannelAuction", async () => {
         }),
       ).to.be.revertedWith("_auctioneerBuyAmountMinimum must be positive");
     });
-    it.only("throws if auction end is not in the future", async () => {
+    it("throws if auction end is not in the future", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -117,7 +118,7 @@ describe("ChannelAuction", async () => {
         }),
       ).to.be.revertedWith("time periods are not configured correctly");
     });
-    it.only("initiateAuction stores the parameters correctly", async () => {
+    it("initiateAuction stores the parameters correctly", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -141,9 +142,10 @@ describe("ChannelAuction", async () => {
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          _buyAmountMaximum: initialAuctionOrder.buyAmount,
-          auctionStartDate,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMaximum: initialAuctionOrder.buyAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount.div(2),
+          _auctionStartDate: auctionStartDate,
           _maxDuration,
         },
       );
@@ -153,10 +155,8 @@ describe("ChannelAuction", async () => {
       expect(auctionData.initialAuctionOrder).to.equal(
         encodeOrder(initialAuctionOrder),
       );
-      expect(auctionData.auctionEndDate).to.be.equal(auctionEndDate);
-      expect(auctionData.orderCancellationEndDate).to.be.equal(
-        orderCancellationEndDate,
-      );
+      expect(auctionData.auctionStartDate).to.be.equal(auctionStartDate);
+      expect(auctionData.maxDuration).to.be.equal(_maxDuration);
       await expect(auctionData.clearingPriceOrder).to.equal(
         encodeOrder({
           userId: BigNumber.from(0),
@@ -197,8 +197,71 @@ describe("ChannelAuction", async () => {
       ).to.equal(1);
     });
   });
-  describe("placeOrdersOnBehalf", async () => {
-    it("places a new order and checks that tokens were transferred", async () => {
+  // Maybe we have to disable that functionality
+  // describe("placeOrdersOnBehalf", async () => {
+  //   it("places a new order and checks that tokens were transferred", async () => {
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
+  //     const now = (await ethers.provider.getBlock("latest")).timestamp;
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionStartDate: now + 3600,
+  //       },
+  //     );
+
+  //     const balanceBeforeOrderPlacement = await biddingToken.balanceOf(
+  //       user_1.address,
+  //     );
+  //     const balanceBeforeOrderPlacementOfUser2 = await biddingToken.balanceOf(
+  //       user_2.address,
+  //     );
+  //     const sellAmount = ethers.utils.parseEther("2").add(1);
+  //     const buyAmount = ethers.utils.parseEther("1");
+  //     await startChannelAuction(channelAuction, auctionId);
+
+  //     await channelAuction
+  //       .connect(user_1)
+  //       .placeSellOrdersOnBehalf(
+  //         auctionId,
+  //         [buyAmount],
+  //         [sellAmount],
+  //         [queueStartElement],
+  //         user_2.address,
+  //       );
+
+  //     expect(await biddingToken.balanceOf(channelAuction.address)).to.equal(
+  //       sellAmount,
+  //     );
+  //     expect(await biddingToken.balanceOf(user_1.address)).to.equal(
+  //       balanceBeforeOrderPlacement.sub(sellAmount),
+  //     );
+  //     expect(await biddingToken.balanceOf(user_2.address)).to.equal(
+  //       balanceBeforeOrderPlacementOfUser2,
+  //     );
+  //   });
+  // });
+
+  describe("placeOrders", async () => {
+    it("one can not place orders, if auction is not yet initiated", async () => {
+      await expect(
+        channelAuction.placeSellOrders(
+          0,
+          ethers.utils.parseEther("1"),
+          ethers.utils.parseEther("1").add(1),
+          queueStartElement,
+        ),
+      ).to.be.revertedWith("auction finished or not yet started");
+    });
+    it("one can not place orders, if auction is not yet started", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -208,73 +271,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
       const now = (await ethers.provider.getBlock("latest")).timestamp;
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          orderCancellationEndDate: now + 3600,
-          auctionEndDate: now + 3600,
+          _auctionStartDate: now + 360000,
         },
       );
 
-      const balanceBeforeOrderPlacement = await biddingToken.balanceOf(
-        user_1.address,
-      );
-      const balanceBeforeOrderPlacementOfUser2 = await biddingToken.balanceOf(
-        user_2.address,
-      );
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-
-      await channelAuction
-        .connect(user_1)
-        .placeSellOrdersOnBehalf(
-          auctionId,
-          [buyAmount],
-          [sellAmount],
-          [queueStartElement],
-          "0x",
-          user_2.address,
-        );
-
-      expect(await biddingToken.balanceOf(channelAuction.address)).to.equal(
-        sellAmount,
-      );
-      expect(await biddingToken.balanceOf(user_1.address)).to.equal(
-        balanceBeforeOrderPlacement.sub(sellAmount),
-      );
-      expect(await biddingToken.balanceOf(user_2.address)).to.equal(
-        balanceBeforeOrderPlacementOfUser2,
-      );
-      const userId = BigNumber.from(
-        await channelAuction.callStatic.getUserId(user_2.address),
-      );
-      await channelAuction
-        .connect(user_2)
-        .cancelSellOrders(auctionId, [
-          encodeOrder({ sellAmount, buyAmount, userId }),
-        ]);
-      expect(await biddingToken.balanceOf(channelAuction.address)).to.equal(
-        "0",
-      );
-      expect(await biddingToken.balanceOf(user_2.address)).to.equal(
-        balanceBeforeOrderPlacementOfUser2.add(sellAmount),
-      );
-    });
-  });
-
-  describe("placeOrders", async () => {
-    it("one can not place orders, if auction is not yet initiated", async () => {
       await expect(
         channelAuction.placeSellOrders(
-          0,
-          [ethers.utils.parseEther("1")],
-          [ethers.utils.parseEther("1").add(1)],
-          [queueStartElement],
-          "0x",
+          auctionId,
+          ethers.utils.parseEther("4").add(1),
+          ethers.utils.parseEther("1"),
+          queueStartElement,
         ),
-      ).to.be.revertedWith("no longer in order placement phase");
+      ).to.be.revertedWith("not yet in order placement phase");
     });
     it("one can not place orders, if auction is over", async () => {
       const {
@@ -285,23 +298,22 @@ describe("ChannelAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
         },
       );
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await expect(
         channelAuction.placeSellOrders(
-          0,
-          [ethers.utils.parseEther("1")],
-          [ethers.utils.parseEther("1").add(1)],
-          [queueStartElement],
-          "0x",
+          auctionId,
+          ethers.utils.parseEther("1"),
+          ethers.utils.parseEther("1").add(1),
+          queueStartElement,
         ),
-      ).to.be.revertedWith("no longer in order placement phase");
+      ).to.be.revertedWith("auction finished or not yet started");
     });
     it("one can not place orders, with a worser or same rate", async () => {
       const {
@@ -312,29 +324,35 @@ describe("ChannelAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const _auctioneerBuyAmountMaximum = ethers.utils.parseEther("2");
+      const _auctioneerBuyAmountMinimum = ethers.utils.parseEther("1");
+      const _auctionedSellAmount = ethers.utils.parseEther("1");
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
+          _auctionedSellAmount,
+          _auctioneerBuyAmountMaximum,
+          _auctioneerBuyAmountMinimum,
         },
       );
+      await startChannelAuction(channelAuction, auctionId);
+      // todo: maybe test is not accurate
       await expect(
         channelAuction.placeSellOrders(
           auctionId,
-          [ethers.utils.parseEther("1").add(1)],
-          [ethers.utils.parseEther("1")],
-          [queueStartElement],
-          "0x",
+          _auctioneerBuyAmountMinimum,
+          _auctionedSellAmount,
+          queueStartElement,
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
       await expect(
         channelAuction.placeSellOrders(
           auctionId,
-          [ethers.utils.parseEther("1")],
-          [ethers.utils.parseEther("1")],
-          [queueStartElement],
-          "0x",
+          _auctioneerBuyAmountMaximum,
+          _auctionedSellAmount,
+          queueStartElement,
         ),
       ).to.be.revertedWith("limit price not better than mimimal offer");
     });
@@ -347,24 +365,25 @@ describe("ChannelAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
         },
       );
+      await startChannelAuction(channelAuction, auctionId);
+
       await expect(
         channelAuction.placeSellOrders(
           auctionId,
-          [ethers.utils.parseEther("0")],
-          [ethers.utils.parseEther("1")],
-          [queueStartElement],
-          "0x",
+          ethers.utils.parseEther("0"),
+          ethers.utils.parseEther("1"),
+          queueStartElement,
         ),
       ).to.be.revertedWith("_minBuyAmounts must be greater than 0");
     });
-    it("does not withdraw funds, if orders are placed twice", async () => {
+    it("can't place an order twice", async () => {
       const {
         auctioningToken,
         biddingToken,
@@ -373,35 +392,35 @@ describe("ChannelAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
         },
       );
+      await startChannelAuction(channelAuction, auctionId);
+
       await expect(() =>
         channelAuction.placeSellOrders(
           auctionId,
-          [ethers.utils.parseEther("1").sub(1)],
-          [ethers.utils.parseEther("1")],
-          [queueStartElement],
-          "0x",
+          ethers.utils.parseEther("1").sub(1),
+          ethers.utils.parseEther("1"),
+          queueStartElement,
         ),
       ).to.changeTokenBalances(
         biddingToken,
         [user_1],
         [ethers.utils.parseEther("-1")],
       );
-      await expect(() =>
+      await expect(
         channelAuction.placeSellOrders(
           auctionId,
-          [ethers.utils.parseEther("1").sub(1)],
-          [ethers.utils.parseEther("1")],
-          [queueStartElement],
-          "0x",
+          ethers.utils.parseEther("1").sub(1),
+          ethers.utils.parseEther("1"),
+          queueStartElement,
         ),
-      ).to.changeTokenBalances(biddingToken, [user_1], [BigNumber.from(0)]);
+      ).to.be.revertedWith("could not insert order");
     });
     it("places a new order and checks that tokens were transferred", async () => {
       const {
@@ -412,7 +431,7 @@ describe("ChannelAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
@@ -425,15 +444,15 @@ describe("ChannelAuction", async () => {
       );
       const sellAmount = ethers.utils.parseEther("1").add(1);
       const buyAmount = ethers.utils.parseEther("1");
+      await startChannelAuction(channelAuction, auctionId);
 
       await channelAuction.placeSellOrders(
         auctionId,
-        [buyAmount, buyAmount],
-        [sellAmount, sellAmount.add(1)],
-        [queueStartElement, queueStartElement],
-        "0x",
+        buyAmount,
+        sellAmount,
+        queueStartElement,
       );
-      const transferredbiddingTokenAmount = sellAmount.add(sellAmount.add(1));
+      const transferredbiddingTokenAmount = sellAmount;
 
       expect(await biddingToken.balanceOf(channelAuction.address)).to.equal(
         transferredbiddingTokenAmount,
@@ -441,183 +460,6 @@ describe("ChannelAuction", async () => {
       expect(await biddingToken.balanceOf(user_1.address)).to.equal(
         balanceBeforeOrderPlacement.sub(transferredbiddingTokenAmount),
       );
-    });
-    it("order placement reverts, if order placer is not allowed", async () => {
-      const verifier = await artifacts.readArtifact("AllowListVerifier");
-      const verifierMocked = await deployMockContract(user_3, verifier.abi);
-      await verifierMocked.mock.isAllowed.returns("0x00000000");
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          allowListManager: verifierMocked.address,
-        },
-      );
-
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-      await expect(
-        channelAuction.placeSellOrders(
-          auctionId,
-          [buyAmount],
-          [sellAmount],
-          [queueStartElement],
-          "0x",
-        ),
-      ).to.be.revertedWith("user not allowed to place order");
-    });
-    it("order placement reverts, if allow manager is an EOA", async () => {
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          allowListManager: user_3.address,
-        },
-      );
-
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-      await expect(
-        channelAuction.placeSellOrders(
-          auctionId,
-          [buyAmount],
-          [sellAmount],
-          [queueStartElement],
-          "0x",
-        ),
-      ).to.be.revertedWith("function call to a non-contract account");
-    });
-    it("allow manager can not mutate state", async () => {
-      const StateChangingAllowListManager = await ethers.getContractFactory(
-        "StateChangingAllowListVerifier",
-      );
-
-      const stateChangingAllowListManager = await StateChangingAllowListManager.deploy();
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          allowListManager: stateChangingAllowListManager.address,
-        },
-      );
-
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-      expect(
-        await stateChangingAllowListManager.callStatic.isAllowed(
-          user_1.address,
-          auctionId,
-          "0x",
-        ),
-      ).to.be.equal(MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE);
-      await expect(
-        channelAuction.placeSellOrders(
-          auctionId,
-          [buyAmount],
-          [sellAmount],
-          [queueStartElement],
-          "0x",
-        ),
-      ).to.be.revertedWith(
-        "Transaction reverted and Hardhat couldn't infer the reason. Please report this to help us improve Hardhat",
-      );
-    });
-
-    it("order placement works, if order placer is allowed", async () => {
-      const verifier = await artifacts.readArtifact("AllowListVerifier");
-      const verifierMocked = await deployMockContract(user_3, verifier.abi);
-      await verifierMocked.mock.isAllowed.returns(
-        MAGIC_VALUE_FROM_ALLOW_LIST_VERIFIER_INTERFACE,
-      );
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          allowListManager: verifierMocked.address,
-        },
-      );
-
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-      await expect(
-        channelAuction.placeSellOrders(
-          auctionId,
-          [buyAmount],
-          [sellAmount],
-          [queueStartElement],
-          "0x",
-        ),
-      ).to.emit(channelAuction, "NewSellOrder");
-    });
-    it("an order is only placed once", async () => {
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-        },
-      );
-
-      const sellAmount = ethers.utils.parseEther("1").add(1);
-      const buyAmount = ethers.utils.parseEther("1");
-
-      await channelAuction.placeSellOrders(
-        auctionId,
-        [buyAmount],
-        [sellAmount],
-        [queueStartElement],
-        "0x",
-      );
-      const allPlacedOrders = await getAllSellOrders(channelAuction, auctionId);
-      expect(allPlacedOrders.length).to.be.equal(1);
     });
     it("throws, if DDOS attack with small order amounts is started", async () => {
       const initialAuctionOrder = {
@@ -642,23 +484,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          minimumBiddingAmountPerOrder: ethers.utils.parseEther("1").div(100),
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+          _minimumBiddingAmountPerOrder: ethers.utils.parseEther("1").div(100),
         },
       );
+      await startChannelAuction(channelAuction, auctionId);
       await expect(
         channelAuction.placeSellOrders(
           auctionId,
-          sellOrders.map((buyOrder) => buyOrder.buyAmount),
-          sellOrders.map((buyOrder) => buyOrder.sellAmount),
-          Array(sellOrders.length).fill(queueStartElement),
-          "0x",
+          sellOrders[0].buyAmount,
+          sellOrders[0].sellAmount,
+          queueStartElement,
         ),
       ).to.be.revertedWith("order too small");
     });
@@ -671,7 +513,7 @@ describe("ChannelAuction", async () => {
         [user_1, user_2],
         hre,
       );
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
@@ -684,227 +526,259 @@ describe("ChannelAuction", async () => {
         channelAuction.address,
         ethers.utils.parseEther("0"),
       );
-
+      await startChannelAuction(channelAuction, auctionId);
       await expect(
         channelAuction.placeSellOrders(
           auctionId,
-          [buyAmount, buyAmount],
-          [sellAmount, sellAmount.add(1)],
-          [queueStartElement, queueStartElement],
-          "0x",
+          buyAmount,
+          sellAmount,
+          queueStartElement,
         ),
       ).to.be.revertedWith("ERC20: transfer amount exceeds allowance");
     });
   });
-  describe("precalculateSellAmountSum", async () => {
-    it("fails if too many orders are considered", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2),
-          buyAmount: ethers.utils.parseEther("1").div(5),
-          userId: BigNumber.from(1),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2),
-          buyAmount: ethers.utils.parseEther("1"),
-          userId: BigNumber.from(1),
-        },
+  // describe("precalculateSellAmountSum", async () => {
+  //   it("fails if too many orders are considered", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("1"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2),
+  //         buyAmount: ethers.utils.parseEther("1").div(5),
+  //         userId: BigNumber.from(1),
+  //       },
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2),
+  //         buyAmount: ethers.utils.parseEther("1"),
+  //         userId: BigNumber.from(1),
+  //       },
 
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").mul(2),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
+  //         buyAmount: ethers.utils.parseEther("1").mul(2),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await expect(
-        channelAuction.precalculateSellAmountSum(auctionId, 3),
-      ).to.be.revertedWith("too many orders summed up");
-    });
-    it("fails if queue end is reached", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2),
-          buyAmount: ethers.utils.parseEther("1").div(5),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await expect(
+  //       channelAuction.precalculateSellAmountSum(auctionId, 3),
+  //     ).to.be.revertedWith("too many orders summed up");
+  //   });
+  //   it("fails if queue end is reached", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("1"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2),
+  //         buyAmount: ethers.utils.parseEther("1").div(5),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await expect(
-        channelAuction.precalculateSellAmountSum(auctionId, 2),
-      ).to.be.revertedWith("reached end of order list");
-    });
-    it("verifies that interimSumBidAmount and iterOrder is set correctly", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2),
-          buyAmount: ethers.utils.parseEther("1").div(5),
-          userId: BigNumber.from(1),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2),
-          buyAmount: ethers.utils.parseEther("1"),
-          userId: BigNumber.from(1),
-        },
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await expect(
+  //       channelAuction.precalculateSellAmountSum(auctionId, 2),
+  //     ).to.be.revertedWith("reached end of order list");
+  //   });
+  //   it("verifies that interimSumBidAmount and iterOrder is set correctly", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("1"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2),
+  //         buyAmount: ethers.utils.parseEther("1").div(5),
+  //         userId: BigNumber.from(1),
+  //       },
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2),
+  //         buyAmount: ethers.utils.parseEther("1"),
+  //         userId: BigNumber.from(1),
+  //       },
 
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").mul(2),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
+  //         buyAmount: ethers.utils.parseEther("1").mul(2),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
+  //     await closeChannelAuction(channelAuction, auctionId);
 
-      await channelAuction.precalculateSellAmountSum(auctionId, 1);
-      const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.interimSumBidAmount).to.equal(
-        sellOrders[0].sellAmount,
-      );
+  //     await channelAuction.precalculateSellAmountSum(auctionId, 1);
+  //     const auctionData = await channelAuction.auctionData(auctionId);
+  //     expect(auctionData.interimSumBidAmount).to.equal(
+  //       sellOrders[0].sellAmount,
+  //     );
 
-      expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
-    });
-    it("verifies that interimSumBidAmount and iterOrder takes correct starting values by applying twice", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(10),
-          userId: BigNumber.from(1),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(10),
-          userId: BigNumber.from(2),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2),
-          buyAmount: ethers.utils.parseEther("1"),
-          userId: BigNumber.from(1),
-        },
+  //     expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[0]));
+  //   });
+  //   it("verifies that interimSumBidAmount and iterOrder takes correct starting values by applying twice", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("1"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1"),
+  //         buyAmount: ethers.utils.parseEther("1").div(10),
+  //         userId: BigNumber.from(1),
+  //       },
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1"),
+  //         buyAmount: ethers.utils.parseEther("1").div(10),
+  //         userId: BigNumber.from(2),
+  //       },
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2),
+  //         buyAmount: ethers.utils.parseEther("1"),
+  //         userId: BigNumber.from(1),
+  //       },
 
-        {
-          sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").mul(2),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //       {
+  //         sellAmount: ethers.utils.parseEther("1").mul(2).add(1),
+  //         buyAmount: ethers.utils.parseEther("1").mul(2),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //       },
+  //     );
+  //     await startChannelAuction(channelAuction, auctionId);
 
-      await closeAuction(channelAuction, auctionId);
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await channelAuction.precalculateSellAmountSum(auctionId, 1);
-      await channelAuction.precalculateSellAmountSum(auctionId, 1);
-      const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.interimSumBidAmount).to.equal(
-        sellOrders[0].sellAmount.add(sellOrders[0].sellAmount),
-      );
+  //     await closeChannelAuction(channelAuction, auctionId);
 
-      expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[1]));
-    });
-  });
+  //     await channelAuction.precalculateSellAmountSum(auctionId, 1);
+  //     await channelAuction.precalculateSellAmountSum(auctionId, 1);
+  //     const auctionData = await channelAuction.auctionData(auctionId);
+  //     expect(auctionData.interimSumBidAmount).to.equal(
+  //       sellOrders[0].sellAmount.add(sellOrders[0].sellAmount),
+  //     );
+
+  //     expect(auctionData.interimOrder).to.equal(encodeOrder(sellOrders[1]));
+  //   });
+  // });
   describe("settleAuction", async () => {
     it("checks case 4, it verifies the price in case of clearing order == initialAuctionOrder", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        channelAuction,
+        [user_1, user_2],
+        hre,
+      );
+      const auctionInitParameters = {
+        auctioningToken,
+        biddingToken,
+        _auctionedSellAmount: ethers.utils.parseEther("1"),
+        _auctioneerBuyAmountMinimum: ethers.utils.parseEther("1"),
+        _auctioneerBuyAmountMaximum: ethers.utils.parseEther("2"),
+        _auctioneerUserId: BigNumber.from(0),
       };
       const sellOrders = [
         {
@@ -913,28 +787,18 @@ describe("ChannelAuction", async () => {
           userId: BigNumber.from(1),
         },
       ];
-
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
-        [user_1, user_2],
+        auctionInitParameters,
+      );
+      await startChannelAuction(channelAuction, auctionId);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
         hre,
       );
-
-      await createAuctionWithDefaults(channelAuction, {
-        auctioningToken,
-        biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
-      });
-
-      const auctionId = BigNumber.from(1);
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await closeAuction(channelAuction, auctionId);
-
+      await closeChannelAuction(channelAuction, auctionId);
       const { clearingOrder: price } = await calculateClearingPrice(
         channelAuction,
         auctionId,
@@ -945,67 +809,33 @@ describe("ChannelAuction", async () => {
           auctionId,
           sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
           sellOrders[0].sellAmount,
-          encodeOrder(getClearingPriceFromInitialOrder(initialAuctionOrder)),
+          encodeOrder({
+            sellAmount: auctionInitParameters._auctioneerBuyAmountMinimum,
+            buyAmount: auctionInitParameters._auctionedSellAmount,
+            userId: auctionInitParameters._auctioneerUserId,
+          }),
         );
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
-    });
-    it("checks case 4, it verifies the price in case of clearingOrder == initialAuctionOrder", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("5"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.1"),
-          buyAmount: ethers.utils.parseEther("0.1"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      await createAuctionWithDefaults(channelAuction, {
-        auctioningToken,
-        biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
-      });
-      const auctionId = BigNumber.from(1);
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await closeAuction(channelAuction, auctionId);
-
-      const { clearingOrder: price } = await calculateClearingPrice(
-        channelAuction,
-        auctionId,
-      );
-      await expect(channelAuction.settleAuction(auctionId))
-        .to.emit(channelAuction, "AuctionCleared")
-        .withArgs(
-          auctionId,
-          sellOrders[0].sellAmount.mul(price.buyAmount).div(price.sellAmount),
-          sellOrders[0].sellAmount,
-          encodeOrder(getClearingPriceFromInitialOrder(initialAuctionOrder)),
-        );
-      const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
-      await claimFromAllOrders(channelAuction, auctionId, sellOrders);
     });
     it("checks case 4, it verifies the price in case of clearingOrder == initialAuctionOrder with 3 orders", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("2"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
+      const {
+        auctioningToken,
+        biddingToken,
+      } = await createTokensAndMintAndApprove(
+        channelAuction,
+        [user_1, user_2, user_3, user_4],
+        hre,
+      );
+      const auctionInitParameters = {
+        auctioningToken,
+        biddingToken,
+        _auctionedSellAmount: ethers.utils.parseEther("2"),
+        _auctioneerBuyAmountMinimum: ethers.utils.parseEther("0.5"),
+        _auctioneerBuyAmountMaximum: ethers.utils.parseEther("1"),
+        _auctioneerUserId: BigNumber.from(0),
       };
-      const sellOrders = [
+      let sellOrders = [
         {
           sellAmount: ethers.utils.parseEther("0.1"),
           buyAmount: ethers.utils.parseEther("0.1"),
@@ -1013,7 +843,7 @@ describe("ChannelAuction", async () => {
         },
         {
           sellAmount: ethers.utils.parseEther("0.1"),
-          buyAmount: ethers.utils.parseEther("0.1"),
+          buyAmount: ethers.utils.parseEther("0.099"),
           userId: BigNumber.from(2),
         },
         {
@@ -1022,25 +852,20 @@ describe("ChannelAuction", async () => {
           userId: BigNumber.from(3),
         },
       ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
+
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
-        [user_1, user_2, user_3],
+        auctionInitParameters,
+      );
+      await startChannelAuction(channelAuction, auctionId);
+      sellOrders = await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
         hre,
       );
 
-      await createAuctionWithDefaults(channelAuction, {
-        auctioningToken,
-        biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
-      });
-      const auctionId = BigNumber.from(1);
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       const { clearingOrder: price } = await calculateClearingPrice(
         channelAuction,
         auctionId,
@@ -1054,12 +879,14 @@ describe("ChannelAuction", async () => {
             .mul(price.buyAmount)
             .div(price.sellAmount),
           sellOrders[0].sellAmount.mul(3),
-          encodeOrder(getClearingPriceFromInitialOrder(initialAuctionOrder)),
+          encodeOrder({
+            sellAmount: auctionInitParameters._auctioneerBuyAmountMinimum,
+            buyAmount: auctionInitParameters._auctionedSellAmount,
+            userId: auctionInitParameters._auctioneerUserId,
+          }),
         );
       const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder(getClearingPriceFromInitialOrder(initialAuctionOrder)),
-      );
+      expect(auctionData.clearingPriceOrder).to.equal(encodeOrder(price));
       await claimFromAllOrders(channelAuction, auctionId, sellOrders);
     });
     it("checks case 6, it verifies the price in case of clearingOrder == initialOrder, although last iterOrder would also be possible", async () => {
@@ -1086,16 +913,21 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      await createAuctionWithDefaults(channelAuction, {
+      await createChannelAuctionWithDefaults(channelAuction, {
         auctioningToken,
         biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
+        _auctionedSellAmount: initialAuctionOrder.sellAmount,
+        _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
       });
       const auctionId = BigNumber.from(1);
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
 
       await expect(channelAuction.settleAuction(auctionId))
         .to.emit(channelAuction, "AuctionCleared")
@@ -1141,16 +973,21 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      await createAuctionWithDefaults(channelAuction, {
+      await createChannelAuctionWithDefaults(channelAuction, {
         auctioningToken,
         biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
+        _auctionedSellAmount: initialAuctionOrder.sellAmount,
+        _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
       });
       const auctionId = BigNumber.from(1);
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
 
       await channelAuction.settleAuction(auctionId);
       await channelAuction.auctionData(auctionId);
@@ -1189,16 +1026,21 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      await createAuctionWithDefaults(channelAuction, {
+      await createChannelAuctionWithDefaults(channelAuction, {
         auctioningToken,
         biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
+        _auctionedSellAmount: initialAuctionOrder.sellAmount,
+        _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
       });
       const auctionId = BigNumber.from(1);
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
 
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
@@ -1228,15 +1070,15 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      await createAuctionWithDefaults(channelAuction, {
+      await createChannelAuctionWithDefaults(channelAuction, {
         auctioningToken,
         biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
+        _auctionedSellAmount: initialAuctionOrder.sellAmount,
+        _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
       });
       const auctionId = BigNumber.from(1);
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
 
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
@@ -1272,18 +1114,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -1318,18 +1165,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -1369,18 +1221,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
@@ -1438,18 +1295,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
@@ -1516,18 +1378,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.equal(
@@ -1597,18 +1464,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.eql(encodeOrder(sellOrders[1]));
@@ -1648,18 +1520,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       // this is the additional step
       await channelAuction.precalculateSellAmountSum(auctionId, 1);
 
@@ -1706,18 +1583,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       // this is the additional step
       await channelAuction.precalculateSellAmountSum(auctionId, 1);
 
@@ -1767,18 +1649,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const auctionData = await channelAuction.auctionData(auctionId);
       expect(auctionData.clearingPriceOrder).to.be.equal(
@@ -1824,18 +1711,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       const { clearingOrder: price } = await calculateClearingPrice(
         channelAuction,
         auctionId,
@@ -1851,113 +1743,8 @@ describe("ChannelAuction", async () => {
       );
       await claimFromAllOrders(channelAuction, auctionId, sellOrders);
     });
-    it("checks whether the minimalFundingThreshold is not met", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("10"),
-        buyAmount: ethers.utils.parseEther("10"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(1),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(4),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          minFundingThreshold: ethers.utils.parseEther("5"),
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await closeAuction(channelAuction, auctionId);
-      const { clearingOrder: price } = await calculateClearingPrice(
-        channelAuction,
-        auctionId,
-      );
-
-      await channelAuction.settleAuction(auctionId);
-      expect(price.toString()).to.eql(
-        getClearingPriceFromInitialOrder(initialAuctionOrder).toString(),
-      );
-      const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.minFundingThresholdNotReached).to.equal(true);
-    });
   });
   describe("claimFromAuctioneerOrder", async () => {
-    it("checks that auctioneer receives all their auctioningTokens back if minFundingThreshold was not met", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("10"),
-        buyAmount: ethers.utils.parseEther("10"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(2),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(4),
-          userId: BigNumber.from(3),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2, user_3],
-        hre,
-      );
-      const auctioningTokenBalanceBeforeAuction = await auctioningToken.balanceOf(
-        user_1.address,
-      );
-      const feeReceiver = user_3;
-      const feeNumerator = 10;
-      await channelAuction
-        .connect(user_1)
-        .setFeeParameters(feeNumerator, feeReceiver.address);
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          minFundingThreshold: ethers.utils.parseEther("5"),
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-      await closeAuction(channelAuction, auctionId);
-      await channelAuction.settleAuction(auctionId);
-      const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.minFundingThresholdNotReached).to.equal(true);
-      expect(await auctioningToken.balanceOf(user_1.address)).to.be.equal(
-        auctioningTokenBalanceBeforeAuction,
-      );
-    });
     it("checks the claimed amounts for a fully matched initialAuctionOrder and buyOrder", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
@@ -1980,18 +1767,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       const { clearingOrder: price } = await calculateClearingPrice(
         channelAuction,
         auctionId,
@@ -2029,18 +1821,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       const callPromise = channelAuction.settleAuction(auctionId);
       // auctioneer reward check:
       await expect(callPromise)
@@ -2060,58 +1857,6 @@ describe("ChannelAuction", async () => {
     });
   });
   describe("claimFromParticipantOrder", async () => {
-    it("checks that participant receives all their biddingTokens back if minFundingThreshold was not met", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("10"),
-        buyAmount: ethers.utils.parseEther("10"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(2),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("1"),
-          buyAmount: ethers.utils.parseEther("1").div(4),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          minFundingThreshold: ethers.utils.parseEther("5"),
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await closeAuction(channelAuction, auctionId);
-      await channelAuction.settleAuction(auctionId);
-      await expect(() =>
-        channelAuction.claimFromParticipantOrder(
-          auctionId,
-          sellOrders.map((order) => encodeOrder(order)),
-        ),
-      ).to.changeTokenBalances(
-        biddingToken,
-        [user_2],
-        [sellOrders[0].sellAmount.add(sellOrders[1].sellAmount)],
-      );
-    });
     it("checks that claiming only works after the finishing of the auction", async () => {
       const initialAuctionOrder = {
         sellAmount: ethers.utils.parseEther("1"),
@@ -2134,16 +1879,21 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
       await expect(
         channelAuction.claimFromParticipantOrder(
@@ -2151,7 +1901,7 @@ describe("ChannelAuction", async () => {
           sellOrders.map((order) => encodeOrder(order)),
         ),
       ).to.be.revertedWith("Auction not yet finished");
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await expect(
         channelAuction.claimFromParticipantOrder(
           auctionId,
@@ -2186,18 +1936,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       const { clearingOrder: price } = await calculateClearingPrice(
         channelAuction,
         auctionId,
@@ -2259,17 +2014,22 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-      await closeAuction(channelAuction, auctionId);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       const receivedAmounts = toReceivedFunds(
         await channelAuction.callStatic.claimFromParticipantOrder(auctionId, [
@@ -2308,18 +2068,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       const { clearingOrder: price } = await calculateClearingPrice(
         channelAuction,
         auctionId,
@@ -2363,18 +2128,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await channelAuction.settleAuction(auctionId);
       await channelAuction.claimFromParticipantOrder(auctionId, [
         encodeOrder(sellOrders[0]),
@@ -2413,18 +2183,23 @@ describe("ChannelAuction", async () => {
       hre,
     );
 
-    const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+    const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
       channelAuction,
       {
         auctioningToken,
         biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
+        _auctionedSellAmount: initialAuctionOrder.sellAmount,
+        _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
       },
     );
-    await placeOrders(channelAuction, sellOrders, auctionId, hre);
+    await placeOrdersForChannelAuction(
+      channelAuction,
+      sellOrders,
+      auctionId,
+      hre,
+    );
 
-    await closeAuction(channelAuction, auctionId);
+    await closeChannelAuction(channelAuction, auctionId);
     await channelAuction.settleAuction(auctionId);
     await expect(
       channelAuction.claimFromParticipantOrder(auctionId, [
@@ -2460,18 +2235,23 @@ describe("ChannelAuction", async () => {
       hre,
     );
 
-    const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+    const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
       channelAuction,
       {
         auctioningToken,
         biddingToken,
-        auctionedSellAmount: initialAuctionOrder.sellAmount,
-        minBuyAmount: initialAuctionOrder.buyAmount,
+        _auctionedSellAmount: initialAuctionOrder.sellAmount,
+        _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
       },
     );
-    await placeOrders(channelAuction, sellOrders, auctionId, hre);
+    await placeOrdersForChannelAuction(
+      channelAuction,
+      sellOrders,
+      auctionId,
+      hre,
+    );
 
-    await closeAuction(channelAuction, auctionId);
+    await closeChannelAuction(channelAuction, auctionId);
     const { clearingOrder: price } = await calculateClearingPrice(
       channelAuction,
       auctionId,
@@ -2497,340 +2277,370 @@ describe("ChannelAuction", async () => {
       initialAuctionOrder.sellAmount.sub(1),
     );
   });
-  describe("settleAuctionAtomically", async () => {
-    it("can not settle atomically, if it is not allowed", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("0.5"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.5"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const atomicSellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.499"),
-          buyAmount: ethers.utils.parseEther("0.4999"),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  // describe("settleAuctionAtomically", async () => {
+  //   it("can not settle atomically, if it is not allowed", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("0.5"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.5"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const atomicSellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.499"),
+  //         buyAmount: ethers.utils.parseEther("0.4999"),
+  //         userId: BigNumber.from(2),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          isAtomicClosureAllowed: false,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //         isAtomicClosureAllowed: false,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await expect(
-        channelAuction.settleAuctionAtomically(
-          auctionId,
-          [atomicSellOrders[0].sellAmount],
-          [atomicSellOrders[0].buyAmount],
-          [queueStartElement],
-          "0x",
-        ),
-      ).to.be.revertedWith("not allowed to settle auction atomically");
-    });
-    it("reverts, if more than one order is intended to be settled atomically", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("0.5"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.5"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const atomicSellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.49"),
-          buyAmount: ethers.utils.parseEther("0.49"),
-          userId: BigNumber.from(2),
-        },
-        {
-          sellAmount: ethers.utils.parseEther("0.4"),
-          buyAmount: ethers.utils.parseEther("0.4"),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await expect(
+  //       channelAuction.settleAuctionAtomically(
+  //         auctionId,
+  //         [atomicSellOrders[0].sellAmount],
+  //         [atomicSellOrders[0].buyAmount],
+  //         [queueStartElement],
+  //         "0x",
+  //       ),
+  //     ).to.be.revertedWith("not allowed to settle auction atomically");
+  //   });
+  //   it("reverts, if more than one order is intended to be settled atomically", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("0.5"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.5"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const atomicSellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.49"),
+  //         buyAmount: ethers.utils.parseEther("0.49"),
+  //         userId: BigNumber.from(2),
+  //       },
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.4"),
+  //         buyAmount: ethers.utils.parseEther("0.4"),
+  //         userId: BigNumber.from(2),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          isAtomicClosureAllowed: true,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //         isAtomicClosureAllowed: true,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await expect(
-        channelAuction.settleAuctionAtomically(
-          auctionId,
-          [atomicSellOrders[0].sellAmount, atomicSellOrders[1].sellAmount],
-          [atomicSellOrders[0].buyAmount, atomicSellOrders[1].buyAmount],
-          [queueStartElement, queueStartElement],
-          "0x",
-        ),
-      ).to.be.revertedWith("Only one order can be placed atomically");
-    });
-    it("can not settle atomically, if precalculateSellAmountSum was used", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("0.5"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.5"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const atomicSellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.499"),
-          buyAmount: ethers.utils.parseEther("0.4999"),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await expect(
+  //       channelAuction.settleAuctionAtomically(
+  //         auctionId,
+  //         [atomicSellOrders[0].sellAmount, atomicSellOrders[1].sellAmount],
+  //         [atomicSellOrders[0].buyAmount, atomicSellOrders[1].buyAmount],
+  //         [queueStartElement, queueStartElement],
+  //         "0x",
+  //       ),
+  //     ).to.be.revertedWith("Only one order can be placed atomically");
+  //   });
+  //   it("can not settle atomically, if precalculateSellAmountSum was used", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("0.5"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.5"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const atomicSellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.499"),
+  //         buyAmount: ethers.utils.parseEther("0.4999"),
+  //         userId: BigNumber.from(2),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          isAtomicClosureAllowed: true,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //         isAtomicClosureAllowed: true,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await channelAuction.precalculateSellAmountSum(auctionId, 1);
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await channelAuction.precalculateSellAmountSum(auctionId, 1);
 
-      await expect(
-        channelAuction.settleAuctionAtomically(
-          auctionId,
-          [atomicSellOrders[0].sellAmount],
-          [atomicSellOrders[0].buyAmount],
-          [queueStartElement],
-          "0x",
-        ),
-      ).to.be.revertedWith("precalculateSellAmountSum is already too advanced");
-    });
-    it("allows an atomic settlement, if the precalculation are not yet beyond the price of the inserted order", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("0.5"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.5"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const atomicSellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.55"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //     await expect(
+  //       channelAuction.settleAuctionAtomically(
+  //         auctionId,
+  //         [atomicSellOrders[0].sellAmount],
+  //         [atomicSellOrders[0].buyAmount],
+  //         [queueStartElement],
+  //         "0x",
+  //       ),
+  //     ).to.be.revertedWith("precalculateSellAmountSum is already too advanced");
+  //   });
+  //   it("allows an atomic settlement, if the precalculation are not yet beyond the price of the inserted order", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("0.5"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.5"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const atomicSellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.55"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          isAtomicClosureAllowed: true,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //         isAtomicClosureAllowed: true,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await channelAuction.precalculateSellAmountSum(auctionId, 1);
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await channelAuction.precalculateSellAmountSum(auctionId, 1);
 
-      await channelAuction.settleAuctionAtomically(
-        auctionId,
-        [atomicSellOrders[0].buyAmount],
-        [atomicSellOrders[0].sellAmount],
-        [queueStartElement],
-        "0x",
-      );
-      await claimFromAllOrders(channelAuction, auctionId, sellOrders);
-      await claimFromAllOrders(channelAuction, auctionId, atomicSellOrders);
-    });
-    it("can settle atomically, if it is allowed", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("0.5"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.5"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const atomicSellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.4999"),
-          buyAmount: ethers.utils.parseEther("0.4999"),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //     await channelAuction.settleAuctionAtomically(
+  //       auctionId,
+  //       [atomicSellOrders[0].buyAmount],
+  //       [atomicSellOrders[0].sellAmount],
+  //       [queueStartElement],
+  //       "0x",
+  //     );
+  //     await claimFromAllOrders(channelAuction, auctionId, sellOrders);
+  //     await claimFromAllOrders(channelAuction, auctionId, atomicSellOrders);
+  //   });
+  //   it("can settle atomically, if it is allowed", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("0.5"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.5"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const atomicSellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.4999"),
+  //         buyAmount: ethers.utils.parseEther("0.4999"),
+  //         userId: BigNumber.from(2),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          isAtomicClosureAllowed: true,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //         isAtomicClosureAllowed: true,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await closeAuction(channelAuction, auctionId);
-      await channelAuction
-        .connect(user_2)
-        .settleAuctionAtomically(
-          auctionId,
-          [atomicSellOrders[0].sellAmount],
-          [atomicSellOrders[0].buyAmount],
-          [queueStartElement],
-          "0x",
-        );
-      const auctionData = await channelAuction.auctionData(auctionId);
-      expect(auctionData.clearingPriceOrder).to.equal(
-        encodeOrder({
-          sellAmount: sellOrders[0].sellAmount.add(
-            atomicSellOrders[0].sellAmount,
-          ),
-          buyAmount: initialAuctionOrder.sellAmount,
-          userId: BigNumber.from(0),
-        }),
-      );
-    });
-    it("can not settle auctions atomically, before auction finished", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("0.5"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.5"),
-          buyAmount: ethers.utils.parseEther("0.5"),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const atomicSellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("0.4999"),
-          buyAmount: ethers.utils.parseEther("0.4999"),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
+  //     await closeChannelAuction(channelAuction, auctionId);
+  //     await channelAuction
+  //       .connect(user_2)
+  //       .settleAuctionAtomically(
+  //         auctionId,
+  //         [atomicSellOrders[0].sellAmount],
+  //         [atomicSellOrders[0].buyAmount],
+  //         [queueStartElement],
+  //         "0x",
+  //       );
+  //     const auctionData = await channelAuction.auctionData(auctionId);
+  //     expect(auctionData.clearingPriceOrder).to.equal(
+  //       encodeOrder({
+  //         sellAmount: sellOrders[0].sellAmount.add(
+  //           atomicSellOrders[0].sellAmount,
+  //         ),
+  //         buyAmount: initialAuctionOrder.sellAmount,
+  //         userId: BigNumber.from(0),
+  //       }),
+  //     );
+  //   });
+  //   it("can not settle auctions atomically, before auction finished", async () => {
+  //     const initialAuctionOrder = {
+  //       sellAmount: ethers.utils.parseEther("1"),
+  //       buyAmount: ethers.utils.parseEther("0.5"),
+  //       userId: BigNumber.from(1),
+  //     };
+  //     const sellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.5"),
+  //         buyAmount: ethers.utils.parseEther("0.5"),
+  //         userId: BigNumber.from(1),
+  //       },
+  //     ];
+  //     const atomicSellOrders = [
+  //       {
+  //         sellAmount: ethers.utils.parseEther("0.4999"),
+  //         buyAmount: ethers.utils.parseEther("0.4999"),
+  //         userId: BigNumber.from(2),
+  //       },
+  //     ];
+  //     const {
+  //       auctioningToken,
+  //       biddingToken,
+  //     } = await createTokensAndMintAndApprove(
+  //       channelAuction,
+  //       [user_1, user_2],
+  //       hre,
+  //     );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          isAtomicClosureAllowed: true,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+  //     const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
+  //       channelAuction,
+  //       {
+  //         auctioningToken,
+  //         biddingToken,
+  //         _auctionedSellAmount: initialAuctionOrder.sellAmount,
+  //         _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
+  //         isAtomicClosureAllowed: true,
+  //       },
+  //     );
+  //     await placeOrdersForChannelAuction(
+  //       channelAuction,
+  //       sellOrders,
+  //       auctionId,
+  //       hre,
+  //     );
 
-      await expect(
-        channelAuction
-          .connect(user_2)
-          .settleAuctionAtomically(
-            auctionId,
-            [atomicSellOrders[0].sellAmount],
-            [atomicSellOrders[0].buyAmount],
-            [queueStartElement],
-            "0x",
-          ),
-      ).to.be.revertedWith("Auction not in solution submission phase");
-    });
-  });
+  //     await expect(
+  //       channelAuction
+  //         .connect(user_2)
+  //         .settleAuctionAtomically(
+  //           auctionId,
+  //           [atomicSellOrders[0].sellAmount],
+  //           [atomicSellOrders[0].buyAmount],
+  //           [queueStartElement],
+  //           "0x",
+  //         ),
+  //     ).to.be.revertedWith("Auction not in solution submission phase");
+  //   });
+  // });
   describe("registerUser", async () => {
     it("registers a user only once", async () => {
       await channelAuction.registerUser(user_1.address);
@@ -2839,190 +2649,6 @@ describe("ChannelAuction", async () => {
       ).to.be.revertedWith("User already registered");
     });
   });
-  describe("cancelOrder", async () => {
-    it("cancels an order", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await expect(
-        channelAuction.cancelSellOrders(auctionId, [
-          encodeOrder(sellOrders[0]),
-        ]),
-      )
-        .to.emit(biddingToken, "Transfer")
-        .withArgs(
-          channelAuction.address,
-          user_1.address,
-          sellOrders[0].sellAmount,
-        );
-    });
-    it("does not allow to cancel a order, if it is too late", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const now = (await ethers.provider.getBlock("latest")).timestamp;
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-          orderCancellationEndDate: now + 60 * 60,
-          auctionEndDate: now + 60 * 60 * 60,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await increaseTime(3601);
-      await expect(
-        channelAuction.cancelSellOrders(auctionId, [
-          encodeOrder(sellOrders[0]),
-        ]),
-      ).to.be.revertedWith(
-        "revert no longer in order placement and cancelation phase",
-      );
-      await closeAuction(channelAuction, auctionId);
-      await expect(
-        channelAuction.cancelSellOrders(auctionId, [
-          encodeOrder(sellOrders[0]),
-        ]),
-      ).to.be.revertedWith(
-        "revert no longer in order placement and cancelation phase",
-      );
-    });
-    it("can't cancel orders twice", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(1),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      // removes the order
-      channelAuction.cancelSellOrders(auctionId, [encodeOrder(sellOrders[0])]);
-      // claims 0 sellAmount tokens
-      await expect(
-        channelAuction.cancelSellOrders(auctionId, [
-          encodeOrder(sellOrders[0]),
-        ]),
-      )
-        .to.emit(biddingToken, "Transfer")
-        .withArgs(channelAuction.address, user_1.address, 0);
-    });
-    it("prevents an order from canceling, if tx is not from owner", async () => {
-      const initialAuctionOrder = {
-        sellAmount: ethers.utils.parseEther("1"),
-        buyAmount: ethers.utils.parseEther("1"),
-        userId: BigNumber.from(1),
-      };
-      const sellOrders = [
-        {
-          sellAmount: ethers.utils.parseEther("1").div(2).add(1),
-          buyAmount: ethers.utils.parseEther("1").div(2),
-          userId: BigNumber.from(2),
-        },
-      ];
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        channelAuction,
-        [user_1, user_2],
-        hre,
-      );
-
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
-        channelAuction,
-        {
-          auctioningToken,
-          biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
-        },
-      );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
-
-      await expect(
-        channelAuction.cancelSellOrders(auctionId, [
-          encodeOrder(sellOrders[0]),
-        ]),
-      ).to.be.revertedWith("Only the user can cancel his orders");
-    });
-  });
-
   describe("containsOrder", async () => {
     it("returns true, if it contains order", async () => {
       const initialAuctionOrder = {
@@ -3046,18 +2672,23 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       expect(
         await channelAuction.callStatic.containsOrder(
           auctionId,
@@ -3082,16 +2713,16 @@ describe("ChannelAuction", async () => {
         hre,
       );
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       expect(
         await channelAuction.callStatic.getSecondsRemainingInBatch(auctionId),
       ).to.be.equal("0");
@@ -3131,20 +2762,25 @@ describe("ChannelAuction", async () => {
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
       // resets the userId, as they are only given during function call.
       sellOrders = await getAllSellOrders(channelAuction, auctionId);
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await expect(() =>
         channelAuction.settleAuction(auctionId),
       ).to.changeTokenBalances(
@@ -3192,23 +2828,28 @@ describe("ChannelAuction", async () => {
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
       // resets the userId, as they are only given during function call.
       sellOrders = await getAllSellOrders(channelAuction, auctionId);
       await channelAuction
         .connect(user_1)
         .setFeeParameters(10, feeReceiver.address);
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await expect(() =>
         channelAuction.settleAuction(auctionId),
       ).to.changeTokenBalances(
@@ -3251,20 +2892,25 @@ describe("ChannelAuction", async () => {
         .connect(user_1)
         .setFeeParameters(feeNumerator, feeReceiver.address);
 
-      const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
+      const auctionId: BigNumber = await createChannelAuctionWithDefaultsAndReturnId(
         channelAuction,
         {
           auctioningToken,
           biddingToken,
-          auctionedSellAmount: initialAuctionOrder.sellAmount,
-          minBuyAmount: initialAuctionOrder.buyAmount,
+          _auctionedSellAmount: initialAuctionOrder.sellAmount,
+          _auctioneerBuyAmountMinimum: initialAuctionOrder.buyAmount,
         },
       );
-      await placeOrders(channelAuction, sellOrders, auctionId, hre);
+      await placeOrdersForChannelAuction(
+        channelAuction,
+        sellOrders,
+        auctionId,
+        hre,
+      );
       // resets the userId, as they are only given during function call.
       sellOrders = await getAllSellOrders(channelAuction, auctionId);
 
-      await closeAuction(channelAuction, auctionId);
+      await closeChannelAuction(channelAuction, auctionId);
       await expect(() =>
         channelAuction.settleAuction(auctionId),
       ).to.changeTokenBalances(

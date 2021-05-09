@@ -13,20 +13,16 @@ library IterableOrderedOrderList {
     bytes32 internal constant QUEUE_END =
         0xffffffffffffffffffffffffffffffffffffffff000000000000000000000001;
 
-    /// The struct is used to implement a modified version of a doubly linked
+    /// The struct is used to implement a modified version of a  linked
     /// list with sorted elements. The list starts from QUEUE_START to
-    /// QUEUE_END, and each node keeps track of its predecessor and successor.
+    /// QUEUE_END, and each node keeps track of its successor.
     /// Nodes can be added or removed.
     ///
-    /// `next` and `prev` have a different role. The list is supposed to be
+    ///  The list is supposed to be
     /// traversed with `next`. If `next` is empty, the node is not part of the
-    /// list. However, `prev` might be set for elements that are not in the
-    /// list, which is why it should not be used for traversing. Having a `prev`
-    /// set for elements not in the list is used to keep track of the history of
-    /// the position in the list of a removed element.
+    /// list.
     struct Data {
         mapping(bytes32 => bytes32) nextMap;
-        mapping(bytes32 => bytes32) prevMap;
     }
 
     struct Order {
@@ -37,7 +33,6 @@ library IterableOrderedOrderList {
 
     function initializeEmptyList(Data storage self) internal {
         self.nextMap[QUEUE_START] = QUEUE_END;
-        self.prevMap[QUEUE_END] = QUEUE_START;
     }
 
     function isEmpty(Data storage self) internal view returns (bool) {

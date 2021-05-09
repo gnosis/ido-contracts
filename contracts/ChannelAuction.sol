@@ -19,13 +19,29 @@ contract ChannelAuction is Ownable {
     using IdToAddressBiMap for IdToAddressBiMap.Data;
 
     modifier atStageOrderPlacement(uint256 auctionId) {
+        {
+            uint256 auctionStartDate = auctionData[auctionId].auctionStartDate;
+            require(
+                block.timestamp > auctionStartDate,
+                "not yet in order placement phase"
+            );
+            require(
+                block.timestamp <
+                    auctionStartDate.add(auctionData[auctionId].maxDuration),
+                "auction finished or not yet started"
+            );
+            require(
+                bytes32(0) == auctionData[auctionId].clearingPriceOrder,
+                "no longer in order placement phase"
+            );
+        }
+        _;
+    }
+
+    modifier atStagePriceCalculation(uint256 auctionId) {
         require(
-            block.timestamp > auctionData[auctionId].auctionStartDate,
-            "not yet in order placement phase"
-        );
-        require(
-            bytes32(0) == auctionData[auctionId].clearingPriceOrder,
-            "no longer in order placement phase"
+            auctionData[auctionId].clearingPriceOrder == bytes32(0),
+            "Auction already finished"
         );
         _;
     }
@@ -76,11 +92,13 @@ contract ChannelAuction is Ownable {
         IERC20 biddingToken;
         uint96 auctionStartDate;
         bytes32 initialAuctionOrder;
-        uint256 minimumBiddingAmountPerOrder;
+        uint96 minimumBiddingAmountPerOrder;
         bytes32 clearingPriceOrder;
         uint96 volumeClearingPriceOrder;
         uint96 maxDuration;
-        uint96 auctioneerBuyAmountMinimum;
+        uint96 auctioneerBuyAmountMaximum;
+        bytes32 interimOrder;
+        uint96 volumeInterimOrder;
     }
     mapping(uint256 => IterableOrderedOrderList.Data) internal sellOrders;
     mapping(uint256 => AuctionData) public auctionData;
@@ -100,8 +118,8 @@ contract ChannelAuction is Ownable {
         address newfeeReceiverAddress
     ) public onlyOwner() {
         require(
-            newFeeNumerator <= 15,
-            "Fee is not allowed to be set higher than 1.5%"
+            newFeeNumerator <= 5,
+            "Fee is not allowed to be set higher than 0.5%"
         );
         // caution: for currently running auctions, the feeReceiverUserId is changing as well.
         feeReceiverUserId = getUserId(newfeeReceiverAddress);
@@ -165,14 +183,16 @@ contract ChannelAuction is Ownable {
             _auctionStartDate,
             IterableOrderedOrderList.encodeOrder(
                 userId,
-                _auctioneerBuyAmountMaximum,
+                _auctioneerBuyAmountMinimum,
                 _auctionedSellAmount
             ),
             _minimumBiddingAmountPerOrder,
             bytes32(0),
             0,
             _maxDuration,
-            _auctioneerBuyAmountMinimum
+            _auctioneerBuyAmountMaximum,
+            bytes32(0),
+            0
         );
         emit NewAuction(
             auctionCounter,
@@ -191,109 +211,112 @@ contract ChannelAuction is Ownable {
 
     function placeSellOrders(
         uint256 auctionId,
-        uint96[] memory _minBuyAmounts,
-        uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders
-    ) external atStageOrderPlacement(auctionId) returns (uint64 userId) {
-        return
-            _placeSellOrders(
-                auctionId,
-                _minBuyAmounts,
-                _sellAmounts,
-                _prevSellOrders,
-                msg.sender
-            );
+        uint96 _minBuyAmounts,
+        uint96 _sellAmounts,
+        bytes32 _prevSellOrders
+    ) external atStageOrderPlacement(auctionId) {
+        _placeSellOrders(
+            auctionId,
+            _minBuyAmounts,
+            _sellAmounts,
+            _prevSellOrders,
+            msg.sender
+        );
     }
 
     function placeSellOrdersOnBehalf(
         uint256 auctionId,
-        uint96[] memory _minBuyAmounts,
-        uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders,
+        uint96 _minBuyAmounts,
+        uint96 _sellAmounts,
+        bytes32 _prevSellOrders,
         address orderSubmitter
-    ) external atStageOrderPlacement(auctionId) returns (uint64 userId) {
-        return
-            _placeSellOrders(
-                auctionId,
-                _minBuyAmounts,
-                _sellAmounts,
-                _prevSellOrders,
-                orderSubmitter
-            );
+    ) external atStageOrderPlacement(auctionId) {
+        _placeSellOrders(
+            auctionId,
+            _minBuyAmounts,
+            _sellAmounts,
+            _prevSellOrders,
+            orderSubmitter
+        );
     }
 
     function _placeSellOrders(
         uint256 auctionId,
-        uint96[] memory _minBuyAmounts,
-        uint96[] memory _sellAmounts,
-        bytes32[] memory _prevSellOrders,
+        uint96 _minBuyAmount,
+        uint96 _sellAmount,
+        bytes32 _prevSellOrder,
         address orderSubmitter
-    ) internal returns (uint64 userId) {
+    ) internal {
+        require(_minBuyAmount > 0, "_minBuyAmounts must be greater than 0");
+        uint256 currentMinBuyAmountFromAuctioneer = 0;
+        (
+            ,
+            uint96 buyAmountOfInitialAuctionOrder,
+            uint96 sellAmountOfInitialAuctionOrder
+        ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
         {
-            (
-                ,
-                uint96 buyAmountOfInitialAuctionOrder,
-                uint96 sellAmountOfInitialAuctionOrder
-            ) = auctionData[auctionId].initialAuctionOrder.decodeOrder();
-            for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
-                require(
-                    _minBuyAmounts[i].mul(buyAmountOfInitialAuctionOrder) <
-                        sellAmountOfInitialAuctionOrder.mul(_sellAmounts[i]),
-                    "limit price not better than mimimal offer"
-                );
-            }
-        }
-        uint256 sumOfSellAmounts = 0;
-        userId = getUserId(orderSubmitter);
-        uint256 minimumBiddingAmountPerOrder =
-            auctionData[auctionId].minimumBiddingAmountPerOrder;
-        for (uint256 i = 0; i < _minBuyAmounts.length; i++) {
-            require(
-                _minBuyAmounts[i] > 0,
-                "_minBuyAmounts must be greater than 0"
+            uint96 auctioneerBuyAmountMaximum =
+                auctionData[auctionId].auctioneerBuyAmountMaximum;
+            currentMinBuyAmountFromAuctioneer = getCurrentMinBuyAmountFromAuctioneer(
+                buyAmountOfInitialAuctionOrder,
+                auctioneerBuyAmountMaximum,
+                block
+                    .timestamp
+                    .sub(auctionData[auctionId].auctionStartDate)
+                    .toUint96(),
+                auctionData[auctionId].maxDuration
             );
-            // orders should have a minimum bid size in order to limit the gas
-            // required to compute the final price of the auction.
+        }
+        uint96 minBuyAmount = _minBuyAmount;
+        {
             require(
-                _sellAmounts[i] > minimumBiddingAmountPerOrder,
-                "order too small"
+                _minBuyAmount.mul(buyAmountOfInitialAuctionOrder) <
+                    sellAmountOfInitialAuctionOrder.mul(_sellAmount),
+                "limit price not better than mimimal offer"
             );
             if (
-                sellOrders[auctionId].insert(
-                    IterableOrderedOrderList.encodeOrder(
-                        userId,
-                        _minBuyAmounts[i],
-                        _sellAmounts[i]
-                    ),
-                    _prevSellOrders[i]
-                )
+                _minBuyAmount.mul(currentMinBuyAmountFromAuctioneer) <
+                sellAmountOfInitialAuctionOrder.mul(_sellAmount)
             ) {
-                sumOfSellAmounts = sumOfSellAmounts.add(_sellAmounts[i]);
-                emit NewSellOrder(
-                    auctionId,
-                    userId,
-                    _minBuyAmounts[i],
-                    _sellAmounts[i]
-                );
+                minBuyAmount = _sellAmount
+                    .mul(currentMinBuyAmountFromAuctioneer)
+                    .div(sellAmountOfInitialAuctionOrder)
+                    .toUint96();
             }
         }
+        uint64 userId = getUserId(orderSubmitter);
+        // orders should have a minimum bid size in order to limit the gas
+        // required to compute the final price of the auction.
+        require(
+            _sellAmount > auctionData[auctionId].minimumBiddingAmountPerOrder,
+            "order too small"
+        );
+        require(
+            sellOrders[auctionId].insert(
+                IterableOrderedOrderList.encodeOrder(
+                    userId,
+                    minBuyAmount,
+                    _sellAmount
+                ),
+                _prevSellOrder
+            ),
+            "could not insert order"
+        );
         auctionData[auctionId].biddingToken.safeTransferFrom(
             msg.sender,
             address(this),
-            sumOfSellAmounts
+            _sellAmount
         ); //[1]
+        emit NewSellOrder(auctionId, userId, minBuyAmount, _sellAmount);
     }
 
     function settleAuctionWithAdditionalOrder(
         uint256 auctionId,
-        uint96[] memory _minBuyAmount,
-        uint96[] memory _sellAmount,
-        bytes32[] memory _prevSellOrder
-    ) public atStageOrderPlacement(auctionId) {
-        require(
-            _minBuyAmount.length == 1 && _sellAmount.length == 1,
-            "Only one order can be placed atomically"
-        );
+        uint96 _minBuyAmount,
+        uint96 _sellAmount,
+        bytes32 _prevSellOrder
+    ) public atStagePriceCalculation(auctionId) {
+        //claculate the maximal outstanding volume and adjust sell amount
         _placeSellOrders(
             auctionId,
             _minBuyAmount,
@@ -305,13 +328,13 @@ contract ChannelAuction is Ownable {
         bytes32[] memory claimOrder = new bytes32[](1);
         claimOrder[0] = IterableOrderedOrderList.encodeOrder(
             getUserId(msg.sender),
-            _minBuyAmount[0],
-            _sellAmount[0]
+            _minBuyAmount,
+            _sellAmount
         );
         claimFromParticipantOrder(auctionId, claimOrder);
     }
 
-    function getCurrentMinBuyAmount(
+    function getCurrentMinBuyAmountFromAuctioneer(
         uint96 buyAmountMinimum,
         uint96 buyAmountMaximum,
         uint96 passedTime,
@@ -334,7 +357,7 @@ contract ChannelAuction is Ownable {
     // @dev function settling the auction and calculating the price
     function settleAuction(uint256 auctionId)
         public
-        atStageOrderPlacement(auctionId)
+        atStagePriceCalculation(auctionId)
         returns (bytes32 clearingOrder)
     {
         (uint64 auctioneerId, , uint96 fullAuctionedAmount) =
@@ -342,11 +365,11 @@ contract ChannelAuction is Ownable {
 
         uint96 minAuctionedBuyAmount = 0;
         {
-            (, uint96 auctioneerBuyAmountMaximum, ) =
+            (, uint96 auctioneerBuyAmountMinimum, ) =
                 auctionData[auctionId].initialAuctionOrder.decodeOrder();
-            minAuctionedBuyAmount = getCurrentMinBuyAmount(
-                auctioneerBuyAmountMaximum,
-                auctionData[auctionId].auctioneerBuyAmountMinimum,
+            minAuctionedBuyAmount = getCurrentMinBuyAmountFromAuctioneer(
+                auctioneerBuyAmountMinimum,
+                auctionData[auctionId].auctioneerBuyAmountMaximum,
                 block
                     .timestamp
                     .sub(auctionData[auctionId].auctionStartDate)
@@ -457,9 +480,6 @@ contract ChannelAuction is Ownable {
             uint96(currentBidSum),
             clearingOrder
         );
-        // Gas refunds
-        auctionData[auctionId].initialAuctionOrder = bytes32(0);
-        auctionData[auctionId].minimumBiddingAmountPerOrder = uint256(0);
     }
 
     function claimFromParticipantOrder(
@@ -588,6 +608,21 @@ contract ChannelAuction is Ownable {
             userId = registerUser(user);
             emit NewUser(userId, user);
         }
+    }
+
+    function getSecondsRemainingUntilLastPossibleClose(uint256 auctionId)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 auctionEndDate =
+            auctionData[auctionId].auctionStartDate.add(
+                auctionData[auctionId].maxDuration
+            );
+        if (auctionEndDate < block.timestamp) {
+            return 0;
+        }
+        return auctionEndDate.sub(block.timestamp);
     }
 
     function containsOrder(uint256 auctionId, bytes32 order)
