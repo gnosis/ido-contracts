@@ -173,6 +173,22 @@
       "decimals": 18,
       "address": "0x7c3e3bdcec89a3f706c9a02797ec427ffa596787",
       "logoURI": "https://i.ibb.co/By0VbLK/stakehouse-dp.png"
+    },
+    {
+      "name": "BSNcommunitynet",
+      "chainId": 4,
+      "symbol": "cBSN",
+      "decimals": 18,
+      "address": "0x487bA7E3C02Fe62a56988dE164a90a6f29d05e0E",
+      "logoURI": "https://i.ibb.co/TtGMbYs/bsn-dp-r.png"
+    },
+    {
+      "name": "StakeHouse Batch",
+      "chainId": 4,
+      "symbol": "SHB",
+      "decimals": 18,
+      "address": "0x67BF1BB0b98FCbBC0EE3ffbE7669acC3e9E44FdF",
+      "logoURI": "https://i.ibb.co/By0VbLK/stakehouse-dp.png"
     }
   ]
 }
