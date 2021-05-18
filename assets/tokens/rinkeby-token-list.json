@@ -164,7 +164,15 @@
       "symbol": "cBSN",
       "decimals": 18,
       "address": "0x7d4b1d793239707445305d8d2456d2c735f6b25b",
-      "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/9418.png"
+      "logoURI": "https://i.ibb.co/TtGMbYs/bsn-dp-r.png"
+    },
+    {
+      "name": "StakeHouse Batch",
+      "chainId": 1,
+      "symbol": "SHB",
+      "decimals": 18,
+      "address": "0x7c3e3bdcec89a3f706c9a02797ec427ffa596787",
+      "logoURI": "https://i.ibb.co/By0VbLK/stakehouse-dp.png"
     }
   ]
 }
