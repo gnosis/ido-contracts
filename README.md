@@ -135,7 +135,7 @@ export PK=<Your private key _for the signing address_. The address for this key 
 yarn hardhat generateSignatures --auction-id "Your auctionId" --file-with-address "./your_address_inputs.txt" --network $NETWORK
 ```
 
-The generated signatures can be directly uploaded to the backend by adding the flag `--post-to-api` to the previous command. Uploading signatures allows all authorized users to create orders from the web interface without the extra friction of managing a signature.
+The generated signatures can be directly uploaded to the backend by adding the flag `--post-to-api` - or `--post-to-dev-api` in case you are testing with [development environment](https://ido-ux.dev.gnosisdev.com/#/) - to the previous command. Uploading signatures allows all authorized users to create orders from the web interface without the extra friction of managing a signature.
 
 ## Audit
 
