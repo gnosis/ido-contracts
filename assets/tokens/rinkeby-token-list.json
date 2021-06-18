@@ -196,7 +196,15 @@
       "symbol": "VITA",
       "decimals": 18,
       "address": "0x29Db448452e17DC5c50CF5D6e3198b1a531E0D6A",
-      "logoURI": "https://ipfs.io/ipfs/QmYmWYViuNG15LghxUhFQbLHKLUvq8Vy3tgJjjvxWJymMG"
+      "logoURI": "http://ipfs.io/ipfs/QmUdpaWdzLjaDsf2jkpyitUQD1fSJkZHFQA3csEnEEJ2SC?filename=VitaLogo.png"
+    },
+    {
+      "name": "VITA",
+      "chainId": 1,
+      "symbol": "VITA",
+      "decimals": 18,
+      "address": "0x81f8f0bb1cb2a06649e51913a151f0e7ef6fa321",
+      "logoURI": "http://ipfs.io/ipfs/QmUdpaWdzLjaDsf2jkpyitUQD1fSJkZHFQA3csEnEEJ2SC?filename=VitaLogo.png"
     }
   ]
 }
