@@ -189,6 +189,14 @@
       "decimals": 18,
       "address": "0x67BF1BB0b98FCbBC0EE3ffbE7669acC3e9E44FdF",
       "logoURI": "https://i.ibb.co/By0VbLK/stakehouse-dp.png"
+    },
+    {
+      "name": "VITA",
+      "chainId": 4,
+      "symbol": "VITA",
+      "decimals": 18,
+      "address": "0x29Db448452e17DC5c50CF5D6e3198b1a531E0D6A",
+      "logoURI": "https://ipfs.io/ipfs/QmYmWYViuNG15LghxUhFQbLHKLUvq8Vy3tgJjjvxWJymMG"
     }
   ]
 }
