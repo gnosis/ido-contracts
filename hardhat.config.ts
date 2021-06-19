@@ -7,6 +7,7 @@ import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
 import { clearAuction } from "./src/tasks/clear_auction";
+import { createTestToken } from "./src/tasks/create_new_test_token";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
 import { placeManyOrders } from "./src/tasks/placeManyOrders";
@@ -51,6 +52,7 @@ initiateAuction();
 clearAuction();
 generateSignatures();
 placeManyOrders();
+createTestToken();
 
 export default {
   paths: {

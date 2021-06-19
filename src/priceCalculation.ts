@@ -1,3 +1,4 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Contract, BigNumber, Wallet } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 export interface Price {
@@ -284,7 +285,7 @@ export async function getAllSellOrders(
 
 export async function createTokensAndMintAndApprove(
   easyAuction: Contract,
-  users: Wallet[],
+  users: SignerWithAddress[],
   hre: HardhatRuntimeEnvironment,
 ): Promise<{ auctioningToken: Contract; biddingToken: Contract }> {
   const ERC20 = await hre.ethers.getContractFactory("ERC20Mintable");

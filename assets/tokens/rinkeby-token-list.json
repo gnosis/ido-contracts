@@ -205,6 +205,14 @@
       "decimals": 18,
       "address": "0x81f8f0bb1cb2a06649e51913a151f0e7ef6fa321",
       "logoURI": "http://ipfs.io/ipfs/QmUdpaWdzLjaDsf2jkpyitUQD1fSJkZHFQA3csEnEEJ2SC?filename=VitaLogo.png"
+    },
+    {
+      "name": "ETH",
+      "chainId": 1,
+      "symbol": "ETH",
+      "decimals": 18,
+      "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
     }
   ]
 }
