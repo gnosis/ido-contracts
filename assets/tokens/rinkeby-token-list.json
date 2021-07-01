@@ -213,6 +213,14 @@
       "decimals": 18,
       "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+    },
+    {
+      "name": "GoldenDog",
+      "chainId": 1,
+      "symbol": "GDOG",
+      "decimals": 18,
+      "address": "0x6aa493050427c7af81d38f19fd6b4f5dd3a75e3b",
+      "logoURI": "https://goldendog.io/images/logo256.png"
     }
   ]
 }
