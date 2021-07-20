@@ -237,6 +237,14 @@
       "decimals": 18,
       "address": "0x138a6A43D529aCba75c936D19425C5c2A1E69507",
       "logoURI": "https://i.ibb.co/GJ4dfdW/JCIL-BYOB-logo.png"
+    },
+    {
+      "name": "Vesting Swarm Markets Token",
+      "chainId": 1,
+      "symbol": "vSMT",
+      "decimals": 18,
+      "address": "0x0C033bb39e67eB598D399C06A8A519498dA1Cec9",
+      "logoURI": "https://raw.githubusercontent.com/SwarmMarkets/docs-www/main/vSMT.png"
     }
   ]
 }
