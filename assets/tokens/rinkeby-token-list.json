@@ -253,6 +253,14 @@
       "decimals": 18,
       "address": "0xbd9908b0cdd50386f92efcc8e1d71766c2782df0",
       "logoURI": "https://raw.githubusercontent.com/DAOSquare/DesignResources/main/logo/DAOSquareToken500X500.png"
+    },
+    {
+      "name": "Tracer",
+      "chainId": 1,
+      "symbol": "TCR",
+      "decimals": 18,
+      "address": "0x9c4a4204b79dd291d6b6571c5be8bbcd0622f050",
+      "logoURI": "https://raw.githubusercontent.com/tracer-protocol/assets/master/tcr-logo-squre.png"
     }
   ]
 }
