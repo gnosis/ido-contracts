@@ -261,6 +261,22 @@
       "decimals": 18,
       "address": "0x9c4a4204b79dd291d6b6571c5be8bbcd0622f050",
       "logoURI": "https://raw.githubusercontent.com/tracer-protocol/assets/master/tcr-logo-squre.png"
+    },
+    {
+      "name": "Swash Token",
+      "chainId": 1,
+      "symbol": "SWASH",
+      "decimals": 18,
+      "address": "0xa130e3a33a4d84b04c3918c4e5762223ae252f80",
+      "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
+    },
+    {
+      "name": "Swash Token",
+      "chainId": 4,
+      "symbol": "SWASH",
+      "decimals": 18,
+      "address": "0xF7BaAF97607A01AECd768858AC986727790a9A47",
+      "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
     }
   ]
 }
