@@ -277,6 +277,14 @@
       "decimals": 18,
       "address": "0xF7BaAF97607A01AECd768858AC986727790a9A47",
       "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
+    },
+    {
+      "name": "USDT",
+      "chainId": 4,
+      "symbol": "USDT",
+      "decimals": 18,
+      "address": "0xd9ba894e0097f8cc2bbc9d24d308b98e36dc6d02",
+      "logoURI": "https://cryptologos.cc/logos/tether-usdt-logo.png?v=014"
     }
   ]
 }
