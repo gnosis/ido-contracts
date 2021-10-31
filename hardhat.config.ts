@@ -111,7 +111,7 @@ export default {
     },
     polygon: {
       ...sharedNetworkConfig,
-      url: "https://rpc-mainnet.maticvigil.com/",
+      url: "https://polygon-rpc.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
