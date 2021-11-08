@@ -6,6 +6,7 @@ import { utils } from "ethers";
 import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
+import { clearAuctionSimplified } from "./src/tasks/clear_auction_simplifed";
 import { clearAuction } from "./src/tasks/clear_auction";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
@@ -49,6 +50,7 @@ if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
 
 initiateAuction();
 clearAuction();
+clearAuctionSimplified();
 generateSignatures();
 placeManyOrders();
 
@@ -87,8 +89,8 @@ export default {
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     rinkeby: {
@@ -96,8 +98,8 @@ export default {
       url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     xdai: {
@@ -105,8 +107,8 @@ export default {
       url: "https://xdai.1hive.org",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     polygon: {
@@ -114,8 +116,8 @@ export default {
       url: "https://polygon-rpc.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     binancesmartchain: {
@@ -123,8 +125,8 @@ export default {
       url: "https://bsc-dataseed1.binance.org/",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
   },
