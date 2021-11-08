@@ -145,6 +145,9 @@ async function getNetworkName(
   if (networkInfo.chainId === 1) {
     networkName = "mainnet";
   }
+  if (networkInfo.chainId === 137) {
+    networkName = "polygon";
+  }
   return networkName;
 }
 export { generateSignatures };
