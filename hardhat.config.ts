@@ -7,6 +7,7 @@ import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
 import { clearAuction } from "./src/tasks/clear_auction";
+import { clearAuctionSimplified } from "./src/tasks/clear_auction_simplifed";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
 import { placeManyOrders } from "./src/tasks/placeManyOrders";
@@ -49,6 +50,7 @@ if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
 
 initiateAuction();
 clearAuction();
+clearAuctionSimplified();
 generateSignatures();
 placeManyOrders();
 
