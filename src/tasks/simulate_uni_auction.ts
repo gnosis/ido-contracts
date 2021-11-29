@@ -38,8 +38,10 @@ const simulateETHGNOAuction: () => void = () => {
     const initialGnoBalance = await gnoToken.balanceOf(gnosisDAO.address);
     const initialWethBalance = await wethToken.balanceOf(gnosisDAO.address);
     const initialxDaiGovGNOBalance = await gnoToken.balanceOf(xdaiGovMultisigAddress);
-    const initialWithdrawnTokens = await vesting.withdrawnTokens()
+    const initialWithdrawnTokens = await vesting.withdrawnTokens();
     const initialAuctionWethBalance = await wethToken.balanceOf(easyAuction.address);
+    const initialETHBalance = await hardhatRuntime.ethers.provider.getBalance(gnosisDAO.address);
+
     ////////////////////////////////////////////////////////////////////////////////
     // 1st: Create single txs
     ////////////////////////////////////////////////////////////////////////////////
@@ -157,7 +159,7 @@ const simulateETHGNOAuction: () => void = () => {
     ////////////////////////////////////////////////////////////////////////////////
     // 4th: Check execution results
     ////////////////////////////////////////////////////////////////////////////////
-    console.log('--------------------------------------------------------------------');
+    console.log('\n--------------------------------------------------------------------');
     let gnosisDAOEthBalanceAfterWithdraw = await gnoToken.balanceOf(gnosisDAO.address)/1e18;
     console.log(`DAO GNO Balance before the proposal started: ${initialGnoBalance/1e18}`);
     console.log(`DAO GNO Balance after the proposal ended   : ${gnosisDAOEthBalanceAfterWithdraw}`);
@@ -170,14 +172,21 @@ const simulateETHGNOAuction: () => void = () => {
     let gnosisDAOwethBalanceAfter = await wethToken.balanceOf(gnosisDAO.address);
     console.log(`DAO WETH balance before the proposal started: ${initialWethBalance/1e18}`);
     console.log(`DAO WETH balance after the proposal ended   : ${gnosisDAOwethBalanceAfter/1e18}`);
-
     let auctionWethBalanceAfter = await wethToken.balanceOf(easyAuction.address);
     console.log(`Auction WETH balance before the proposal started: ${initialAuctionWethBalance/1e18}`);
     console.log(`Auction WETH balance after the proposal ended   : ${auctionWethBalanceAfter/1e18}`);
+    let gnosisDAOETHBalanceAfter = await hardhatRuntime.ethers.provider.getBalance(gnosisDAO.address);
+    console.log(`DAO ETH Balance before the proposal started: ${initialETHBalance}`);
+    console.log(`DAO ETH Balance after the proposal ended   : ${gnosisDAOETHBalanceAfter}`);
+    console.log('--------------------------------------------------------------------\n');
 
+    // We expect the balance of xDAI Multisig to increase by the amount of GNO we withdraw from VestingContract
     assert.ok(xdaiGovGNOBalanceAfter.eq(initialxDaiGovGNOBalance.add(gnoWithdrawAmount)));
+    // We expect 20,000 ETH to be changed for WETH and be deposited on the Auction contract
     assert.ok(gnosisDAOwethBalanceAfter.eq(initialWethBalance));
     assert.ok(auctionWethBalanceAfter.sub(initialAuctionWethBalance).eq(auctionedSellAmount));
+    assert.ok(gnosisDAOETHBalanceAfter.eq(initialETHBalance.sub(auctionedSellAmount)));
+
 
     ////////////////////////////////////////////////////////////////////////////////
     // 5th: All kind of checks
