@@ -44,13 +44,13 @@ const simulateETHGNOAuction: () => void = () => {
       "20000",
     );
     const minBuyAmount = hardhatRuntime.ethers.utils.parseEther(
-      "166666",
+      "166666.66",
     );
     const minimumBiddingAmountPerOrder = hardhatRuntime.ethers.utils.parseEther(
       "0.5",
     );;
     const minFundingThreshold = 0;
-    const isAtomicClosureAllowed = true;
+    const isAtomicClosureAllowed = false;
     const accessManagerContract = "0x0000000000000000000000000000000000000000";
     const accessManagerContractData = "0x";
 
@@ -58,7 +58,7 @@ const simulateETHGNOAuction: () => void = () => {
     const tx_wrapping = {
       "from": gnosisDAO.address,
       "to": wethToken.address,
-      "value": hardhatRuntime.ethers.utils.parseUnits("20000", 18).toString(), // 20,000 base16
+      "value": auctionedSellAmount.toString(),
       "data": "0x",
       "operation": 0
     }
@@ -180,6 +180,7 @@ const simulateETHGNOAuction: () => void = () => {
       " ETH",
     );
 
+    console.log("If all tests passed, use the following data:", proposals)
   });
 };
 
