@@ -10,7 +10,7 @@ import { clearAuction } from "./src/tasks/clear_auction";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
 import { placeManyOrders } from "./src/tasks/placeManyOrders";
-import { simulateUniAuction } from "./src/tasks/simulate_uni_auction";
+import { simulateETHGNOAuction } from "./src/tasks/simulate_uni_auction";
 const argv = yargs
   .option("network", {
     type: "string",
@@ -51,7 +51,7 @@ initiateAuction();
 clearAuction();
 generateSignatures();
 placeManyOrders();
-simulateUniAuction();
+simulateETHGNOAuction();
 
 export default {
   paths: {
@@ -82,7 +82,7 @@ export default {
       forking: {
         url:
           "https://eth-mainnet.alchemyapi.io/v2/InqJMyBXARYCr8eaH0xuw3se-lVEiV4w",
-        blockNumber: 12288415,
+        blockNumber: 13709461,
       },
     },
     mainnet: {
@@ -90,8 +90,8 @@ export default {
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     rinkeby: {
@@ -99,8 +99,8 @@ export default {
       url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     xdai: {
@@ -108,8 +108,8 @@ export default {
       url: "https://xdai.poanetwork.dev",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
   },
