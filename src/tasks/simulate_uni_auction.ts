@@ -161,6 +161,7 @@ const simulateETHGNOAuction: () => void = () => {
     }
 
     console.log("proposals executed")
+
     ////////////////////////////////////////////////////////////////////////////////
     // 4th: Check execution results
     ////////////////////////////////////////////////////////////////////////////////
@@ -185,6 +186,13 @@ const simulateETHGNOAuction: () => void = () => {
     console.log(`DAO ETH Balance before the proposal started: ${hardhatRuntime.ethers.utils.formatEther(initialETHBalance)}`);
     console.log(`DAO ETH Balance after the proposal ended   : ${hardhatRuntime.ethers.utils.formatEther(gnosisDAOETHBalanceAfter)}`);
     console.log('--------------------------------------------------------------------\n');
+
+    // Check the proposal transactions were executed
+    const question = await realityModule.connect(proposer).buildQuestion(proposalId, txsHashes);
+    const questionHash = hardhatRuntime.ethers.utils.keccak256(hardhatRuntime.ethers.utils.toUtf8Bytes(question));
+    for (let txHash of txsHashes) {
+      assert.ok(await realityModule.connect(proposer).executedProposalTransactions(questionHash, txHash) == true);
+    }
 
     // We expect the balance of GNO receiver to increase by the amount of GNO we withdraw from VestingContract
     assert.ok(gnoWithdrawReceiverBalanceAfter.eq(initialGNOWithdrawReceiverBalance.add(gnoWithdrawAmount)));
