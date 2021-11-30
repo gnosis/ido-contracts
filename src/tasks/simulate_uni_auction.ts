@@ -17,8 +17,14 @@ const simulateETHGNOAuction: () => void = () => {
     // 0th: Get contracts to be used
     ////////////////////////////////////////////////////////////////////////////////
 
-    const xdaiGovMultisigAddress = "0x42F38ec5A75acCEc50054671233dfAC9C0E7A3F6";
-    const gnoWithdrawAmount = hardhatRuntime.ethers.utils.parseEther("285398");
+    const proposal_data = require('./proposal_data.json');
+
+    console.log('\n---------------------------Configuration-----------------------------');
+    console.log(proposal_data);
+    console.log('--------------------------------------------------------------------\n');
+
+    const xdaiGovMultisigAddress = proposal_data.xdaiGovMultisigAddress;
+    const gnoWithdrawAmount = hardhatRuntime.ethers.utils.parseEther(proposal_data.gnoWithdrawAmount);
     const easyAuction = await getGnosisAuction(hardhatRuntime);
     const realityModule = await getRealityModule(hardhatRuntime);
     const wethToken = await getWETHToken(hardhatRuntime);
@@ -26,7 +32,7 @@ const simulateETHGNOAuction: () => void = () => {
     const gnosisDAO = await getGnosisSafe(hardhatRuntime);
     const realitio = await getRealityIO(hardhatRuntime);
     const vesting = await getGNOVesting(hardhatRuntime);
-    const formerProposerAccount = "0x7e4A8391C728fEd9069B2962699AB416628B19Fa";
+    const formerProposerAccount = proposal_data.formerProposerAccount;
     await hardhatRuntime.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [formerProposerAccount],
@@ -47,28 +53,27 @@ const simulateETHGNOAuction: () => void = () => {
     ////////////////////////////////////////////////////////////////////////////////
     const _auctioningToken = wethToken.address;
     const _biddingToken = gnoToken.address;
-    const orderCancellationEndDate = 1640008800;
-    const auctionEndDate = 1640008800;
+    const orderCancellationEndDate = proposal_data.orderCancellationEndDate;
+    const auctionEndDate = proposal_data.auctionEndDate;
     const auctionedSellAmount = hardhatRuntime.ethers.utils.parseEther(
-      "20000",
+      proposal_data.auctionedSellAmount,
     );
     const minBuyAmount = hardhatRuntime.ethers.utils.parseEther(
-      "166666.66",
+      proposal_data.minBuyAmount,
     );
     const minimumBiddingAmountPerOrder = hardhatRuntime.ethers.utils.parseEther(
-      "0.5",
+      proposal_data.minimumBiddingAmountPerOrder,
     );;
-    const minFundingThreshold = 0;
-    const isAtomicClosureAllowed = false;
-    const accessManagerContract = "0x0000000000000000000000000000000000000000";
-    const accessManagerContractData = "0x";
+    const minFundingThreshold = proposal_data.minFundingThreshold;
+    const isAtomicClosureAllowed = proposal_data.isAtomicClosureAllowed;
+    const accessManagerContract = proposal_data.accessManagerContract;
+    const accessManagerContractData = proposal_data.accessManagerContractData;
 
     const tx_withdraw_gno = {
       "to": vesting.address,
       "value": "0",
       "data": vesting.interface
         .encodeFunctionData("withdraw", [
-          // gnosisDAO.address,
           xdaiGovMultisigAddress,
           gnoWithdrawAmount,
         ]),
