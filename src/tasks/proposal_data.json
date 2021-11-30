@@ -1,5 +1,5 @@
 {
-  "xdaiGovMultisigAddress": "0x42F38ec5A75acCEc50054671233dfAC9C0E7A3F6",
+  "gnoWithdrawReceiver": "0xC96a9f96a23e083Fc1423C3791bCe752a77F170b",
   "gnoWithdrawAmount": "285398",
   "formerProposerAccount": "0x7e4A8391C728fEd9069B2962699AB416628B19Fa",
   "orderCancellationEndDate": "1640008800",
