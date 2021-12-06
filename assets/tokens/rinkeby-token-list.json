@@ -285,6 +285,14 @@
       "decimals": 18,
       "address": "0xd9ba894e0097f8cc2bbc9d24d308b98e36dc6d02",
       "logoURI": "https://cryptologos.cc/logos/tether-usdt-logo.png?v=014"
+    },
+    {
+      "name": "Silo Governance Token",
+      "chainId": 1,
+      "symbol": "SILO",
+      "decimals": 18,
+      "address": "0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8",
+      "logoURI": "https://raw.githubusercontent.com/silo-finance/assets/3cc52988fb670db745dcef10055429d3fa1f394f/Silo-Brandmark256%40PNG.png"
     }
   ]
 }
