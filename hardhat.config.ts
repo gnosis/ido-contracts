@@ -129,6 +129,15 @@ export default {
           )
         : "auto",
     },
+    avax: {
+      ...sharedNetworkConfig,
+      url: "https://api.avax.network/ext/bc/C/rpc",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
   },
   namedAccounts: {
     deployer: 0,

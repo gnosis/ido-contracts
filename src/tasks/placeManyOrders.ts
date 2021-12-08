@@ -25,9 +25,10 @@ const placeManyOrders: () => void = () => {
       console.log("Using the account:", caller.address);
 
       const easyAuction = await getEasyAuctionContract(hardhatRuntime);
-      if (easyAuction.address != "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7") {
-        throw new Error("Use the script only on rinkeby");
-      }
+      console.log(taskArgs.auctionId)
+      // if (easyAuction.address != "0xC5992c0e0A3267C7F75493D0F717201E26BE35f7") {
+      //   throw new Error("Use the script only on rinkeby");
+      // }
       const auctionData = await easyAuction.callStatic.auctionData(
         taskArgs.auctionId,
       );
@@ -41,11 +42,11 @@ const placeManyOrders: () => void = () => {
       );
       const sellAmountsInAtoms = ethers.utils.parseUnits(
         taskArgs.sellAmount,
-        await auctioningToken.callStatic.decimals(),
+        await biddingToken.callStatic.decimals(),
       );
       const minBuyAmountInAtoms = ethers.utils.parseUnits(
         taskArgs.minBuyAmount,
-        await biddingToken.callStatic.decimals(),
+        await auctioningToken.callStatic.decimals(),
       );
 
       console.log("Using EasyAuction deployed to:", easyAuction.address);
@@ -65,13 +66,13 @@ const placeManyOrders: () => void = () => {
       );
       if (totalSellingAmountInAtoms.gt(allowance)) {
         console.log("Approving tokens:");
-        const tx = await auctioningToken
-          .connect(caller)
-          .approve(easyAuction.address, totalSellingAmountInAtoms);
-        await tx.wait();
+        // const tx = await auctioningToken
+        //   .connect(caller)
+        //   .approve(easyAuction.address, totalSellingAmountInAtoms);
+        // await tx.wait();
         console.log("Approved");
       }
-      const orderBlockSize = 50;
+      const orderBlockSize = 1;
       if (taskArgs.nrOfOrders % orderBlockSize !== 0) {
         throw new Error("nrOfOrders must be a multiple of orderBlockSize");
       }
@@ -93,6 +94,7 @@ const placeManyOrders: () => void = () => {
           Array(orderBlockSize).fill(sellAmountsInAtoms),
           Array(orderBlockSize).fill(queueStartElement), //<-- very inefficient, please use only one rinkeby
           "0x",
+          {gasLimit: 300000}
         );
         const txResult = await tx.wait();
         console.log("Placed order", i, " with result", txResult);
