@@ -1,0 +1,15 @@
+{
+  "gnoWithdrawReceiver": "0xC96a9f96a23e083Fc1423C3791bCe752a77F170b",
+  "gnoWithdrawAmount": "285398",
+  "formerProposerAccount": "0x7e4A8391C728fEd9069B2962699AB416628B19Fa",
+  "orderCancellationEndDate": "1640008800",
+  "auctionEndDate": "1640008800",
+  "auctionedSellAmount": "20000",
+  "minBuyAmount": "166666.66",
+  "minimumBiddingAmountPerOrder": "0.5",
+  "minFundingThreshold": "0",
+  "isAtomicClosureAllowed": false,
+  "accessManagerContract": "0x0000000000000000000000000000000000000000",
+  "accessManagerContractData": "0x"
+
+}
