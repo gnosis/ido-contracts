@@ -129,6 +129,26 @@ export default {
           )
         : "auto",
     },
+    fuji: {
+      ...sharedNetworkConfig,
+      chainId: 43113,
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
+    avax: {
+      ...sharedNetworkConfig,
+      chainId: 43114,
+      url: "https://api.avax.network/ext/bc/C/rpc",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
   },
   namedAccounts: {
     deployer: 0,

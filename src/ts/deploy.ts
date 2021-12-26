@@ -73,13 +73,13 @@ export async function logResult(
     log(` - Address: ${deployResult.address}`);
     log(` - Transaction hash: ${deployResult.transactionHash}`);
     log(
-      ` - Gas used: ${receipt.gasUsed} @ ${
+      ` - Gas used: ${+receipt.gasUsed} @ ${
         transaction.gasPrice.toNumber() / 10 ** 9
       } GWei`,
     );
     log(
       ` - Deployment cost: ${ethers.utils.formatEther(
-        transaction.gasPrice.mul(receipt.gasUsed),
+        transaction.gasPrice.mul(+receipt.gasUsed),
       )} ETH`,
     );
   } else {
