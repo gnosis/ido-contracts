@@ -114,14 +114,8 @@ describe("DepositAndPlaceOrder - integration tests", async () => {
         "DepositAndPlaceOrder",
       );
 
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        easyAuction,
-        [user_1, user_2],
-        hre,
-      );
+      const { auctioningToken, biddingToken } =
+        await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
       depositAndPlaceOrder = await DepositAndPlaceOrder.deploy(
         easyAuction.address,
         biddingToken.address, //<-- introduces the error

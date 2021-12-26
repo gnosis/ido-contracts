@@ -65,17 +65,17 @@ contract AllowListOffChainManaged {
         bytes32 s;
         (v, r, s) = abi.decode(callData, (uint8, bytes32, bytes32));
         bytes32 hash = keccak256(abi.encode(domainSeparator, user, auctionId));
-        address signer =
-            ecrecover(
-                keccak256(
-                    abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
-                ),
-                v,
-                r,
-                s
-            );
-        bytes memory allowListData =
-            EasyAuction(allower).auctionAccessData(auctionId);
+        address signer = ecrecover(
+            keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+            ),
+            v,
+            r,
+            s
+        );
+        bytes memory allowListData = EasyAuction(allower).auctionAccessData(
+            auctionId
+        );
         if (abi.decode(allowListData, (address)) == signer) {
             return AllowListVerifierHelper.MAGICVALUE;
         } else {

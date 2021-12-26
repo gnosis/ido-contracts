@@ -32,14 +32,8 @@ describe("AccessManager - integration tests", async () => {
   });
   describe("AccessManager - placing order in easyAuction with auctioneer signature", async () => {
     it("integration test: places a new order and checks that tokens were transferred - with whitelisting", async () => {
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        easyAuction,
-        [user_1, user_2],
-        hre,
-      );
+      const { auctioningToken, biddingToken } =
+        await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
       const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {
@@ -104,14 +98,8 @@ describe("AccessManager - integration tests", async () => {
       );
 
       const allowListManager = await AllowListManager.deploy();
-      const {
-        auctioningToken,
-        biddingToken,
-      } = await createTokensAndMintAndApprove(
-        easyAuction,
-        [user_1, user_2],
-        hre,
-      );
+      const { auctioningToken, biddingToken } =
+        await createTokensAndMintAndApprove(easyAuction, [user_1, user_2], hre);
       const auctionId: BigNumber = await createAuctionWithDefaultsAndReturnId(
         easyAuction,
         {

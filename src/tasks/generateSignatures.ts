@@ -78,13 +78,13 @@ const generateSignatures: () => void = () => {
           const auctioneerSignature = await caller.signMessage(
             hardhatRuntime.ethers.utils.arrayify(auctioneerMessage),
           );
-          const sig = hardhatRuntime.ethers.utils.splitSignature(
-            auctioneerSignature,
-          );
-          const auctioneerSignatureEncoded = hardhatRuntime.ethers.utils.defaultAbiCoder.encode(
-            ["uint8", "bytes32", "bytes32"],
-            [sig.v, sig.r, sig.s],
-          );
+          const sig =
+            hardhatRuntime.ethers.utils.splitSignature(auctioneerSignature);
+          const auctioneerSignatureEncoded =
+            hardhatRuntime.ethers.utils.defaultAbiCoder.encode(
+              ["uint8", "bytes32", "bytes32"],
+              [sig.v, sig.r, sig.s],
+            );
           signatures.push({
             user: address,
             signature: auctioneerSignatureEncoded,
