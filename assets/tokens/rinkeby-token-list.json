@@ -293,6 +293,14 @@
       "decimals": 18,
       "address": "0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8",
       "logoURI": "https://raw.githubusercontent.com/silo-finance/assets/3cc52988fb670db745dcef10055429d3fa1f394f/Silo-Brandmark256%40PNG.png"
+    },
+    {
+      "name": "Alpha Abachi",
+      "chainId": 137,
+      "symbol": "aABI",
+      "decimals": 9,
+      "address": "0x835ba011ec70e695879185df3d46939dbfbef7e5",
+      "logoURI": "https://raw.githubusercontent.com/abachi-io/publicAssets/main/abachi-200px.png"
     }
   ]
 }
