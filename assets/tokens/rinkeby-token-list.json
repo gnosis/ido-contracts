@@ -301,6 +301,22 @@
       "decimals": 9,
       "address": "0x835ba011ec70e695879185df3d46939dbfbef7e5",
       "logoURI": "https://raw.githubusercontent.com/abachi-io/publicAssets/main/abachi-200px.png"
+    },
+    {
+      "name": "CrowdToken",
+      "chainId": 137,
+      "symbol": "CROWD",
+      "decimals": 18,
+      "address": "0x483dd3425278C1f79F377f1034d9d2CaE55648B6",
+      "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
+    },
+    {
+      "name": "CrowdToken",
+      "chainId": 4,
+      "symbol": "CROWD",
+      "decimals": 18,
+      "address": "0x6006A2997b14A4a74263C1187a34c067c1861FC8",
+      "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
     }
   ]
 }
