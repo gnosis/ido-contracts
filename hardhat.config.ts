@@ -104,7 +104,7 @@ export default {
     },
     xdai: {
       ...sharedNetworkConfig,
-      url: "https://rpc.gnosischain.com/",
+      url: "https://rpc.gnosischain.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
