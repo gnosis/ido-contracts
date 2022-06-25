@@ -106,6 +106,11 @@ export default {
       url: `https://goerli.infura.io/v3/${INFURA_KEY}`,
       ...sharedNetworkConfig,
       chainId: 5,
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
+        : "auto",
     },
     xdai: {
       ...sharedNetworkConfig,
