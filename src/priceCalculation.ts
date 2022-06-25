@@ -1,5 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { Contract, BigNumber } from "ethers";
+import { Contract, BigNumber, Wallet } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 export interface Price {
   priceNumerator: BigNumber;
