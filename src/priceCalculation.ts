@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { Contract, BigNumber, Wallet } from "ethers";
+import { Contract, BigNumber } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 export interface Price {
   priceNumerator: BigNumber;
@@ -153,7 +153,7 @@ export async function calculateClearingPrice(
 }
 
 function printOrders(orders: Order[], isInitialOrder: boolean, debug = false) {
-  const log = debug ? (...a: any) => console.log(...a) : () => {};
+  const log = debug ? (...a: any) => console.log(...a) : () => { };
 
   if (isInitialOrder) {
     log("Initial order");
