@@ -152,7 +152,7 @@ export async function calculateClearingPrice(
 }
 
 function printOrders(orders: Order[], isInitialOrder: boolean, debug = false) {
-  const log = debug ? (...a: any) => console.log(...a) : () => { };
+  const log = debug ? (...a: any) => console.log(...a) : () => {};
 
   if (isInitialOrder) {
     log("Initial order");
