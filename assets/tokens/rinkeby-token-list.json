@@ -213,6 +213,110 @@
       "decimals": 18,
       "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+    },
+    {
+      "name": "GoldenDog",
+      "chainId": 1,
+      "symbol": "GDOG",
+      "decimals": 18,
+      "address": "0x6aa493050427c7af81d38f19fd6b4f5dd3a75e3b",
+      "logoURI": "https://goldendog.io/images/logo256.png"
+    },
+    {
+      "name": "Be Your Own Bank",
+      "chainId": 1,
+      "symbol": "BYOB",
+      "decimals": 18,
+      "address": "0xf4c4c94070a571be425d2a998b4bbf4a5a8ba5f3",
+      "logoURI": "https://i.ibb.co/GJ4dfdW/JCIL-BYOB-logo.png"
+    },
+    {
+      "name": "Be Your Own Bank",
+      "chainId": 4,
+      "symbol": "BYOB",
+      "decimals": 18,
+      "address": "0x138a6A43D529aCba75c936D19425C5c2A1E69507",
+      "logoURI": "https://i.ibb.co/GJ4dfdW/JCIL-BYOB-logo.png"
+    },
+    {
+      "name": "Vesting Swarm Markets Token",
+      "chainId": 1,
+      "symbol": "vSMT",
+      "decimals": 18,
+      "address": "0x0C033bb39e67eB598D399C06A8A519498dA1Cec9",
+      "logoURI": "https://raw.githubusercontent.com/SwarmMarkets/docs-www/main/vSMT.png"
+    },
+    {
+      "name": "DAOSquare Governance Token",
+      "chainId": 1,
+      "symbol": "RICE",
+      "decimals": 18,
+      "address": "0xbd9908b0cdd50386f92efcc8e1d71766c2782df0",
+      "logoURI": "https://raw.githubusercontent.com/DAOSquare/DesignResources/main/logo/DAOSquareToken500X500.png"
+    },
+    {
+      "name": "Tracer",
+      "chainId": 1,
+      "symbol": "TCR",
+      "decimals": 18,
+      "address": "0x9c4a4204b79dd291d6b6571c5be8bbcd0622f050",
+      "logoURI": "https://raw.githubusercontent.com/tracer-protocol/assets/master/tcr-logo-squre.png"
+    },
+    {
+      "name": "Swash Token",
+      "chainId": 1,
+      "symbol": "SWASH",
+      "decimals": 18,
+      "address": "0xa130e3a33a4d84b04c3918c4e5762223ae252f80",
+      "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
+    },
+    {
+      "name": "Swash Token",
+      "chainId": 4,
+      "symbol": "SWASH",
+      "decimals": 18,
+      "address": "0xF7BaAF97607A01AECd768858AC986727790a9A47",
+      "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
+    },
+    {
+      "name": "USDT",
+      "chainId": 4,
+      "symbol": "USDT",
+      "decimals": 18,
+      "address": "0xd9ba894e0097f8cc2bbc9d24d308b98e36dc6d02",
+      "logoURI": "https://cryptologos.cc/logos/tether-usdt-logo.png?v=014"
+    },
+    {
+      "name": "Silo Governance Token",
+      "chainId": 1,
+      "symbol": "SILO",
+      "decimals": 18,
+      "address": "0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8",
+      "logoURI": "https://raw.githubusercontent.com/silo-finance/assets/3cc52988fb670db745dcef10055429d3fa1f394f/Silo-Brandmark256%40PNG.png"
+    },
+    {
+      "name": "Alpha Abachi",
+      "chainId": 137,
+      "symbol": "aABI",
+      "decimals": 9,
+      "address": "0x835ba011ec70e695879185df3d46939dbfbef7e5",
+      "logoURI": "https://raw.githubusercontent.com/abachi-io/publicAssets/main/abachi-200px.png"
+    },
+    {
+      "name": "CrowdToken",
+      "chainId": 137,
+      "symbol": "CROWD",
+      "decimals": 18,
+      "address": "0x483dd3425278C1f79F377f1034d9d2CaE55648B6",
+      "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
+    },
+    {
+      "name": "CrowdToken",
+      "chainId": 4,
+      "symbol": "CROWD",
+      "decimals": 18,
+      "address": "0x6006A2997b14A4a74263C1187a34c067c1861FC8",
+      "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
     }
   ]
 }

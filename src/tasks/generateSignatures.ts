@@ -55,8 +55,8 @@ const generateSignatures: () => void = () => {
 
       // Post signatures in packages of `signaturePackageSize` to the api and write
       // them into the file `signatures-ith.json`
-      const signaturePackageSize = 10;
-      for (let i = 0; i <= addresses.length / signaturePackageSize; i++) {
+      const signaturePackageSize = 10.0;
+      for (let i = 0; i < addresses.length / signaturePackageSize; i++) {
         const signatures = [];
         console.log("Creating signatures for the ", i, "-th package");
         for (const address of addresses.slice(
@@ -144,6 +144,9 @@ async function getNetworkName(
   }
   if (networkInfo.chainId === 1) {
     networkName = "mainnet";
+  }
+  if (networkInfo.chainId === 137) {
+    networkName = "polygon";
   }
   return networkName;
 }

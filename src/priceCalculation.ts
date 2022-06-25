@@ -285,7 +285,7 @@ export async function getAllSellOrders(
 
 export async function createTokensAndMintAndApprove(
   easyAuction: Contract,
-  users: SignerWithAddress[],
+  users: Wallet[],
   hre: HardhatRuntimeEnvironment,
 ): Promise<{ auctioningToken: Contract; biddingToken: Contract }> {
   const ERC20 = await hre.ethers.getContractFactory("ERC20Mintable");

@@ -7,7 +7,7 @@ import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
 import { clearAuction } from "./src/tasks/clear_auction";
-import { createTestToken } from "./src/tasks/create_new_test_token";
+import { clearAuctionSimplified } from "./src/tasks/clear_auction_simplifed";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
 import { placeManyOrders } from "./src/tasks/placeManyOrders";
@@ -50,9 +50,9 @@ if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
 
 initiateAuction();
 clearAuction();
+clearAuctionSimplified();
 generateSignatures();
 placeManyOrders();
-createTestToken();
 
 export default {
   paths: {
@@ -104,7 +104,7 @@ export default {
     },
     xdai: {
       ...sharedNetworkConfig,
-      url: "https://xdai.1hive.org",
+      url: "https://rpc.gnosischain.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
@@ -113,7 +113,7 @@ export default {
     },
     polygon: {
       ...sharedNetworkConfig,
-      url: "https://rpc-mainnet.maticvigil.com/",
+      url: "https://polygon-rpc.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
@@ -123,6 +123,26 @@ export default {
     binancesmartchain: {
       ...sharedNetworkConfig,
       url: "https://bsc-dataseed1.binance.org/",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
+    fuji: {
+      ...sharedNetworkConfig,
+      chainId: 43113,
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
+    avax: {
+      ...sharedNetworkConfig,
+      chainId: 43114,
+      url: "https://api.avax.network/ext/bc/C/rpc",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
