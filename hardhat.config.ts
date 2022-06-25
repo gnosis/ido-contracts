@@ -42,7 +42,7 @@ if (PK) {
   };
 }
 
-if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
+if (["rinkeby", "goerli", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
   throw new Error(
     `Could not find Infura key in env, unable to connect to network ${argv.network}`,
   );
@@ -89,8 +89,8 @@ export default {
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     rinkeby: {
@@ -98,17 +98,22 @@ export default {
       url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
+    },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${INFURA_KEY}`,
+      ...sharedNetworkConfig,
+      chainId: 5,
     },
     xdai: {
       ...sharedNetworkConfig,
       url: "https://rpc.gnosischain.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     polygon: {
@@ -116,8 +121,8 @@ export default {
       url: "https://polygon-rpc.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     binancesmartchain: {
@@ -125,8 +130,8 @@ export default {
       url: "https://bsc-dataseed1.binance.org/",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     fuji: {
@@ -135,8 +140,8 @@ export default {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
     avax: {
@@ -145,8 +150,8 @@ export default {
       url: "https://api.avax.network/ext/bc/C/rpc",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
     },
   },
