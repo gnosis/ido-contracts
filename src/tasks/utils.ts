@@ -81,6 +81,8 @@ export async function getWETH9Address(
     weth9Address = "0xd9d01a9f7c810ec035c0e42cb9e80ef44d7f8692"; // wrapped avax
   } else if (chainId == 43114) {
     weth9Address = "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"; // wrapped avax
+  }else if (chainId == 5) {
+    weth9Address = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"; 
   }
   return weth9Address;
 }
