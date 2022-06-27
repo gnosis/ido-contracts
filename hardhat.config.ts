@@ -42,7 +42,10 @@ if (PK) {
   };
 }
 
-if (["rinkeby", "mainnet"].includes(argv.network) && INFURA_KEY === undefined) {
+if (
+  ["rinkeby", "goerli", "mainnet"].includes(argv.network) &&
+  INFURA_KEY === undefined
+) {
   throw new Error(
     `Could not find Infura key in env, unable to connect to network ${argv.network}`,
   );
@@ -96,6 +99,16 @@ export default {
     rinkeby: {
       ...sharedNetworkConfig,
       url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${INFURA_KEY}`,
+      ...sharedNetworkConfig,
+      chainId: 5,
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
