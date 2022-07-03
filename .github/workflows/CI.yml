@@ -2,14 +2,14 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:
   test:
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [16.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
