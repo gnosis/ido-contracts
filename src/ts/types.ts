@@ -13,3 +13,14 @@ export interface InitiateAuctionInput {
   allowListManager: BytesLike;
   allowListData: BytesLike;
 }
+
+export interface InitiateChannelAuctionInput {
+  auctioningToken: Contract;
+  biddingToken: Contract;
+  _auctionedSellAmount: BigNumberish;
+  _auctioneerBuyAmountMinimum: BigNumberish;
+  _auctioneerBuyAmountMaximum: BigNumberish;
+  _auctionStartDate: BigNumberish;
+  _minimumBiddingAmountPerOrder: BigNumberish;
+  _maxDuration: BigNumberish;
+}
