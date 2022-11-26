@@ -317,6 +317,13 @@
       "decimals": 18,
       "address": "0x6006A2997b14A4a74263C1187a34c067c1861FC8",
       "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
-    }
+    },
+   "name": "Nonagon Finance",
+      "chainId": 1,
+      "symbol": "ONA",
+      "decimals": 18,
+      "address": "0x2A8f808Ad38E1ed7693fC9459b2177a1fA4A1fE5",
+      "logoURI": "https://github.com/NedimRenesalis/Logo/blob/main/nonagon.png"
+    } 
   ]
 }
