@@ -1,0 +1,339 @@
+{
+    "name": "IDO Goerli",
+    "version": {
+      "major": 0,
+      "minor": 0,
+      "patch": 1
+    },
+    "keywords": [
+      "IDO",
+      "Goerli",
+      "tokens",
+      "trusted"
+    ],
+    "logoURI": "https://avatars.githubusercontent.com/u/24954468?s=200&v=4",
+    "timestamp": "2023-03-07T06:06:32+00:00Z",
+    "tokens": [
+      {
+        "name": "Gnosis",
+        "chainId": 4,
+        "symbol": "GNO",
+        "decimals": 18,
+        "address": "0xd0Dab4E640D95E9E8A47545598c33e31bDb53C7c",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6810e776880C02933D47DB1b9fc05908e5386b96/logo.png"
+      },
+      {
+        "name": "USDT",
+        "chainId": 4,
+        "symbol": "USDT",
+        "decimals": 6,
+        "address": "0xa9881E6459CA05d7D7C95374463928369cD7a90C",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
+      },
+      {
+        "name": "USD Coin",
+        "chainId": 4,
+        "symbol": "USDC",
+        "decimals": 6,
+        "address": "0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
+      },
+      {
+        "name": "TUSD",
+        "chainId": 4,
+        "symbol": "TUSD",
+        "decimals": 18,
+        "address": "0x0000000000085d4780B73119b644AE5ecd22b376",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x0000000000085d4780B73119b644AE5ecd22b376/logo.png"
+      },
+      {
+        "name": "PAX",
+        "chainId": 4,
+        "symbol": "PAX",
+        "decimals": 18,
+        "address": "0xBD6A9921504fae42EaD2024F43305A8ED3890F6f",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x8E870D67F660D95d5be530380D0eC0bd388289E1/logo.png"
+      },
+      {
+        "name": "sUSD",
+        "chainId": 4,
+        "symbol": "sUSD",
+        "decimals": 18,
+        "address": "0x1b642a124CDFa1E5835276A6ddAA6CFC4B35d52c",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x57Ab1ec28D129707052df4dF418D58a2D46d5f51/logo.png"
+      },
+      {
+        "name": "GUSD",
+        "chainId": 4,
+        "symbol": "GUSD",
+        "decimals": 2,
+        "address": "0x784B46A4331f5c7C495F296AE700652265ab2fC6",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd/logo.png"
+      },
+      {
+        "name": "OWL",
+        "chainId": 4,
+        "symbol": "OWL",
+        "decimals": 18,
+        "address": "0xa7D1C04fAF998F9161fC9F800a99A809b84cfc9D",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x1A5F9352Af8aF974bFC03399e3767DF6370d82e4/logo.png"
+      },
+      {
+        "name": "Wrapped Ether",
+        "chainId": 4,
+        "symbol": "WETH",
+        "decimals": 18,
+        "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+      },
+      {
+        "name": "DAI",
+        "chainId": 4,
+        "symbol": "DAI",
+        "decimals": 18,
+        "address": "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png"
+      },
+      {
+        "name": "WBTC",
+        "chainId": 4,
+        "symbol": "WBTC",
+        "decimals": 18,
+        "address": "0x577d296678535e4903d59a4c929b718e1d575e0a",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png"
+      },
+      {
+        "name": "WBTC",
+        "chainId": 4,
+        "symbol": "WETH",
+        "decimals": 18,
+        "address": "0xd0dab4e640d95e9e8a47545598c33e31bdb53c7c",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6810e776880C02933D47DB1b9fc05908e5386b96/logo.png"
+      },
+      {
+        "name": "BOSONX",
+        "chainId": 4,
+        "symbol": "BOS",
+        "decimals": 18,
+        "address": "0x350AeeF292Ff3C7396235CA76d709Acfdbe6d8d1",
+        "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/8827.png"
+      },
+      {
+        "name": "Boson",
+        "chainId": 1,
+        "symbol": "BOSON",
+        "decimals": 18,
+        "address": "0xC477D038d5420C6A9e0b031712f61c5120090de9",
+        "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/8827.png"
+      },
+      {
+        "name": "k21.kanon.art",
+        "chainId": 1,
+        "symbol": "K21",
+        "decimals": 18,
+        "address": "0xB9d99C33eA2d86EC5eC6b8A4dD816EBBA64404AF",
+        "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/9205.png"
+      },
+      {
+        "name": "Universal Basic Income",
+        "chainId": 1,
+        "symbol": "UBI",
+        "decimals": 18,
+        "address": "0xDd1Ad9A21Ce722C151A836373baBe42c868cE9a4",
+        "logoURI": "https://ipfs.kleros.io/ipfs/QmPe3qwcZEUxywsu5fTzyUD3R5QivmETGu7QooM5yfsbRh/UBI"
+      },
+      {
+        "name": "SNAFU",
+        "chainId": 100,
+        "symbol": "SNAFU",
+        "decimals": 18,
+        "address": "0x27B9C2Bd4BaEa18ABdF49169054c1C1c12af9862",
+        "logoURI": "https://gateway.ipfs.io/ipfs/QmaEPqRKrJDN8iNKVSFj19rbHzZSyWENdj241oek3EJYn7"
+      },
+      {
+        "name": "Lever Token",
+        "chainId": 1,
+        "symbol": "LEV",
+        "decimals": 18,
+        "address": "0xbc194e6f748a222754C3E8b9946922c09E7d4e91",
+        "logoURI": "https://s2.coinmarketcap.com/static/img/coins/64x64/9505.png"
+      },
+      {
+        "name": "BSNcommunitynet",
+        "chainId": 1,
+        "symbol": "cBSN",
+        "decimals": 18,
+        "address": "0x7d4b1d793239707445305d8d2456d2c735f6b25b",
+        "logoURI": "https://i.ibb.co/TtGMbYs/bsn-dp-r.png"
+      },
+      {
+        "name": "StakeHouse Batch",
+        "chainId": 1,
+        "symbol": "SHB",
+        "decimals": 18,
+        "address": "0x7c3e3bdcec89a3f706c9a02797ec427ffa596787",
+        "logoURI": "https://i.ibb.co/By0VbLK/stakehouse-dp.png"
+      },
+      {
+        "name": "BSNcommunitynet",
+        "chainId": 4,
+        "symbol": "cBSN",
+        "decimals": 18,
+        "address": "0x487bA7E3C02Fe62a56988dE164a90a6f29d05e0E",
+        "logoURI": "https://i.ibb.co/TtGMbYs/bsn-dp-r.png"
+      },
+      {
+        "name": "StakeHouse Batch",
+        "chainId": 4,
+        "symbol": "SHB",
+        "decimals": 18,
+        "address": "0x67BF1BB0b98FCbBC0EE3ffbE7669acC3e9E44FdF",
+        "logoURI": "https://i.ibb.co/By0VbLK/stakehouse-dp.png"
+      },
+      {
+        "name": "VITA",
+        "chainId": 4,
+        "symbol": "VITA",
+        "decimals": 18,
+        "address": "0x29Db448452e17DC5c50CF5D6e3198b1a531E0D6A",
+        "logoURI": "http://ipfs.io/ipfs/QmUdpaWdzLjaDsf2jkpyitUQD1fSJkZHFQA3csEnEEJ2SC?filename=VitaLogo.png"
+      },
+      {
+        "name": "VITA",
+        "chainId": 1,
+        "symbol": "VITA",
+        "decimals": 18,
+        "address": "0x81f8f0bb1cb2a06649e51913a151f0e7ef6fa321",
+        "logoURI": "http://ipfs.io/ipfs/QmUdpaWdzLjaDsf2jkpyitUQD1fSJkZHFQA3csEnEEJ2SC?filename=VitaLogo.png"
+      },
+      {
+        "name": "ETH",
+        "chainId": 1,
+        "symbol": "ETH",
+        "decimals": 18,
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+      },
+      {
+        "name": "GoldenDog",
+        "chainId": 1,
+        "symbol": "GDOG",
+        "decimals": 18,
+        "address": "0x6aa493050427c7af81d38f19fd6b4f5dd3a75e3b",
+        "logoURI": "https://goldendog.io/images/logo256.png"
+      },
+      {
+        "name": "Be Your Own Bank",
+        "chainId": 1,
+        "symbol": "BYOB",
+        "decimals": 18,
+        "address": "0xf4c4c94070a571be425d2a998b4bbf4a5a8ba5f3",
+        "logoURI": "https://i.ibb.co/GJ4dfdW/JCIL-BYOB-logo.png"
+      },
+      {
+        "name": "Be Your Own Bank",
+        "chainId": 4,
+        "symbol": "BYOB",
+        "decimals": 18,
+        "address": "0x138a6A43D529aCba75c936D19425C5c2A1E69507",
+        "logoURI": "https://i.ibb.co/GJ4dfdW/JCIL-BYOB-logo.png"
+      },
+      {
+        "name": "Vesting Swarm Markets Token",
+        "chainId": 1,
+        "symbol": "vSMT",
+        "decimals": 18,
+        "address": "0x0C033bb39e67eB598D399C06A8A519498dA1Cec9",
+        "logoURI": "https://raw.githubusercontent.com/SwarmMarkets/docs-www/main/vSMT.png"
+      },
+      {
+        "name": "DAOSquare Governance Token",
+        "chainId": 1,
+        "symbol": "RICE",
+        "decimals": 18,
+        "address": "0xbd9908b0cdd50386f92efcc8e1d71766c2782df0",
+        "logoURI": "https://raw.githubusercontent.com/DAOSquare/DesignResources/main/logo/DAOSquareToken500X500.png"
+      },
+      {
+        "name": "Tracer",
+        "chainId": 1,
+        "symbol": "TCR",
+        "decimals": 18,
+        "address": "0x9c4a4204b79dd291d6b6571c5be8bbcd0622f050",
+        "logoURI": "https://raw.githubusercontent.com/tracer-protocol/assets/master/tcr-logo-squre.png"
+      },
+      {
+        "name": "Swash Token",
+        "chainId": 1,
+        "symbol": "SWASH",
+        "decimals": 18,
+        "address": "0xa130e3a33a4d84b04c3918c4e5762223ae252f80",
+        "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
+      },
+      {
+        "name": "Swash Token",
+        "chainId": 4,
+        "symbol": "SWASH",
+        "decimals": 18,
+        "address": "0xF7BaAF97607A01AECd768858AC986727790a9A47",
+        "logoURI": "https://raw.githubusercontent.com/swashapp/token/main/logo/Logo.png"
+      },
+      {
+        "name": "USDT",
+        "chainId": 4,
+        "symbol": "USDT",
+        "decimals": 18,
+        "address": "0xd9ba894e0097f8cc2bbc9d24d308b98e36dc6d02",
+        "logoURI": "https://cryptologos.cc/logos/tether-usdt-logo.png?v=014"
+      },
+      {
+        "name": "Silo Governance Token",
+        "chainId": 1,
+        "symbol": "SILO",
+        "decimals": 18,
+        "address": "0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8",
+        "logoURI": "https://raw.githubusercontent.com/silo-finance/assets/3cc52988fb670db745dcef10055429d3fa1f394f/Silo-Brandmark256%40PNG.png"
+      },
+      {
+        "name": "Alpha Abachi",
+        "chainId": 137,
+        "symbol": "aABI",
+        "decimals": 9,
+        "address": "0x835ba011ec70e695879185df3d46939dbfbef7e5",
+        "logoURI": "https://raw.githubusercontent.com/abachi-io/publicAssets/main/abachi-200px.png"
+      },
+      {
+        "name": "CrowdToken",
+        "chainId": 137,
+        "symbol": "CROWD",
+        "decimals": 18,
+        "address": "0x483dd3425278C1f79F377f1034d9d2CaE55648B6",
+        "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
+      },
+      {
+        "name": "CrowdToken",
+        "chainId": 4,
+        "symbol": "CROWD",
+        "decimals": 18,
+        "address": "0x6006A2997b14A4a74263C1187a34c067c1861FC8",
+        "logoURI": "https://app.crowdswap.org/assets/media/logo/crowd-token.png"
+      },
+      {
+        "name": "Nonagon Finance",
+        "chainId": 1,
+        "symbol": "ONA",
+        "decimals": 18,
+        "address": "0x2A8f808Ad38E1ed7693fC9459b2177a1fA4A1fE5",
+        "logoURI": "https://user-images.githubusercontent.com/19872990/209383085-5876c225-0544-45f6-b619-cf30b77158bf.png"
+      },
+      {
+        "name": "HairDAO Token",
+        "chainId": 1,
+        "symbol": "HAIR",
+        "decimals": 18,
+        "address": "0x9Ce115f0341ae5daBC8B477b74E83db2018A6f42",
+        "logoURI": "https://raw.githubusercontent.com/Gnosis-Builders/ido-contracts/master/assets/tokens/token-logos/HairDAO.png"
+      }
+    ]
+  }
+  
