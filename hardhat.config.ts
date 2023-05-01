@@ -11,7 +11,7 @@ import { clearAuctionSimplified } from "./src/tasks/clear_auction_simplifed";
 import { generateSignatures } from "./src/tasks/generateSignatures";
 import { initiateAuction } from "./src/tasks/initiate_new_auction";
 import { placeManyOrders } from "./src/tasks/placeManyOrders";
-
+import { simulateUniAuction } from "./src/tasks/simulate_uni_auction";
 const argv = yargs
   .option("network", {
     type: "string",
@@ -56,6 +56,7 @@ clearAuction();
 clearAuctionSimplified();
 generateSignatures();
 placeManyOrders();
+simulateUniAuction();
 
 export default {
   paths: {
@@ -83,8 +84,10 @@ export default {
   },
   networks: {
     hardhat: {
-      accounts: {
-        accountsBalance: "1000000000000000000000000000000",
+      forking: {
+        url:
+          "https://eth-mainnet.alchemyapi.io/v2/InqJMyBXARYCr8eaH0xuw3se-lVEiV4w",
+        blockNumber: 12288415,
       },
     },
     mainnet: {
